@@ -68,15 +68,26 @@ elseif(OS_IS_MAC)
     set(MACOSX_BUNDLE_BUNDLE_NAME ${MUSE_APP_TITLE})
     set(MACOSX_BUNDLE_LONG_VERSION_STRING ${MUSE_APP_VERSION})
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${MUSE_APP_VERSION})
-    set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_BUILD_NUMBER})
+    
+    if (IOS)
+		#   CMAKE_BUILD_NUMBER is blank, use MUSE_APP_VERSION
+	    set(MACOSX_BUNDLE_BUNDLE_VERSION ${MUSE_APP_VERSION})
+    else(IOS)
+        set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_BUILD_NUMBER})
+	endif(IOS)
+	
     set(MACOSX_BUNDLE_COPYRIGHT "Copyright © 1999-2024 MuseScore Limited. Published under the GNU General Public License version 3.")
-
+    
     set(CMAKE_INSTALL_RPATH ${QT_INSTALL_LIBS})
     if (MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH)
         list(PREPEND CMAKE_INSTALL_RPATH "${MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH}/lib")
     endif()
     
-    message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
+    if (IOS)
+		message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
+    else(IOS)
+		message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
+	endif(IOS)
 
 elseif(OS_IS_WASM)
 
@@ -143,7 +154,6 @@ set(LINK_LIB
     muse::learn
     notation
     project
-    print
     commonscene
     palette
     inspector
@@ -152,6 +162,11 @@ set(LINK_LIB
     muse::vst
     muse::update
     )
+    
+# print not available for iOS, we might to PDF export someday
+if (NOT (OS_IS_MAC AND IOS))
+    list(APPEND LINK_LIB print)
+endif()
 
 if (MUSE_MODULE_UI)
     list(APPEND LINK_LIB muse::ui)
@@ -272,9 +287,36 @@ add_executable(MuseScoreStudio
 set_target_properties(MuseScoreStudio PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 
 if (OS_IS_MAC)
-    set_target_properties(MuseScoreStudio PROPERTIES
-        MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/macOS/Info.plist.in
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
+    # IOS_CONFIG_BUG
+    if (IOS)
+        set_target_properties(MuseScoreStudio PROPERTIES
+            MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "com.Humble-Earth-Productions-Inc.MuseScore"
+            OUTPUT_NAME "${PROJECT_NAME}"
+            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY 1,2
+            XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET 18.2
+
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+            
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "V9R6W356UT"
+            XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic
+            )
+
+	if(PROJECT_VERSION)
+		set_target_properties(MuseScoreStudio PROPERTIES
+          	  MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
+	endif()
+
+        set_target_properties(MuseScoreStudio PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/iOS/Info.plist.in
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
+            
+    else(IOS)
+        set_target_properties(MuseScoreStudio PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/macOS/Info.plist.in
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
+    endif(IOS)
 endif (OS_IS_MAC)
 
 if (CC_IS_MINGW)
@@ -298,7 +340,24 @@ endif(OS_IS_WASM)
 # Link
 ###########################################
 
-if (NOT CC_IS_EMSCRIPTEN)
+# IOS_CONFIG_BUG
+if(IOS)
+
+    target_link_libraries(MuseScoreStudio INTERFACE ${LINK_LIB} )
+
+    # This might be how to get frameworks in the link list.
+    find_library(IOKit_Framework NAMES IOKit)
+    find_library(CoreVideo NAMES CoreVideo)
+    set(MODULE_LINK ${MODULE_LINK} ${IOKit_Framework} ${CoreVideo})
+    target_link_libraries(MuseScoreStudio INTERFACE ${MODULE_LINK} )
+    
+    # This might be how to get the Qt pieces into a static app.
+    target_link_libraries(MuseScoreStudio INTERFACE ${QT_LIBRARIES})
+
+    find_package(Qt6QmlImportScanner REQUIRED)
+    qt_import_qml_plugins(MuseScoreStudio PATH_TO_SCAN ${CMAKE_SOURCE_DIR})
+
+elseif (NOT CC_IS_EMSCRIPTEN)
     target_link_libraries(MuseScoreStudio ${LINK_LIB} )
 else()
     target_link_libraries(MuseScoreStudio PRIVATE ${QT_LIBRARIES})

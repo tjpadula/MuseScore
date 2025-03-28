@@ -256,6 +256,11 @@ bool MultiInstancesProvider::openNewAppInstance(const QStringList& args)
     if (!isInited()) {
         return false;
     }
+    
+#if TARGET_OS_IOS
+    LOGE() << __PRETTY_FUNCTION__ << " is not implemented for iOS, args: " << args;
+    return false;
+#else
 
     QList<ipc::ID> currentApps = m_ipcChannel->instances();
 
@@ -297,6 +302,7 @@ bool MultiInstancesProvider::openNewAppInstance(const QStringList& args)
     }
 
     return ok;
+#endif
 }
 
 bool MultiInstancesProvider::isPreferencesAlreadyOpened() const

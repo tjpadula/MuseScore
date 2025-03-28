@@ -46,6 +46,8 @@ static QString userAgent()
     osName = "Windows";
 #elif defined (Q_OS_MACOS)
     osName = "Mac";
+#elif defined(Q_OS_IOS)
+    osName = "iOS";
 #else
     osName = "Linux";
 #endif

@@ -60,8 +60,18 @@ endif()
 
 # Mac-specific
 if(OS_IS_MAC)
-    set(MACOSX_DEPLOYMENT_TARGET 10.14)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
+    # IOS_CONFIG_BUG
+    if(IOS)
+        set(MACOSX_DEPLOYMENT_TARGET 18.2)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 18.2)
+        
+        set_source_files_properties(build/src/Media.xcassets PROPERTIES
+            MACOSX_PACKAGE_LOCATION Resources)
+
+    else(IOS)
+        set(MACOSX_DEPLOYMENT_TARGET 10.14)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
+    endif(IOS)
 endif(OS_IS_MAC)
 
 # MSVC-specific

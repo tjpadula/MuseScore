@@ -179,7 +179,9 @@
 #include "extensions/extensionsmodule.h"
 #endif
 
+#if ALLOW_PRINTING_IOS
 #include "print/printmodule.h"
+#endif
 
 #ifdef MUE_BUILD_PROJECT_MODULE
 #include "project/projectmodule.h"
@@ -312,7 +314,9 @@ std::shared_ptr<muse::IApplication> AppFactory::newGuiApp(const CmdOptions& opti
 #ifdef MUSE_MODULE_EXTENSIONS
     app->addModule(new muse::extensions::ExtensionsModule());
 #endif
+#if ALLOW_PRINTING_IOS
     app->addModule(new mu::print::PrintModule());
+#endif
     app->addModule(new mu::project::ProjectModule());
     app->addModule(new muse::update::UpdateModule());
     app->addModule(new muse::workspace::WorkspaceModule());
@@ -415,7 +419,9 @@ std::shared_ptr<muse::IApplication> AppFactory::newConsoleApp(const CmdOptions& 
 #ifdef MUSE_MODULE_EXTENSIONS
     app->addModule(new muse::extensions::ExtensionsModule());
 #endif
+#if ALLOW_PRINTING_IOS
     app->addModule(new mu::print::PrintModule());
+#endif
     app->addModule(new mu::project::ProjectModule());
     app->addModule(new muse::update::UpdateModule());
     app->addModule(new muse::workspace::WorkspaceModule());

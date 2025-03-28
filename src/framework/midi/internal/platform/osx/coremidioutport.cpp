@@ -23,7 +23,11 @@
 
 #include <QString>
 
+#if TARGET_OS_IOS
+#include <CoreVideo/CVHostTime.h>
+#else
 #include <CoreAudio/HostTime.h>
+#endif
 #include <CoreServices/CoreServices.h>
 #include <CoreMIDI/CoreMIDI.h>
 
@@ -308,7 +312,11 @@ Ret CoreMidiOutPort::sendEvent(const Event& e)
     }
 
     OSStatus result;
+#if TARGET_OS_IOS
+    MIDITimeStamp timeStamp = CVGetCurrentHostTime();
+#else
     MIDITimeStamp timeStamp = AudioGetCurrentHostTime();
+#endif
 
     if (__builtin_available(macOS 11.0, *)) {
         MIDIProtocolID protocolId = configuration()->useMIDI20Output() ? m_core->destinationProtocolId : kMIDIProtocol_1_0;
