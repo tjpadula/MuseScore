@@ -185,6 +185,7 @@ macro(setup_module)
 
     set(MODULE_LINK ${CMAKE_DL_LIBS} ${QT_LIBRARIES} ${MODULE_LINK})
 
+    message(STATUS "Module ${MODULE} target_link_libraries: ${MODULE_LINK}")
     target_link_libraries(${MODULE} PRIVATE ${MODULE_LINK} )
 
 endmacro()
