@@ -388,7 +388,9 @@ muse::Ret ProjectActionsController::doOpenCloudProjectOffline(const muse::io::pa
 
 Ret ProjectActionsController::doFinishOpenProject()
 {
-    extensionsProvider()->performPointAsync(EXEC_ONPOST_PROJECT_OPENED);
+    if (extensionsProvider()) {
+        extensionsProvider()->performPointAsync(EXEC_ONPOST_PROJECT_OPENED);
+    }
 
     //! Show MuseSampler update if need
     async::Channel<Uri> opened = interactive()->opened();
@@ -653,7 +655,9 @@ void ProjectActionsController::newProject()
     Ret ret = interactive()->open(NEW_SCORE_URI).ret;
 
     if (ret) {
-        extensionsProvider()->performPointAsync(EXEC_ONPOST_PROJECT_CREATED);
+        if (extensionsProvider()) {
+            extensionsProvider()->performPointAsync(EXEC_ONPOST_PROJECT_CREATED);
+        }
 
         ret = doFinishOpenProject();
     }
@@ -924,7 +928,9 @@ bool ProjectActionsController::saveProjectLocally(const muse::io::path_t& filePa
 
     Ret ret = make_ok();
     if (saveMode == SaveMode::Save) {
-        ret = extensionsProvider()->performPoint(EXEC_ONPRE_PROJECT_SAVE);
+        if (extensionsProvider()) {
+            ret = extensionsProvider()->performPoint(EXEC_ONPRE_PROJECT_SAVE);
+        }
     }
 
     if (ret) {
@@ -957,7 +963,9 @@ bool ProjectActionsController::saveProjectLocally(const muse::io::path_t& filePa
     }
 
     if (saveMode == SaveMode::Save) {
-        ret = extensionsProvider()->performPoint(EXEC_ONPOST_PROJECT_SAVED);
+        if (extensionsProvider()) {
+            ret = extensionsProvider()->performPoint(EXEC_ONPOST_PROJECT_SAVED);
+        }
     }
 
     recentFilesController()->prependRecentFile(makeRecentFile(project));
