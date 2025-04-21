@@ -179,7 +179,11 @@
 #include "extensions/extensionsmodule.h"
 #endif
 
-#if ALLOW_PRINTING_IOS
+#if defined(Q_OS_IOS)
+#if defined(ALLOW_PRINTING_IOS)
+#include "print/printmodule.h"
+#endif
+#else
 #include "print/printmodule.h"
 #endif
 
