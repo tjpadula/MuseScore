@@ -1824,6 +1824,12 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
                 staff->clefList().insert(std::pair<int, ClefType>(ctx.tick().ticks(), ClefType::G));
             }
 
+            // Clef segments are sorted on layout now.  Previously, clef barline position could be out of sync with segment placement.
+            if (ctx.tick() != Fraction(0, 1) && ctx.tick() == m->tick()
+                && !(m->prevMeasure() && m->prevMeasure()->repeatEnd()) && !header) {
+                clef->setClefToBarlinePosition(ClefToBarlinePosition::AFTER);
+            }
+
             segment->add(clef);
         } else if (tag == "TimeSig") {
             // if time sig not at beginning of measure => courtesy time sig
@@ -2597,7 +2603,7 @@ static void readPart(Part* part, XmlReader& e, ReadContext& ctx)
 //   readPageFormat
 //---------------------------------------------------------
 
-static void readPageFormat(PageFormat* pf, XmlReader& e)
+static void readPageFormat(PageFormat* pf, int& pageNumberOffset, XmlReader& e)
 {
     double _oddRightMargin  = 0.0;
     double _evenRightMargin = 0.0;
@@ -2647,7 +2653,7 @@ static void readPageFormat(PageFormat* pf, XmlReader& e)
             const PaperSize* s = getPaperSize114(e.readText());
             pf->setSize(SizeF(s->w, s->h));
         } else if (tag == "page-offset") {
-            e.readInt();
+            pageNumberOffset = e.readInt();
         } else {
             e.unknown();
         }
@@ -2722,16 +2728,20 @@ static void readStyle(MStyle* style, XmlReader& e, ReadChordListHook& readChordL
 //    import old version <= 1.3 files
 //---------------------------------------------------------
 
-Err Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
+muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
 {
     IF_ASSERT_FAILED(score->isMaster()) {
-        return Err::FileUnknownError;
+        return make_ret(Err::FileUnknownError);
     }
 
     ReadContext ctx(score);
-    if (out && out->overriddenSpatium.has_value()) {
-        ctx.setSpatium(out->overriddenSpatium.value());
-        ctx.setOverrideSpatium(true);
+    if (out) {
+        if (out->overriddenSpatium.has_value()) {
+            ctx.setSpatium(out->overriddenSpatium.value());
+            ctx.setOverrideSpatium(true);
+        }
+
+        ctx.setPropertiesToSkip(out->propertiesToSkip);
     }
 
     DEFER {
@@ -2825,7 +2835,11 @@ Err Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
             e.skipCurrentElement();
         } else if (tag == "page-layout") {
             compat::PageFormat pf;
-            readPageFormat(&pf, e);
+            int pageNumberOffset = 0;
+            initPageFormat(&masterScore->style(), &pf);
+            readPageFormat(&pf, pageNumberOffset, e);
+            setPageFormat(&masterScore->style(), pf);
+            masterScore->setPageNumberOffset(pageNumberOffset);
         } else if (tag == "copyright" || tag == "rights") {
             Text* text = Factory::createText(masterScore->dummy(), TextStyleType::DEFAULT, false);
             readText114(e, ctx, text, text);
@@ -2915,7 +2929,7 @@ Err Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
 
     if (e.error() != muse::XmlStreamReader::NoError) {
         LOGD() << e.lineNumber() << " " << e.columnNumber() << ": " << e.errorString();
-        return Err::FileBadFormat;
+        return make_ret(Err::FileBadFormat, e.errorString());
     }
 
     for (Staff* s : masterScore->staves()) {
@@ -3172,7 +3186,7 @@ Err Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
         score->removeElement(invalidSpanner);
     }
 
-    return Err::NoError;
+    return muse::make_ok();
 }
 
 bool Read114::pasteStaff(XmlReader&, Segment*, staff_idx_t, Fraction)

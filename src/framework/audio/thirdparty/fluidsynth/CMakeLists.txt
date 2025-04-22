@@ -1,5 +1,4 @@
-
-declare_module(fluidsynth)
+declare_thirdparty_module(fluidsynth)
 
 include(${CMAKE_CURRENT_LIST_DIR}/fluidsynth.cmake)
 
@@ -32,8 +31,9 @@ set(MODULE_LINK
     ${SNDFILE_LIB} ${LIBOGG_LIBRARY} ${LIBVORBIS_LIBRARY}
     )
 
-set(MODULE_USE_PCH OFF)
 set(MODULE_USE_UNITY OFF)
+set(MODULE_USE_COVERAGE OFF)
+
 setup_module()
 
 #target_no_warning(${MODULE} -Wunused-const-variable=0)

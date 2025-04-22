@@ -24,16 +24,23 @@
 
 #include <QAbstractListModel>
 
+#include "modularity/ioc.h"
 #include "async/asyncable.h"
 #include "async/channel.h"
+
+#include "iinteractive.h"
+#include "inotationconfiguration.h"
 
 #include "engraving/dom/drumset.h"
 
 #include "percussionpanelpadmodel.h"
 
 namespace mu::notation {
-class PercussionPanelPadListModel : public QAbstractListModel, public muse::async::Asyncable
+class PercussionPanelPadListModel : public QAbstractListModel, public muse::Injectable, public muse::async::Asyncable
 {
+    muse::Inject<muse::IInteractive> interactive = { this };
+    muse::Inject<INotationConfiguration> configuration = { this };
+
     Q_OBJECT
 
     Q_PROPERTY(int numColumns READ numColumns CONSTANT)
@@ -49,15 +56,14 @@ public:
 
     Q_INVOKABLE void init();
 
-    Q_INVOKABLE void addEmptyRow();
+    Q_INVOKABLE void addEmptyRow(bool focusFirstInNewRow = false);
     Q_INVOKABLE void deleteRow(int row);
 
     void removeEmptyRows();
 
-    Q_INVOKABLE bool rowIsEmpty(int row) const;
-
     Q_INVOKABLE void startPadSwap(int startIndex);
     Q_INVOKABLE void endPadSwap(int endIndex);
+    bool swapInProgress() const { return indexIsValid(m_padSwapStartIndex); }
 
     bool hasActivePads() const { return m_drumset; }
 
@@ -65,18 +71,23 @@ public:
     int numPads() const { return m_padModels.count(); }
 
     void setDrumset(const engraving::Drumset* drumset);
-    engraving::Drumset* drumset() const { return m_drumset; }
+    const engraving::Drumset* drumset() const { return m_drumset; }
 
     QList<PercussionPanelPadModel*> padList() const { return m_padModels; }
 
-    mu::engraving::Drumset constructDefaultLayout(const engraving::Drumset* templateDrumset) const;
+    mu::engraving::Drumset constructDefaultLayout(const engraving::Drumset& templateDrumset) const;
+    int nextAvailableIndex(int pitch) const; //! NOTE: This may be equal to m_padModels.size()
+    int nextAvailablePitch(int pitch) const;
+
+    void focusFirstActivePad();
+    void focusLastActivePad();
 
     muse::async::Notification hasActivePadsChanged() const { return m_hasActivePadsChanged; }
-    muse::async::Channel<int /*pitch*/> padTriggered() const { return m_triggeredChannel; }
+    muse::async::Channel<PercussionPanelPadModel::PadAction, int /*pitch*/> padActionRequested() const { return m_padActionRequestChannel; }
 
 signals:
     void numPadsChanged();
-    void rowIsEmptyChanged(int row, bool empty);
+    void padFocusRequested(int padIndex); //! NOTE: This won't work if it is called immediately before a layoutChange
 
 private:
     static constexpr int NUM_COLUMNS = 8;
@@ -92,7 +103,12 @@ private:
     PercussionPanelPadModel* createPadModelForPitch(int pitch);
     int createModelIndexForPitch(int pitch) const;
 
+    int getModelIndexForPitch(int pitch) const;
+
     void movePad(int fromIndex, int toIndex);
+
+    muse::RetVal<muse::Val> openPadSwapDialog();
+    void swapMidiNotesAndShortcuts(int fromIndex, int toIndex);
 
     int numEmptySlotsAtRow(int row) const;
 
@@ -102,6 +118,6 @@ private:
     int m_padSwapStartIndex = -1;
 
     muse::async::Notification m_hasActivePadsChanged;
-    muse::async::Channel<int /*pitch*/> m_triggeredChannel;
+    muse::async::Channel<PercussionPanelPadModel::PadAction, int /*pitch*/> m_padActionRequestChannel;
 };
 }

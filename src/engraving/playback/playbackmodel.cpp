@@ -352,7 +352,7 @@ void PlaybackModel::updateContext(const InstrumentTrackId& trackId)
 }
 
 void PlaybackModel::processSegment(const int tickPositionOffset, const Segment* segment, const std::set<staff_idx_t>& staffIdxSet,
-                                   bool isFirstSegmentOfMeasure, ChangedTrackIdSet* trackChanges)
+                                   bool isFirstChordRestSegmentOfMeasure, ChangedTrackIdSet* trackChanges)
 {
     for (const EngravingItem* item : segment->annotations()) {
         if (!item || !item->part()) {
@@ -385,6 +385,10 @@ void PlaybackModel::processSegment(const int tickPositionOffset, const Segment* 
         collectChangesTracks(trackId, trackChanges);
     }
 
+    if (segment->isTimeTickType()) {
+        return; // optimization: search only for annotations
+    }
+
     for (const EngravingItem* item : segment->elist()) {
         if (!item || !item->isChordRest() || !item->part()) {
             continue;
@@ -401,7 +405,7 @@ void PlaybackModel::processSegment(const int tickPositionOffset, const Segment* 
             continue;
         }
 
-        if (isFirstSegmentOfMeasure) {
+        if (isFirstChordRestSegmentOfMeasure) {
             if (item->isMeasureRepeat()) {
                 const MeasureRepeat* measureRepeat = toMeasureRepeat(item);
                 const Measure* currentMeasure = measureRepeat->measure();
@@ -453,16 +457,21 @@ void PlaybackModel::processMeasureRepeat(const int tickPositionOffset, const Mea
     int currentMeasureTick = currentMeasure->tick().ticks();
     int referringMeasureTick = referringMeasure->tick().ticks();
     int repeatPositionTickOffset = currentMeasureTick - referringMeasureTick;
+    int tickFrom = tickPositionOffset + repeatPositionTickOffset;
 
-    bool isFirstSegmentOfRepeatedMeasure = true;
+    std::set<staff_idx_t> staffToProcessIdxSet { staffIdx };
+    int chordRestSegmentNum = -1;
 
     for (const Segment* seg = referringMeasure->first(); seg; seg = seg->next()) {
-        if (!seg->isChordRestType()) {
+        if (!seg->isChordRestType() && !seg->isTimeTickType()) {
             continue;
         }
 
-        processSegment(tickPositionOffset + repeatPositionTickOffset, seg, { staffIdx }, isFirstSegmentOfRepeatedMeasure, trackChanges);
-        isFirstSegmentOfRepeatedMeasure = false;
+        if (seg->isChordRestType()) {
+            chordRestSegmentNum++;
+        }
+
+        processSegment(tickFrom, seg, staffToProcessIdxSet, chordRestSegmentNum == 0, trackChanges);
     }
 }
 
@@ -494,10 +503,10 @@ void PlaybackModel::updateEvents(const int tickFrom, const int tickTo, const tra
                 continue;
             }
 
-            bool isFirstSegmentOfMeasure = true;
+            int chordRestSegmentNum = -1;
 
-            for (Segment* segment = measure->first(); segment; segment = segment->next()) {
-                if (!segment->isChordRestType()) {
+            for (const Segment* segment = measure->first(); segment; segment = segment->next()) {
+                if (!segment->isChordRestType() && !segment->isTimeTickType()) {
                     continue;
                 }
 
@@ -508,8 +517,11 @@ void PlaybackModel::updateEvents(const int tickFrom, const int tickTo, const tra
                     continue;
                 }
 
-                processSegment(tickPositionOffset, segment, staffToProcessIdxSet, isFirstSegmentOfMeasure, trackChanges);
-                isFirstSegmentOfMeasure = false;
+                if (segment->isChordRestType()) {
+                    chordRestSegmentNum++;
+                }
+
+                processSegment(tickPositionOffset, segment, staffToProcessIdxSet, chordRestSegmentNum == 0, trackChanges);
             }
 
             m_renderer.renderMetronome(m_score, measureStartTick, measureEndTick, tickPositionOffset,
@@ -546,9 +558,12 @@ bool PlaybackModel::hasToReloadTracks(const ScoreChangesRange& changesRange) con
 
     if (changesRange.isValidBoundary()) {
         const Measure* measureTo = m_score->tick2measure(Fraction::fromTicks(changesRange.tickTo));
-
         if (!measureTo) {
             return false;
+        }
+
+        if (measureTo->containsMeasureRepeat(changesRange.staffIdxFrom, changesRange.staffIdxTo)) {
+            return true;
         }
 
         const Measure* nextMeasure = measureTo->nextMeasure();
@@ -713,7 +728,9 @@ void PlaybackModel::clearExpiredEvents(const int tickFrom, const int tickTo, con
         int removeEventsFromTick = std::max(tickFrom, repeatStartTick);
         timestamp_t removeEventsFrom = timestampFromTicks(m_score, removeEventsFromTick + tickPositionOffset);
 
-        int removeEventsToTick = std::min(tickTo, repeatEndTick);
+        //! NOTE: the end tick of the current repeat segment == the start tick of the next repeat segment
+        //! so subtract 1 to avoid removing events belonging to the next segment
+        int removeEventsToTick = std::min(tickTo, repeatEndTick - 1);
         timestamp_t removeEventsTo = timestampFromTicks(m_score, removeEventsToTick + tickPositionOffset);
 
         removeEventsFromRange(trackFrom, trackTo, removeEventsFrom, removeEventsTo);
@@ -821,7 +838,9 @@ PlaybackModel::TickBoundaries PlaybackModel::tickBoundaries(const ScoreChangesRa
         return result;
     }
 
-    for (const EngravingItem* item : changesRange.changedItems) {
+    for (const auto& pair : changesRange.changedItems) {
+        const EngravingItem* item = pair.first;
+
         if (item->isNote()) {
             const Note* note = toNote(item);
             const Chord* chord = note->chord();
@@ -950,9 +969,10 @@ PlaybackContextPtr PlaybackModel::playbackCtx(const InstrumentTrackId& trackId)
 
 void PlaybackModel::applyTiedNotesTickBoundaries(const Note* note, TickBoundaries& tickBoundaries)
 {
-    if (const Tie* tie = note->tieFor()) {
+    const Tie* tie;
+    if ((tie = note->tieFor())) {
         applyTieTickBoundaries(tie, tickBoundaries);
-    } else if (const Tie* tie = note->tieBack()) {
+    } else if ((tie = note->tieBack())) {
         applyTieTickBoundaries(tie, tickBoundaries);
     }
 }

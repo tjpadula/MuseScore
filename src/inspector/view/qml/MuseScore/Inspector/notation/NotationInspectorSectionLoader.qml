@@ -92,7 +92,8 @@ Loader {
             case Inspector.TYPE_VIBRATO: return vibratoComp
             case Inspector.TYPE_SLUR:
             case Inspector.TYPE_TIE:
-            case Inspector.TYPE_LAISSEZ_VIB: return slurAndTieComp
+            case Inspector.TYPE_LAISSEZ_VIB:
+            case Inspector.TYPE_PARTIAL_TIE: return slurAndTieComp
             case Inspector.TYPE_TEMPO: return tempoComp
             case Inspector.TYPE_A_TEMPO: return aTempoComp
             case Inspector.TYPE_TEMPO_PRIMO: return tempoPrimoComp
@@ -120,6 +121,7 @@ Loader {
             case Inspector.TYPE_TEXT_FRAME: return textFrameComp
             case Inspector.TYPE_VERTICAL_FRAME: return verticalFrameComp
             case Inspector.TYPE_HORIZONTAL_FRAME: return horizontalFrameComp
+            case Inspector.TYPE_FRET_FRAME: return fretFrameComp
             case Inspector.TYPE_ARTICULATION: return articulationComp
             case Inspector.TYPE_ORNAMENT: return ornamentComp
             case Inspector.TYPE_AMBITUS: return ambitusComp
@@ -273,6 +275,11 @@ Loader {
     Component {
         id: horizontalFrameComp
         HorizontalFrameSettings { }
+    }
+
+    Component {
+        id: fretFrameComp
+        FretFrameSettings { }
     }
 
     Component {

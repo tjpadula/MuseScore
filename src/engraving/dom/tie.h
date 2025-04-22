@@ -25,6 +25,8 @@
 #include "slurtie.h"
 
 namespace mu::engraving {
+class TieJumpPointList;
+class TieJumpPoint;
 //---------------------------------------------------------
 //   @@ TieSegment
 ///    a single segment of a tie
@@ -40,8 +42,6 @@ public:
     TieSegment(const TieSegment& s);
 
     TieSegment* clone() const override { return new TieSegment(*this); }
-
-    int subtype() const override { return static_cast<int>(spanner()->type()); }
 
     void addAdjustmentOffset(const PointF& offset, Grip grip) { m_adjustmentOffsets[static_cast<size_t>(grip)] += offset; }
     void resetAdjustmentOffset() { m_adjustmentOffsets.fill(PointF()); }
@@ -62,12 +62,16 @@ public:
     double midWidth() const override;
     double dottedWidth() const override;
 
+    struct LayoutData : public SlurTieSegment::LayoutData {
+        bool allJumpPointsInactive = false;
+    };
+    DECLARE_LAYOUTDATA_METHODS(TieSegment)
+
 protected:
     TieSegment(const ElementType& type, System* parent);
     void changeAnchor(EditData&, EngravingItem*) override;
 
 private:
-
     int m_staffMove = 0;
     std::array<PointF, static_cast<size_t>(Grip::GRIPS)> m_adjustmentOffsets;
 };
@@ -84,13 +88,14 @@ class Tie : public SlurTie
 
 public:
     Tie(EngravingItem* parent = 0);
+    Tie(const Tie& t);
 
     Tie* clone() const override { return new Tie(*this); }
 
     virtual ~Tie() {}
 
-    Note* startNote() const;
-    void setStartNote(Note* note);
+    virtual Note* startNote() const;
+    virtual void setStartNote(Note* note);
     virtual Note* endNote() const;
     virtual void setEndNote(Note* note) { setEndElement((EngravingItem*)note); }
 
@@ -115,14 +120,33 @@ public:
 
     double scalingFactor() const override;
 
+    const TiePlacement& tiePlacement() const { return m_tiePlacement; }
+    void setTiePlacement(const TiePlacement& val) { m_tiePlacement = val; }
+
+    // Outgoing ties before repeats
+    void updatePossibleJumpPoints();
+    void addTiesToJumpPoints();
+    void undoRemoveTiesFromJumpPoints();
+    virtual bool allJumpPointsInactive() const;
+    virtual TieJumpPointList* tieJumpPoints();
+    virtual const TieJumpPointList* tieJumpPoints() const;
+
+    // Incoming ties after repeats
+    void setJumpPoint(TieJumpPoint* jumpPoint) { m_jumpPoint = jumpPoint; }
+    void updateStartTieOnRemoval();
+    TieJumpPoint* jumpPoint() const { return m_jumpPoint; }
+    Tie* startTie() const;
+
+    static void changeTieType(Tie* oldTie, Note* endNote = nullptr);
+
 protected:
     Tie(const ElementType& type, EngravingItem* parent = nullptr);
 
     bool m_isInside = false;
-    M_PROPERTY2(TiePlacement, tiePlacement, setTiePlacement, TiePlacement::AUTO)
+    TiePlacement m_tiePlacement = TiePlacement::AUTO;
 
-private:
-    static Note* editStartNote;
-    static Note* editEndNote;
+    // Jump point information for incoming ties after repeats
+    TieJumpPoint* m_jumpPoint = nullptr;
+    TieJumpPointList* startTieJumpPoints() const;
 };
 } // namespace mu::engraving

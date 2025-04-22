@@ -22,21 +22,28 @@
 
 #include "percussionpanelpadmodel.h"
 
+#include "ui/view/iconcodes.h"
+
+static const QString DUPLICATE_PAD_CODE("duplicate-pad");
+static const QString DELETE_PAD_CODE("delete-pad");
+static const QString DEFINE_PAD_SHORTCUT_CODE("define-pad-shortcut");
+
 using namespace mu::notation;
+using namespace muse::ui;
 
 PercussionPanelPadModel::PercussionPanelPadModel(QObject* parent)
     : QObject(parent)
 {
 }
 
-void PercussionPanelPadModel::setInstrumentName(const QString& instrumentName)
+void PercussionPanelPadModel::setPadName(const QString& padName)
 {
-    if (m_instrumentName == instrumentName) {
+    if (m_padName == padName) {
         return;
     }
 
-    m_instrumentName = instrumentName;
-    emit instrumentNameChanged();
+    m_padName = padName;
+    emit padNameChanged();
 }
 
 void PercussionPanelPadModel::setKeyboardShortcut(const QString& keyboardShortcut)
@@ -74,7 +81,47 @@ const QVariant PercussionPanelPadModel::notationPreviewItemVariant() const
     return QVariant::fromValue(m_notationPreviewItem);
 }
 
-void PercussionPanelPadModel::triggerPad()
+QList<QVariantMap> PercussionPanelPadModel::contextMenuItems() const
 {
-    m_triggeredNotification.notify();
+    static constexpr int definePadShortcutIcon = static_cast<int>(IconCode::Code::SHORTCUTS);
+    // static constexpr int duplicatePadIcon = static_cast<int>(IconCode::Code::COPY);
+    static constexpr int deletePadIcon = static_cast<int>(IconCode::Code::DELETE_TANK);
+
+    QList<QVariantMap> menuItems = {
+        { { "id", DEFINE_PAD_SHORTCUT_CODE }, { "title", muse::qtrc("shortcuts", "Define keyboard shortcut…") },
+            { "icon", definePadShortcutIcon }, { "enabled", true } },
+
+        //! NOTE: Disabled for now - will be re-introduced with new percussion mapping system...
+        // { { "id", DUPLICATE_PAD_CODE }, { "title", muse::qtrc("global", "Duplicate") },
+        //     { "icon", duplicatePadIcon }, { "enabled", true } },
+
+        { { "id", DELETE_PAD_CODE }, { "title", muse::qtrc("notation/percussion", "Delete pad") },
+            { "icon", deletePadIcon }, { "enabled", true } },
+    };
+
+    return menuItems;
+}
+
+void PercussionPanelPadModel::handleMenuItem(const QString& itemId)
+{
+    if (itemId == DUPLICATE_PAD_CODE) {
+        m_padActionTriggered.send(PadAction::DUPLICATE);
+    } else if (itemId == DELETE_PAD_CODE) {
+        m_padActionTriggered.send(PadAction::DELETE);
+    } else if (itemId == DEFINE_PAD_SHORTCUT_CODE) {
+        m_padActionTriggered.send(PadAction::DEFINE_SHORTCUT);
+    }
+}
+
+void PercussionPanelPadModel::triggerPad(const Qt::KeyboardModifiers& mods)
+{
+    PadAction action = PadAction::TRIGGER_STANDARD;
+
+    if (mods & Qt::ShiftModifier && (mods & Qt::ControlModifier || mods & Qt::MetaModifier)) {
+        action = PadAction::TRIGGER_INSERT;
+    } else if (mods & Qt::ShiftModifier) {
+        action = PadAction::TRIGGER_ADD;
+    }
+
+    m_padActionTriggered.send(action);
 }

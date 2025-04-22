@@ -70,13 +70,13 @@ elseif(OS_IS_MAC)
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${MUSE_APP_VERSION})
     
     if (IOS)
-		#   CMAKE_BUILD_NUMBER is blank, use MUSE_APP_VERSION
+	#   CMAKE_BUILD_NUMBER is blank, use MUSE_APP_VERSION
 	    set(MACOSX_BUNDLE_BUNDLE_VERSION ${MUSE_APP_VERSION})
     else(IOS)
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_BUILD_NUMBER})
 	endif(IOS)
 	
-    set(MACOSX_BUNDLE_COPYRIGHT "Copyright © 1999-2024 MuseScore Limited. Published under the GNU General Public License version 3.")
+    set(MACOSX_BUNDLE_COPYRIGHT "Copyright © 1999-2025 MuseScore Limited. Published under the GNU General Public License version 3.")
     
     set(CMAKE_INSTALL_RPATH ${QT_INSTALL_LIBS})
     if (MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH)
@@ -147,7 +147,6 @@ set(LINK_LIB
     context
     muse::shortcuts
     muse::workspace
-    workspacescene
     muse::audio
     muse::mpe
     muse::midi
@@ -161,6 +160,7 @@ set(LINK_LIB
     instrumentsscene
     muse::vst
     muse::update
+    musesounds
     )
     
 # print not available for iOS, we might to PDF export someday
@@ -172,6 +172,10 @@ if (MUSE_MODULE_UI)
     list(APPEND LINK_LIB muse::ui)
     list(APPEND LINK_LIB muse::uicomponents)
     list(APPEND LINK_LIB muse::dockwindow)
+endif()
+
+if (MUSE_MODULE_TOURS)
+    list(APPEND LINK_LIB muse::tours)
 endif()
 
 if (MUSE_MODULE_AUDIOPLUGINS)
@@ -186,10 +190,6 @@ if (MUE_BUILD_APPSHELL_MODULE)
     list(APPEND LINK_LIB appshell)
 endif()
 
-if (MUE_BUILD_MUSESOUNDS_MODULE)
-    list(APPEND LINK_LIB musesounds)
-endif()
-
 if (NOT CC_IS_EMSCRIPTEN)
     list(APPEND LINK_LIB muse::cloud)
     list(APPEND LINK_LIB muse::languages)
@@ -200,7 +200,7 @@ if (NOT CC_IS_EMSCRIPTEN)
     endif()
 
     if (MUE_BUILD_IMPORTEXPORT_MODULE)
-        set(LINK_LIB ${LINK_LIB}
+        list(APPEND LINK_LIB
             iex_musicxml
             iex_bb
             iex_bww
@@ -286,6 +286,13 @@ add_executable(MuseScoreStudio
 
 set_target_properties(MuseScoreStudio PROPERTIES OUTPUT_NAME ${EXECUTABLE_NAME})
 
+if (MUSE_ENABLE_UNIT_TESTS_CODE_COVERAGE)
+    set(COVERAGE_FLAGS -fprofile-arcs -ftest-coverage --coverage)
+    set(COVERAGE_LINK_FLAGS -lgcov --coverage)
+    target_compile_options(MuseScoreStudio PRIVATE ${COVERAGE_FLAGS})
+    target_link_options(MuseScoreStudio PRIVATE ${COVERAGE_LINK_FLAGS})
+endif()
+
 if (OS_IS_MAC)
     # IOS_CONFIG_BUG
     if (IOS)
@@ -335,6 +342,26 @@ if (OS_IS_WASM)
     set_target_properties(MuseScoreStudio PROPERTIES LINK_FLAGS "${EMCC_LINKER_FLAGS}")
 endif(OS_IS_WASM)
 
+###########################################
+# Includes
+###########################################
+
+target_include_directories(MuseScoreStudio PRIVATE
+    ${PROJECT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+
+    ${PROJECT_SOURCE_DIR}/src
+
+    ${MUSE_FRAMEWORK_PATH}
+    ${MUSE_FRAMEWORK_PATH}/framework
+    ${MUSE_FRAMEWORK_PATH}/framework/global
+
+    # compat
+    ${MUSE_FRAMEWORK_PATH}/src
+    ${MUSE_FRAMEWORK_PATH}/src/framework
+    ${MUSE_FRAMEWORK_PATH}/src/framework/global
+    # end compat
+)
 
 ###########################################
 # Link
@@ -363,7 +390,7 @@ if(IOS)
     
 
 elseif (NOT CC_IS_EMSCRIPTEN)
-    target_link_libraries(MuseScoreStudio ${LINK_LIB} )
+    target_link_libraries(MuseScoreStudio ${LINK_LIB} ${COVERAGE_LINK_FLAGS})
 else()
     target_link_libraries(MuseScoreStudio PRIVATE ${QT_LIBRARIES})
 

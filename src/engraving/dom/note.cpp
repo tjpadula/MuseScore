@@ -30,6 +30,7 @@
 #include <assert.h>
 
 #include "dom/noteline.h"
+#include "dom/volta.h"
 #include "translation.h"
 #include "types/typesconv.h"
 #include "iengravingfont.h"
@@ -42,6 +43,7 @@
 
 #include "bagpembell.h"
 #include "beam.h"
+#include "barline.h"
 
 #include "chord.h"
 #include "chordline.h"
@@ -53,9 +55,11 @@
 #include "guitarbend.h"
 #include "laissezvib.h"
 #include "linkedobjects.h"
+#include "marker.h"
 #include "measure.h"
 #include "notedot.h"
 #include "part.h"
+#include "partialtie.h"
 #include "pitchspelling.h"
 #include "score.h"
 #include "segment.h"
@@ -564,14 +568,14 @@ Note::~Note()
     m_rightParenthesis = nullptr;
 }
 
-std::vector<const Note*> Note::compoundNotes() const
+std::vector<Note*> Note::compoundNotes() const
 {
-    std::vector<const Note*> elements;
-    if (const Note* note = firstTiedNote()) {
+    std::vector<Note*> elements;
+    if (Note* note = firstTiedNote()) {
         elements.push_back(note);
     }
 
-    if (const Note* note = lastTiedNote()) {
+    if (Note* note = lastTiedNote()) {
         elements.push_back(note);
     }
 
@@ -653,15 +657,33 @@ Note::Note(const Note& n, bool link)
         m_tieFor = Factory::copyLaissezVib(*toLaissezVib(n.m_tieFor));
         m_tieFor->setParent(this);
         m_tieFor->setStartNote(this);
-        m_tieFor->setTick(m_tieFor->startNote()->tick());
+        m_tieFor->setTick(tick());
+        if (link) {
+            score()->undo(new Link(m_tieFor, n.m_tieFor));
+        }
+    } else if (n.outgoingPartialTie()) {
+        setTieFor(Factory::copyPartialTie(*toPartialTie(n.m_tieFor)));
+        m_tieFor->setParent(this);
+        m_tieFor->setStartNote(this);
+        m_tieFor->setTick(tick());
         if (link) {
             score()->undo(new Link(m_tieFor, n.m_tieFor));
         }
     } else if (n.m_tieFor) {
         m_tieFor = Factory::copyTie(*n.m_tieFor);
         m_tieFor->setStartNote(this);
-        m_tieFor->setTick(m_tieFor->startNote()->tick());
+        m_tieFor->setTick(tick());
         m_tieFor->setEndNote(0);
+    }
+
+    if (n.incomingPartialTie()) {
+        setTieBack(Factory::copyPartialTie(*toPartialTie(n.m_tieBack)));
+        m_tieBack->setParent(this);
+        m_tieBack->setEndNote(this);
+        m_tieBack->setTick(tick());
+        if (link) {
+            score()->undo(new Link(m_tieBack, n.m_tieBack));
+        }
     }
 
     for (NoteDot* dot : n.m_dots) {
@@ -1282,15 +1304,25 @@ void Note::add(EngravingItem* e)
         LaissezVib* lv = toLaissezVib(e);
         lv->setStartNote(this);
         lv->setTick(lv->startNote()->tick());
-        lv->setTrack(track());
         setTieFor(lv);
+        break;
+    }
+    case ElementType::PARTIAL_TIE: {
+        PartialTie* pt = toPartialTie(e);
+        pt->setTick(tick());
+        if (pt->isOutgoing()) {
+            pt->setStartNote(this);
+            setTieFor(pt);
+        } else {
+            pt->setEndNote(this);
+            setTieBack(pt);
+        }
         break;
     }
     case ElementType::TIE: {
         Tie* tie = toTie(e);
         tie->setStartNote(this);
         tie->setTick(tie->startNote()->tick());
-        tie->setTrack(track());
         setTieFor(tie);
         if (tie->endNote()) {
             tie->endNote()->setTieBack(tie);
@@ -1348,11 +1380,23 @@ void Note::remove(EngravingItem* e)
         }
         break;
 
+    case ElementType::PARTIAL_TIE: {
+        PartialTie* pt = toPartialTie(e);
+        assert((pt->isOutgoing() ? pt->startNote() : pt->endNote()) == this);
+        if (pt->isOutgoing()) {
+            setTieFor(nullptr);
+        } else {
+            setTieBack(nullptr);
+            pt->setJumpPoint(nullptr);
+        }
+        break;
+    }
     case ElementType::LAISSEZ_VIB:
     case ElementType::TIE: {
         Tie* tie = toTie(e);
         assert(tie->startNote() == this);
-        setTieFor(0);
+        setTieFor(nullptr);
+        tie->setJumpPoint(nullptr);
         if (tie->endNote()) {
             tie->endNote()->setTieBack(0);
         }
@@ -1598,7 +1642,7 @@ class NoteEditData : public ElementEditData
 {
     OBJECT_ALLOCATOR(engraving, NoteEditData)
 public:
-    enum EditMode {
+    enum EditMode : unsigned char {
         EditMode_ChangePitch = 0,
         EditMode_AddSpacing,
         EditMode_Undefined,
@@ -1722,7 +1766,7 @@ bool Note::acceptDrop(EditData& data) const
            || (type == ElementType::FIGURED_BASS)
            || (type == ElementType::LYRICS)
            || (type == ElementType::HARP_DIAGRAM)
-           || (type != ElementType::TIE && e->isSpanner())
+           || (type != ElementType::TIE && type != ElementType::PARTIAL_TIE && e->isSpanner())
            || (type == ElementType::ACTION_ICON && toActionIcon(e)->actionType() == ActionIconType::STANDARD_BEND)
            || (type == ElementType::ACTION_ICON && toActionIcon(e)->actionType() == ActionIconType::PRE_BEND)
            || (type == ElementType::ACTION_ICON && toActionIcon(e)->actionType() == ActionIconType::GRACE_NOTE_BEND)
@@ -1880,6 +1924,9 @@ EngravingItem* Note::drop(EditData& data)
             GuitarBendType type = (toActionIcon(e)->actionType() == ActionIconType::PRE_BEND)
                                   ? GuitarBendType::PRE_BEND : GuitarBendType::GRACE_NOTE_BEND;
             GuitarBend* guitarBend = score()->addGuitarBend(type, this);
+            if (!guitarBend) {
+                break;
+            }
             Note* note = guitarBend->startNote();
             IF_ASSERT_FAILED(note) {
                 LOGE() << "not valid start note of the bend";
@@ -2188,7 +2235,7 @@ void Note::updateAccidental(AccidentalState* as)
             as->setAccidentalVal(eAbsLine, accVal, m_tieBack != 0 && m_accidental == 0);
             acci = Accidental::value2subtype(accVal);
             // if previous tied note has same tpc, don't show accidental
-            if (m_tieBack && m_tieBack->startNote()->tpc1() == tpc1()) {
+            if (tieBackNonPartial() && m_tieBack->startNote()->tpc1() == tpc1()) {
                 acci = AccidentalType::NONE;
             } else if (acci == AccidentalType::NONE) {
                 acci = AccidentalType::NATURAL;
@@ -2316,14 +2363,28 @@ void Note::scanElements(void* data, void (* func)(void*, EngravingItem*), bool a
 void Note::setTrack(track_idx_t val)
 {
     EngravingItem::setTrack(val);
-    if (m_tieFor) {
+    if (tieForNonPartial()) {
         m_tieFor->setTrack(val);
         for (SpannerSegment* seg : m_tieFor->spannerSegments()) {
             seg->setTrack(val);
         }
     }
-    if (m_tieBack) {
+    if (tieBackNonPartial()) {
         m_tieBack->setTrack2(val);
+    }
+    if (laissezVib() || outgoingPartialTie()) {
+        m_tieFor->setTrack(val);
+        m_tieFor->setTrack2(val);
+        for (SpannerSegment* seg : m_tieFor->spannerSegments()) {
+            seg->setTrack(val);
+        }
+    }
+    if (incomingPartialTie()) {
+        m_tieBack->setTrack(val);
+        m_tieBack->setTrack2(val);
+        for (SpannerSegment* seg : m_tieBack->spannerSegments()) {
+            seg->setTrack(val);
+        }
     }
     for (Spanner* s : m_spannerFor) {
         s->setTrack(val);
@@ -2417,6 +2478,24 @@ GuitarBend* Note::bendBack() const
     return nullptr;
 }
 
+Tie* Note::tieForNonPartial() const
+{
+    if (!m_tieFor || m_tieFor->type() != ElementType::TIE) {
+        return nullptr;
+    }
+
+    return m_tieFor;
+}
+
+Tie* Note::tieBackNonPartial() const
+{
+    if (!m_tieBack || m_tieBack->type() != ElementType::TIE) {
+        return nullptr;
+    }
+
+    return m_tieBack;
+}
+
 LaissezVib* Note::laissezVib() const
 {
     if (!m_tieFor || !m_tieFor->isLaissezVib()) {
@@ -2424,6 +2503,44 @@ LaissezVib* Note::laissezVib() const
     }
 
     return toLaissezVib(m_tieFor);
+}
+
+PartialTie* Note::incomingPartialTie() const
+{
+    if (!m_tieBack || !m_tieBack->isPartialTie()) {
+        return nullptr;
+    }
+
+    return toPartialTie(m_tieBack);
+}
+
+PartialTie* Note::outgoingPartialTie() const
+{
+    if (!m_tieFor || !m_tieFor->isPartialTie()) {
+        return nullptr;
+    }
+
+    return toPartialTie(m_tieFor);
+}
+
+void Note::setTieFor(Tie* t)
+{
+    if (!t) {
+        m_jumpPoints.clear();
+    }
+    m_tieFor = t;
+    if (m_tieFor && !m_tieFor->isLaissezVib()) {
+        m_tieFor->updatePossibleJumpPoints();
+    }
+}
+
+void Note::setTieBack(Tie* t)
+{
+    if (m_tieBack && t && m_tieBack->jumpPoint()) {
+        t->setJumpPoint(m_tieBack->jumpPoint());
+        m_tieBack->setJumpPoint(nullptr);
+    }
+    m_tieBack = t;
 }
 
 //---------------------------------------------------------
@@ -2621,7 +2738,8 @@ RectF Note::drag(EditData& ed)
         noteEditData->mode = NoteEditData::editModeByDragDirection(delta.x(), delta.y());
     }
 
-    if (noteEditData->mode == NoteEditData::EditMode_AddSpacing) {
+    bool isSingleNoteSelection = score()->getSelectedElement() == this;
+    if (noteEditData->mode == NoteEditData::EditMode_AddSpacing && isSingleNoteSelection && !(ed.modifiers & ControlModifier)) {
         horizontalDrag(ed);
     } else if (noteEditData->mode == NoteEditData::EditMode_ChangePitch) {
         verticalDrag(ed);
@@ -3437,6 +3555,7 @@ EngravingItem* Note::nextElement()
 
     case ElementType::TIE_SEGMENT:
     case ElementType::LAISSEZ_VIB_SEGMENT:
+    case ElementType::PARTIAL_TIE_SEGMENT:
         if (!m_spannerFor.empty()) {
             for (auto i : m_spannerFor) {
                 if (i->type() == ElementType::GLISSANDO) {
@@ -3526,6 +3645,7 @@ EngravingItem* Note::prevElement()
     }
         return this;
     case ElementType::TIE_SEGMENT:
+    case ElementType::PARTIAL_TIE_SEGMENT:
     case ElementType::LAISSEZ_VIB_SEGMENT:
         if (!m_el.empty()) {
             return m_el.back();
@@ -3609,7 +3729,7 @@ EngravingItem* Note::prevSegmentElement()
 //   lastTiedNote
 //---------------------------------------------------------
 
-const Note* Note::lastTiedNote(bool ignorePlayback) const
+Note* Note::lastTiedNote(bool ignorePlayback) const
 {
     std::vector<const Note*> notes;
     const Note* note = this;
@@ -3624,7 +3744,7 @@ const Note* Note::lastTiedNote(bool ignorePlayback) const
         note = note->tieFor()->endNote();
         notes.push_back(note);
     }
-    return note;
+    return const_cast<Note*>(note);
 }
 
 //---------------------------------------------------------
@@ -3642,6 +3762,9 @@ Note* Note::firstTiedNote(bool ignorePlayback) const
         if (std::find(notes.begin(), notes.end(), note->tieBack()->startNote()) != notes.end()) {
             break;
         }
+        if (!note->tieBack()->startNote()) {
+            break;
+        }
         note = note->tieBack()->startNote();
         notes.push_back(note);
     }
@@ -3652,13 +3775,31 @@ Note* Note::firstTiedNote(bool ignorePlayback) const
 //   tiedNotes
 //---------------------------------------------------------
 
-std::vector<Note*> Note::tiedNotes() const
+std::vector<Note*> Note::findTiedNotes(Note* startNote, bool followPartialTies)
 {
+    // Returns all notes ahead of startNote in a chain of ties
+    // Follows partial tie paths recursively
+    Note* note = startNote;
     std::vector<Note*> notes;
-    Note* note = firstTiedNote();
-
     notes.push_back(note);
+
     while (note->tieFor()) {
+        if (followPartialTies) {
+            for (TieJumpPoint* jumpPoint : *note->tieJumpPoints()) {
+                if (!jumpPoint->active() || jumpPoint->followingNote()) {
+                    continue;
+                }
+                if (!jumpPoint->note() || std::find(notes.begin(), notes.end(), jumpPoint->note()) != notes.end()) {
+                    continue;
+                }
+                // ONLY backtrack when end point is a full tie eg. around a segno
+                const bool endTieIsFullTie = jumpPoint->endTie() && !jumpPoint->endTie()->isPartialTie();
+                Note* jumpPointNote = endTieIsFullTie ? jumpPoint->endTie()->startNote()->firstTiedNote() : jumpPoint->note();
+                std::vector<Note*> partialTieNotes = findTiedNotes(jumpPointNote, !endTieIsFullTie);
+                notes.insert(notes.end(), partialTieNotes.begin(), partialTieNotes.end());
+            }
+        }
+
         Note* endNote = note->tieFor()->endNote();
         if (!endNote || std::find(notes.begin(), notes.end(), endNote) != notes.end()) {
             break;
@@ -3666,6 +3807,17 @@ std::vector<Note*> Note::tiedNotes() const
         note = endNote;
         notes.push_back(note);
     }
+
+    return notes;
+}
+
+std::vector<Note*> Note::tiedNotes() const
+{
+    // Backtrack to the first tied note in a chain, then return all notes in the chain ahead of it
+    Note* note = firstTiedNote();
+
+    std::vector<Note*> notes = findTiedNotes(note);
+
     return notes;
 }
 
@@ -3708,13 +3860,13 @@ void Note::disconnectTiedNotes()
 
 void Note::connectTiedNotes()
 {
-    if (tieBack()) {
+    if (tieBack() && !tieBack()->isPartialTie()) {
         tieBack()->setEndNote(this);
         if (tieBack()->startNote()) {
             tieBack()->startNote()->add(tieBack());
         }
     }
-    if (tieFor() && tieFor()->endNote()) {
+    if (tieFor() && tieFor()->endNote() && !tieFor()->isPartialTie()) {
         tieFor()->endNote()->setTieBack(tieFor());
     }
 }
@@ -3870,12 +4022,12 @@ void Note::setIsTrillCueNote(bool v)
     }
 }
 
-void Note::addLineAttachPoint(PointF point, EngravingItem* line)
+void Note::addLineAttachPoint(PointF point, EngravingItem* line, bool start)
 {
     // IMPORTANT: the point is expected in *staff* coordinates
     // We transform into note coordinates by subtracting the note position in staff coordinates
     point -= posInStaffCoordinates();
-    m_lineAttachPoints.push_back(LineAttachPoint(line, point.x(), point.y()));
+    m_lineAttachPoints.push_back(LineAttachPoint(line, point.x(), point.y(), start));
 }
 
 bool Note::negativeFretUsed() const

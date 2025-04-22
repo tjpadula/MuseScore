@@ -63,7 +63,7 @@ public:
     Q_INVOKABLE QString noteInputBarName() const;
 
     Q_INVOKABLE QString palettesPanelName() const;
-    Q_INVOKABLE QString instrumentsPanelName() const;
+    Q_INVOKABLE QString layoutPanelName() const;
     Q_INVOKABLE QString inspectorPanelName() const;
     Q_INVOKABLE QString selectionFiltersPanelName() const;
     Q_INVOKABLE QString undoHistoryPanelName() const;
@@ -85,7 +85,7 @@ private:
 
     void toggleDock(const QString& name);
 
-    void updateDrumsetPanelVisibility(); // TODO: Delete when the new percussion panel is finished
+    void updateDrumsetPanelVisibility();
     void updatePercussionPanelVisibility();
 };
 }

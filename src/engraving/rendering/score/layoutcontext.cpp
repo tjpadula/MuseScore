@@ -151,7 +151,7 @@ const std::vector<Part*>& DomAccessor::parts() const
     return score()->parts();
 }
 
-int DomAccessor::visiblePartCount() const
+size_t DomAccessor::visiblePartCount() const
 {
     IF_ASSERT_FAILED(score()) {
         return 0;
@@ -236,6 +236,14 @@ size_t DomAccessor::ntracks() const
     return score()->ntracks();
 }
 
+size_t DomAccessor::nmeasures() const
+{
+    IF_ASSERT_FAILED(score()) {
+        return 0;
+    }
+    return score()->nmeasures();
+}
+
 const Measure* DomAccessor::tick2measure(const Fraction& tick) const
 {
     IF_ASSERT_FAILED(score()) {
@@ -258,6 +266,22 @@ Measure* DomAccessor::firstMeasure()
         return nullptr;
     }
     return score()->firstMeasure();
+}
+
+const Measure* DomAccessor::lastMeasure() const
+{
+    IF_ASSERT_FAILED(score()) {
+        return nullptr;
+    }
+    return score()->lastMeasure();
+}
+
+Measure* DomAccessor::lastMeasure()
+{
+    IF_ASSERT_FAILED(score()) {
+        return nullptr;
+    }
+    return score()->lastMeasure();
 }
 
 Measure* DomAccessor::tick2measure(const Fraction& tick)
@@ -390,6 +414,14 @@ void DomAccessor::removeElement(EngravingItem* item)
         return;
     }
     score()->removeElement(item);
+}
+
+void DomAccessor::updateSystemLocksOnCreateMMRest(Measure* first, Measure* last)
+{
+    IF_ASSERT_FAILED(score()) {
+        return;
+    }
+    score()->updateSystemLocksOnCreateMMRests(first, last);
 }
 
 void DomAccessor::addUnmanagedSpanner(Spanner* s)

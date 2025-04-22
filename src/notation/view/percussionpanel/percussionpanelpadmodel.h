@@ -36,18 +36,20 @@ class PercussionPanelPadModel : public QObject, public muse::async::Asyncable
 {
     Q_OBJECT
 
-    Q_PROPERTY(QString instrumentName READ instrumentName NOTIFY instrumentNameChanged)
+    Q_PROPERTY(QString padName READ padName NOTIFY padNameChanged)
 
     Q_PROPERTY(QString keyboardShortcut READ keyboardShortcut NOTIFY keyboardShortcutChanged)
     Q_PROPERTY(QString midiNote READ midiNote NOTIFY midiNoteChanged)
 
     Q_PROPERTY(QVariant notationPreviewItem READ notationPreviewItemVariant NOTIFY notationPreviewItemChanged)
 
+    Q_PROPERTY(QList<QVariantMap> contextMenuItems READ contextMenuItems CONSTANT)
+
 public:
     explicit PercussionPanelPadModel(QObject* parent = nullptr);
 
-    QString instrumentName() const { return m_instrumentName; }
-    void setInstrumentName(const QString& instrumentName);
+    QString padName() const { return m_padName; }
+    void setPadName(const QString& padName);
 
     QString keyboardShortcut() const { return m_keyboardShortcut; }
     void setKeyboardShortcut(const QString& keyboardShortcut);
@@ -62,11 +64,24 @@ public:
 
     const QVariant notationPreviewItemVariant() const;
 
-    Q_INVOKABLE void triggerPad();
-    muse::async::Notification padTriggered() const { return m_triggeredNotification; }
+    QList<QVariantMap> contextMenuItems() const;
+    Q_INVOKABLE void handleMenuItem(const QString& itemId);
+
+    Q_INVOKABLE void triggerPad(const Qt::KeyboardModifiers& modifiers = Qt::KeyboardModifier::NoModifier);
+
+    enum class PadAction {
+        TRIGGER_STANDARD,
+        TRIGGER_ADD,
+        TRIGGER_INSERT,
+        DUPLICATE,
+        DELETE,
+        DEFINE_SHORTCUT,
+    };
+
+    muse::async::Channel<PadAction> padActionTriggered() const { return m_padActionTriggered; }
 
 signals:
-    void instrumentNameChanged();
+    void padNameChanged();
 
     void keyboardShortcutChanged();
     void midiNoteChanged();
@@ -74,13 +89,13 @@ signals:
     void notationPreviewItemChanged();
 
 private:
-    QString m_instrumentName;
+    QString m_padName;
 
     QString m_keyboardShortcut;
     int m_pitch = -1;
 
     mu::engraving::ElementPtr m_notationPreviewItem;
 
-    muse::async::Notification m_triggeredNotification;
+    muse::async::Channel<PadAction> m_padActionTriggered;
 };
 }

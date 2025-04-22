@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_CHORD_H
-#define MU_ENGRAVING_CHORD_H
+#pragma once
 
 /**
  \file
@@ -129,10 +128,7 @@ public:
 
     double defaultStemLength() const { return m_defaultStemLength; }
     void setDefaultStemLength(double l) { m_defaultStemLength = l; }
-    double minStemLength() const { return m_minStemLength; }
     void setBeamExtension(double extension);
-    static int minStaffOverlap(bool up, int staffLines, int beamCount, bool hasHook, double beamSpacing, bool useWideBeams,
-                               bool isFullSize);
 
     std::vector<Note*>& notes() { return m_notes; }
     const std::vector<Note*>& notes() const { return m_notes; }
@@ -181,6 +177,7 @@ public:
 
     const std::vector<Chord*>& graceNotes() const { return m_graceNotes; }
     std::vector<Chord*>& graceNotes() { return m_graceNotes; }
+    std::vector<Chord*> allGraceChordsOfMainChord();
 
     GraceNotesGroup& graceNotesBefore(bool filterUnplayable = false) const;
     GraceNotesGroup& graceNotesAfter(bool filterUnplayable = false) const;
@@ -190,8 +187,10 @@ public:
 
     Chord* graceNoteAt(size_t idx) const;
 
-    int upLine() const override;
-    int downLine() const override;
+    int line(bool up) const { return up ? upLine() : downLine(); }
+    int line() const { return ldata()->up ? upLine() : downLine(); }
+    int upLine() const;
+    int downLine() const;
     PointF stemPos() const override;            ///< page coordinates
     PointF stemPosBeam() const override;        ///< page coordinates
     double stemPosX() const override;
@@ -315,8 +314,6 @@ public:
     double downPos() const override;
     double centerX() const;
 
-    double calcDefaultStemLength();
-
     struct StartEndSlurs {
         bool startUp = false;
         bool startDown = false;
@@ -339,12 +336,6 @@ private:
 
     Chord(Segment* parent = 0);
     Chord(const Chord&, bool link = false);
-
-    int stemLengthBeamAddition() const;
-    int maxReduction(int extensionOutsideStaff) const;
-    int stemOpticalAdjustment(int stemEndPosition) const;
-    int calcMinStemLength();
-    int calc4BeamsException(int stemLength) const;
 
     // `includeTemporarySiblings`: whether items that are deleted & recreated during every layout should also be processed
     void processSiblings(std::function<void(EngravingItem*)> func, bool includeTemporarySiblings) const;
@@ -380,7 +371,6 @@ private:
     double m_spaceRw = 0.0;
 
     double m_defaultStemLength = 0.0;
-    double m_minStemLength = 0.0;
 
     bool m_isUiItem = false;
 
@@ -399,4 +389,3 @@ private:
     std::vector<Articulation*> m_articulations;
 };
 } // namespace mu::engraving
-#endif

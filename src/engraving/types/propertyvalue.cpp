@@ -168,6 +168,10 @@ QVariant PropertyValue::toQVariant() const
     case P_TYPE::TIE_PLACEMENT:    return static_cast<int>(value<TiePlacement>());
     case P_TYPE::TIE_DOTS_PLACEMENT: return static_cast<int>(value<TieDotsPlacement>());
     case P_TYPE::LYRICS_DASH_SYSTEM_START_TYPE: return static_cast<int>(value<LyricsDashSystemStart>());
+    case P_TYPE::PARTIAL_SPANNER_DIRECTION: return static_cast<int>(value<PartialSpannerDirection>());
+    case P_TYPE::TIMESIG_PLACEMENT: return static_cast<int>(value<TimeSigPlacement>());
+    case P_TYPE::TIMESIG_STYLE:    return static_cast<int>(value<TimeSigStyle>());
+    case P_TYPE::TIMESIG_MARGIN: return static_cast<int>(value<TimeSigVSMargin>());
 
     case P_TYPE::VOICE_ASSIGNMENT: return static_cast<int>(value<VoiceAssignment>());
     case P_TYPE::AUTO_ON_OFF:       return static_cast<int>(value<AutoOnOff>());
@@ -275,8 +279,12 @@ PropertyValue PropertyValue::fromQVariant(const QVariant& v, P_TYPE type)
     case P_TYPE::TIE_PLACEMENT:    return PropertyValue(TiePlacement(v.toInt()));
     case P_TYPE::TIE_DOTS_PLACEMENT: return PropertyValue(TieDotsPlacement(v.toInt()));
     case P_TYPE::LYRICS_DASH_SYSTEM_START_TYPE:    return PropertyValue(LyricsDashSystemStart(v.toInt()));
+    case P_TYPE::PARTIAL_SPANNER_DIRECTION:    return PropertyValue(PartialSpannerDirection(v.toInt()));
     case P_TYPE::VOICE_ASSIGNMENT: return PropertyValue(VoiceAssignment(v.toInt()));
     case P_TYPE::AUTO_ON_OFF:      return PropertyValue(AutoOnOff(v.toInt()));
+    case P_TYPE::TIMESIG_PLACEMENT: return PropertyValue(TimeSigPlacement(v.toInt()));
+    case P_TYPE::TIMESIG_STYLE:    return PropertyValue(TimeSigStyle(v.toInt()));
+    case P_TYPE::TIMESIG_MARGIN:   return PropertyValue(TimeSigVSMargin(v.toInt()));
 
     // Other
     case P_TYPE::GROUPS: {

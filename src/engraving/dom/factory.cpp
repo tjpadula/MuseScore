@@ -75,6 +75,8 @@
 #include "ottava.h"
 #include "page.h"
 #include "palmmute.h"
+#include "parenthesis.h"
+#include "partialtie.h"
 #include "pedal.h"
 #include "pickscrape.h"
 #include "playtechannotation.h"
@@ -151,7 +153,7 @@ EngravingItem* Factory::doCreateItem(ElementType type, EngravingItem* parent)
     case ElementType::HARMONIC_MARK:     return new HarmonicMark(parent);
     case ElementType::PICK_SCRAPE:       return new PickScrape(parent);
     case ElementType::PEDAL:             return new Pedal(parent);
-    case ElementType::HAIRPIN:           return new Hairpin(parent->isSegment() ? toSegment(parent) : dummy->segment());
+    case ElementType::HAIRPIN:           return new Hairpin(parent);
     case ElementType::CLEF:              return new Clef(parent->isSegment() ? toSegment(parent) : dummy->segment());
     case ElementType::KEYSIG:            return new KeySig(parent->isSegment() ? toSegment(parent) : dummy->segment());
     case ElementType::TIMESIG:           return new TimeSig(parent->isSegment() ? toSegment(parent) : dummy->segment());
@@ -236,6 +238,9 @@ EngravingItem* Factory::doCreateItem(ElementType type, EngravingItem* parent)
     case ElementType::STRING_TUNINGS:      return new StringTunings(parent->isSegment() ? toSegment(parent) : dummy->segment());
     case ElementType::TIME_TICK_ANCHOR:  return new TimeTickAnchor(parent->isSegment() ? toSegment(parent) : dummy->segment());
     case ElementType::LAISSEZ_VIB:       return new LaissezVib(parent->isNote() ? toNote(parent) : dummy->note());
+    case ElementType::PARTIAL_TIE:       return new PartialTie(parent->isNote() ? toNote(parent) : dummy->note());
+    case ElementType::PARTIAL_LYRICSLINE: return new PartialLyricsLine(parent);
+    case ElementType::PARENTHESIS:       return new Parenthesis(parent->isSegment() ? toSegment(parent) : dummy->segment());
 
     case ElementType::LYRICSLINE:
     case ElementType::TEXTLINE_BASE:
@@ -249,10 +254,10 @@ EngravingItem* Factory::doCreateItem(ElementType type, EngravingItem* parent)
     case ElementType::SLUR_SEGMENT:
     case ElementType::TIE_SEGMENT:
     case ElementType::LAISSEZ_VIB_SEGMENT:
+    case ElementType::PARTIAL_TIE_SEGMENT:
     case ElementType::STEM_SLASH:
     case ElementType::PAGE:
     case ElementType::BEAM:
-    case ElementType::BEAM_SEGMENT:
     case ElementType::HOOK:
     case ElementType::HAIRPIN_SEGMENT:
     case ElementType::OTTAVA_SEGMENT:
@@ -268,6 +273,7 @@ EngravingItem* Factory::doCreateItem(ElementType type, EngravingItem* parent)
     case ElementType::VOLTA_SEGMENT:
     case ElementType::PEDAL_SEGMENT:
     case ElementType::LYRICSLINE_SEGMENT:
+    case ElementType::PARTIAL_LYRICSLINE_SEGMENT:
     case ElementType::LEDGER_LINE:
     case ElementType::STAFF_LINES:
     case ElementType::SELECTION:
@@ -275,18 +281,12 @@ EngravingItem* Factory::doCreateItem(ElementType type, EngravingItem* parent)
     case ElementType::SHADOW_NOTE:
     case ElementType::SEGMENT:
     case ElementType::SYSTEM:
-    case ElementType::COMPOUND:
-    case ElementType::ELEMENT:
-    case ElementType::ELEMENT_LIST:
-    case ElementType::STAFF_LIST:
-    case ElementType::MEASURE_LIST:
     case ElementType::MAXTYPE:
     case ElementType::INVALID:
     case ElementType::PART:
     case ElementType::STAFF:
     case ElementType::SCORE:
     case ElementType::BRACKET_ITEM:
-    case ElementType::OSSIA:
     case ElementType::GRACE_NOTES_GROUP:
     case ElementType::ROOT_ITEM:
     case ElementType::FIGURED_BASS_ITEM:
@@ -408,8 +408,8 @@ MAKE_ITEM_IMPL(Clef, Segment)
 CREATE_ITEM_IMPL(DeadSlapped, ElementType::DEAD_SLAPPED, Rest, isAccessibleEnabled)
 COPY_ITEM_IMPL(DeadSlapped)
 
-CREATE_ITEM_IMPL(Fermata, ElementType::FERMATA, EngravingItem, isAccessibleEnabled)
-MAKE_ITEM_IMPL(Fermata, EngravingItem)
+CREATE_ITEM_IMPL(Fermata, ElementType::FERMATA, Segment, isAccessibleEnabled)
+MAKE_ITEM_IMPL(Fermata, Segment)
 
 CREATE_ITEM_IMPL(FiguredBass, ElementType::FIGURED_BASS, Segment, isAccessibleEnabled)
 MAKE_ITEM_IMPL(FiguredBass, Segment)
@@ -471,7 +471,13 @@ Page* Factory::createPage(RootItem* parent, bool isAccessibleEnabled)
     return page;
 }
 
-Rest* Factory::createRest(Segment* parent, bool isAccessibleEnabled)
+CREATE_ITEM_IMPL(PartialTie, ElementType::PARTIAL_TIE, Note, isAccessibleEnabled)
+COPY_ITEM_IMPL(PartialTie)
+
+CREATE_ITEM_IMPL(PartialLyricsLine, ElementType::PARTIAL_LYRICSLINE, EngravingItem, isAccessibleEnabled)
+COPY_ITEM_IMPL(PartialLyricsLine)
+
+Rest* Factory::createRest(Segment * parent, bool isAccessibleEnabled)
 {
     Rest* r = new Rest(parent);
     r->setAccessibleEnabled(isAccessibleEnabled);
@@ -652,8 +658,8 @@ MAKE_ITEM_IMPL(TremoloBar, EngravingItem)
 CREATE_ITEM_IMPL(Tuplet, ElementType::TUPLET, Measure, isAccessibleEnabled)
 COPY_ITEM_IMPL(Tuplet)
 
-CREATE_ITEM_IMPL(Hairpin, ElementType::HAIRPIN, Segment, isAccessibleEnabled)
-MAKE_ITEM_IMPL(Hairpin, Segment)
+CREATE_ITEM_IMPL(Hairpin, ElementType::HAIRPIN, EngravingItem, isAccessibleEnabled)
+MAKE_ITEM_IMPL(Hairpin, EngravingItem)
 
 CREATE_ITEM_IMPL(Glissando, ElementType::GLISSANDO, EngravingItem, isAccessibleEnabled)
 MAKE_ITEM_IMPL(Glissando, EngravingItem)
@@ -774,3 +780,6 @@ SystemLockIndicator* Factory::createSystemLockIndicator(System * parent, const S
 }
 
 COPY_ITEM_IMPL(SystemLockIndicator)
+
+CREATE_ITEM_IMPL(Parenthesis, ElementType::PARENTHESIS, Segment, isAccessibleEnabled);
+COPY_ITEM_IMPL(Parenthesis)

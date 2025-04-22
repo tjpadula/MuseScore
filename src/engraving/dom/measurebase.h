@@ -173,17 +173,28 @@ public:
     bool noBreak() const { return flag(ElementFlag::NO_BREAK); }
     void setNoBreak(bool v) { setFlag(ElementFlag::NO_BREAK, v); }
 
-    bool hasCourtesyKeySig() const { return flag(ElementFlag::KEYSIG); }
-    void setHasCourtesyKeySig(bool v) { setFlag(ElementFlag::KEYSIG, v); }
+    bool hasCourtesyKeySig() const { return flag(ElementFlag::COURTESY_KEYSIG); }
+    void setHasCourtesyKeySig(bool v) { setFlag(ElementFlag::COURTESY_KEYSIG, v); }
+
+    bool hasCourtesyTimeSig() const { return flag(ElementFlag::COURTESY_TIMESIG); }
+    void setHasCourtesyTimeSig(bool v) const { setFlag(ElementFlag::COURTESY_TIMESIG, v); }
+
+    bool hasCourtesyClef() const { return flag(ElementFlag::COURTESY_CLEF); }
+    void setHasCourtesyClef(bool v) const { setFlag(ElementFlag::COURTESY_CLEF, v); }
+
+    bool endOfMeasureChange() const { return flag(ElementFlag::END_OF_MEASURE_CHANGE); }
+    void setEndOfMeasureChange(bool val) const { setFlag(ElementFlag::END_OF_MEASURE_CHANGE, val); }
 
     virtual void computeMinWidth() { }
 
     int index() const;
     int measureIndex() const;
 
+    bool isBefore(const EngravingItem* other) const override;
     bool isBefore(const MeasureBase* other) const;
     bool isBeforeOrEqual(const MeasureBase* other) const { return other == this || isBefore(other); }
     bool isAfter(const MeasureBase* other) const { return !isBeforeOrEqual(other); }
+    bool isAfterOrEqual(const MeasureBase* other) const { return !isBefore(other); }
 
     const SystemLock* systemLock() const;
     bool isStartOfSystemLock() const;

@@ -77,7 +77,6 @@ public:
     static void resolveRestVSRest(std::vector<Rest*>& rests, const Staff* staff, Segment* segment, LayoutContext& ctx,
                                   bool considerBeams = false);
     static void layoutChordBaseFingering(Chord* chord, System* system, LayoutContext& ctx);
-    static void layoutStretchedBends(Chord* chord, LayoutContext& ctx);
 
     static void crossMeasureSetup(Chord* chord, bool on, LayoutContext& ctx);
 
@@ -113,7 +112,7 @@ private:
 
     static bool leaveSpaceForTie(const Articulation* item);
 
-    static void computeUpBeamCase(Chord* item, Beam* beam, const LayoutContext& ctx);
+    static void computeUpBeamCase(Chord* item, Beam* beam);
 };
 }
 

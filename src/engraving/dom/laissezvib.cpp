@@ -78,6 +78,13 @@ SymId LaissezVib::symId() const
     return up() ? SymId::articLaissezVibrerAbove : SymId::articLaissezVibrerBelow;
 }
 
+SlurTieSegment* LaissezVib::newSlurTieSegment(System* parent)
+{
+    LaissezVibSegment* seg =  new LaissezVibSegment(parent);
+    seg->setTrack(track());
+    return seg;
+}
+
 void LaissezVib::setEndNote(Note* note)
 {
     setEndElement(note);

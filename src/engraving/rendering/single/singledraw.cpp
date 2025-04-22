@@ -83,6 +83,7 @@
 #include "dom/measurerepeat.h"
 
 #include "dom/note.h"
+#include "dom/noteline.h"
 
 #include "dom/ornament.h"
 #include "dom/ottava.h"
@@ -249,6 +250,8 @@ void SingleDraw::drawItem(const EngravingItem* item, Painter* painter)
     case ElementType::NOTE:                 draw(item_cast<const Note*>(item), painter);
         break;
     case ElementType::NOTEHEAD:             draw(item_cast<const NoteHead*>(item), painter);
+        break;
+    case ElementType::NOTELINE_SEGMENT:     draw(item_cast<const NoteLineSegment*>(item), painter);
         break;
 
     case ElementType::ORNAMENT:             draw(item_cast<const Ornament*>(item), painter);
@@ -482,7 +485,7 @@ void SingleDraw::draw(const Note* item, Painter* painter)
         }
         const Staff* st = item->staff();
         const StaffType* tab = st->staffTypeForElement(item);
-        if (item->tieBack() && !tab->showBackTied()) {
+        if (item->tieBackNonPartial() && !tab->showBackTied()) {
             if (item->chord()->measure()->system() == item->tieBack()->startNote()->chord()->measure()->system() && item->el().empty()) {
                 // fret should be hidden, so return without drawing it
                 return;
@@ -562,6 +565,12 @@ void SingleDraw::draw(const Note* item, Painter* painter)
 void SingleDraw::draw(const NoteHead* item, Painter* painter)
 {
     draw(static_cast<const Symbol*>(item), painter);
+}
+
+void SingleDraw::draw(const NoteLineSegment*, Painter*)
+{
+    // TRACE_DRAW_ITEM;
+    // To be implemented
 }
 
 void SingleDraw::draw(const Ornament* item, Painter* painter)
@@ -1927,7 +1936,7 @@ void SingleDraw::draw(const KeySig* item, Painter* painter)
 
     if (!item->explicitParent() && (item->isAtonal() || item->isCustom()) && ldata->keySymbols.empty()) {
         // empty custom or atonal key signature - draw something for palette
-        painter->setPen(item->configuration()->formattingColor());
+        painter->setPen(item->configuration()->scoreGreyColor());
         item->drawSymbol(SymId::timeSigX, painter, PointF(item->symWidth(SymId::timeSigX) * -0.5, 2.0 * item->spatium()));
     }
 }
@@ -2056,7 +2065,7 @@ void SingleDraw::draw(const ShadowNote* item, Painter* painter)
     PointF ap(item->pagePos());
     painter->translate(ap);
     double lw = item->style().styleMM(Sid::stemWidth) * item->mag();
-    Pen pen(item->configuration()->highlightSelectionColor(item->voice()), lw, PenStyle::SolidLine, PenCapStyle::FlatCap);
+    Pen pen(item->color(), lw, PenStyle::SolidLine, PenCapStyle::FlatCap);
     painter->setPen(pen);
 
     bool up = item->computeUp();

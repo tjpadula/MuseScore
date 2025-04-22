@@ -26,6 +26,7 @@
 
 #include "containers.h"
 
+#include "dom/partialtie.h"
 #include "style/style.h"
 
 #include "barline.h"
@@ -572,6 +573,10 @@ void MasterScore::initExcerpt(Excerpt* excerpt)
 
     Excerpt::createExcerpt(excerpt);
     excerpt->setInited(true);
+
+    if (!score->style().isDefault(Sid::timeSigPlacement)) {
+        score->resetStyleValue(Sid::timeSigPlacement);
+    }
 }
 
 void MasterScore::initParts(Excerpt* excerpt)
@@ -770,7 +775,7 @@ static void processLinkedClone(EngravingItem* ne, Score* score, track_idx_t stra
 
 static void addTies(Note* originalNote, Note* newNote, TieMap& tieMap, Score* score)
 {
-    if (originalNote->tieFor() && !originalNote->tieFor()->isLaissezVib()) {
+    if (originalNote->tieFor() && originalNote->tieFor()->type() == ElementType::TIE) {
         Tie* tie = toTie(originalNote->tieFor()->linkedClone());
         tie->setScore(score);
         newNote->setTieFor(tie);
@@ -778,14 +783,19 @@ static void addTies(Note* originalNote, Note* newNote, TieMap& tieMap, Score* sc
         tie->setTrack(newNote->track());
         tieMap.add(originalNote->tieFor(), tie);
     }
-    if (originalNote->tieBack()) {
+    if (originalNote->tieBack() && originalNote->tieBack()->type() == ElementType::TIE) {
         Tie* tie = tieMap.findNew(originalNote->tieBack());
         if (tie) {
             newNote->setTieBack(tie);
             tie->setEndNote(newNote);
+            tie->setTrack2(newNote->track());
         } else {
             LOGD("addTiesToMap: cannot find tie");
         }
+    }
+
+    if (originalNote->outgoingPartialTie()) {
+        tieMap.add(originalNote->outgoingPartialTie(), newNote->outgoingPartialTie());
     }
 }
 
@@ -824,6 +834,16 @@ static void addTremoloTwoChord(Chord* oldChord, Chord* newChord, TremoloTwoChord
         }
     } else {
         LOGD("inconsistent two note tremolo");
+    }
+}
+
+static void collectTieEndPoints(TieMap& tieMap)
+{
+    for (auto& tie : tieMap) {
+        Tie* newTie = toTie(tie.second);
+        if (newTie->type() == ElementType::TIE || (newTie->type() == ElementType::PARTIAL_TIE && toPartialTie(newTie)->isOutgoing())) {
+            newTie->updatePossibleJumpPoints();
+        }
     }
 }
 
@@ -1061,7 +1081,7 @@ static MeasureBase* cloneMeasure(MeasureBase* mb, Score* score, const Score* osc
         }
     }
 
-    nmb->linkTo(mb);
+    score->undo(new Link(nmb, mb));
     nmb->setExcludeFromOtherParts(false);
 
     for (EngravingItem* e : mb->el()) {
@@ -1098,9 +1118,8 @@ static MeasureBase* cloneMeasure(MeasureBase* mb, Score* score, const Score* osc
             // skip part name in score
             continue;
         } else if (e->isTextBase() || e->isLayoutBreak()) {
-            ne = e->clone();
+            ne = e->linkedClone();
             ne->setAutoplace(true);
-            ne->linkTo(e);
         } else {
             ne = e->clone();
         }
@@ -1187,6 +1206,7 @@ void Excerpt::cloneStaves(Score* sourceScore, Score* dstScore, const std::vector
             }
         }
     }
+    collectTieEndPoints(tieMap);
 }
 
 void Excerpt::cloneMeasures(Score* oscore, Score* score)
@@ -1198,6 +1218,8 @@ void Excerpt::cloneMeasures(Score* oscore, Score* score)
         MeasureBase* newMeasure = cloneMeasure(mb, score, oscore, {}, {}, tieMap);
         measures->add(newMeasure);
     }
+
+    collectTieEndPoints(tieMap);
 }
 
 //! NOTE For staves in the same score
@@ -1384,6 +1406,8 @@ void Excerpt::cloneStaff(Staff* srcStaff, Staff* dstStaff, bool cloneSpanners)
             cloneSpanner(s, score, dstTrack, dstTrack2);
         }
     }
+
+    collectTieEndPoints(tieMap);
 }
 
 //! NOTE For staves potentially in different scores
@@ -1478,6 +1502,10 @@ void Excerpt::cloneStaff2(Staff* srcStaff, Staff* dstStaff, const Fraction& star
             if (oldEl->systemFlag() && dstStaffIdx != 0) {
                 continue;
             }
+            bool alreadyCloned = oldEl->systemFlag() && oldEl->findLinkedInScore(score);
+            if (alreadyCloned) {
+                continue;
+            }
             EngravingItem* newEl = oldEl->linkedClone();
             newEl->setParent(nm);
             newEl->setTrack(0);
@@ -1514,7 +1542,12 @@ void Excerpt::cloneStaff2(Staff* srcStaff, Staff* dstStaff, const Fraction& star
                         continue;
                     }
                     bool systemObject = e->systemFlag() && e->track() == 0;
-                    bool alreadyCloned = bool(e->findLinkedInScore(score));
+                    EngravingItem* linkedElement = e->findLinkedInScore(score);
+                    Segment* linkedParent = linkedElement ? toSegment(linkedElement->parent()) : nullptr;
+                    bool alreadyCloned = linkedParent && (linkedParent == ns
+                                                          || (linkedParent->isType(Segment::CHORD_REST_OR_TIME_TICK_TYPE)
+                                                              && ns->isType(Segment::CHORD_REST_OR_TIME_TICK_TYPE)
+                                                              && linkedParent->tick() == ns->tick()));
                     bool cloneAnnotation = !alreadyCloned && (e->elementAppliesToTrack(srcTrack) || systemObject);
 
                     if (!cloneAnnotation) {
@@ -1674,6 +1707,8 @@ void Excerpt::cloneStaff2(Staff* srcStaff, Staff* dstStaff, const Fraction& star
 
         score->transposeKeys(dstStaffIdx, dstStaffIdx + 1, startTick, endTick, !scoreConcertPitch);
     }
+
+    collectTieEndPoints(tieMap);
 }
 
 void Excerpt::promoteGapRestsToRealRests(const Measure* measure, staff_idx_t staffIdx)

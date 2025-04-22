@@ -112,8 +112,9 @@ public:
 
     void updateRepeatListTempo();
     void updateRepeatList();
+
     const RepeatList& repeatList() const override;
-    const RepeatList& repeatList(bool expandRepeats) const override;
+    const RepeatList& repeatList(bool expandRepeats, bool updateTies = true) const override;
 
     std::vector<Excerpt*>& excerpts() { return m_excerpts; }
     const std::vector<Excerpt*>& excerpts() const { return m_excerpts; }
@@ -154,6 +155,7 @@ public:
     void rebuildAndUpdateExpressive(Synthesizer* synth);
     void updateExpressive(Synthesizer* synth);
     void updateExpressive(Synthesizer* synth, bool expressive, bool force = false);
+    void rebuildFretDiagramLegend();
 
     using Score::loopBoundaryTick;
     Fraction loopBoundaryTick(LoopBoundaryType type) const;
@@ -198,7 +200,10 @@ private:
     void reorderMidiMapping();
     void rebuildExcerptsMidiMapping();
     void removeDeletedMidiMapping();
+
     int updateMidiMapping();
+    void doUpdateMidiMapping(int& maxport, std::set<int>& occupiedMidiChannels, unsigned int& searchMidiMappingFrom, Part* part,
+                             InstrChannel* channel, bool useDrumset);
 
     friend class EngravingProject;
     friend class compat::ScoreAccess;

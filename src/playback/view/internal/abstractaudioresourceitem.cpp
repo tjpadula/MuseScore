@@ -20,9 +20,7 @@ AbstractAudioResourceItem::AbstractAudioResourceItem(QObject* parent)
 
 AbstractAudioResourceItem::~AbstractAudioResourceItem()
 {
-    if (m_editorUri.isValid()) {
-        emit nativeEditorViewCloseRequested();
-    }
+    requestToCloseNativeEditorView();
 }
 
 void AbstractAudioResourceItem::requestToLaunchNativeEditorView()
@@ -32,11 +30,9 @@ void AbstractAudioResourceItem::requestToLaunchNativeEditorView()
     }
 }
 
-void AbstractAudioResourceItem::updateNativeEditorView()
+void AbstractAudioResourceItem::requestToCloseNativeEditorView()
 {
-    if (hasNativeEditorSupport()) {
-        doRequestToLaunchNativeEditorView();
-    } else if (m_editorUri.isValid()) {
+    if (m_editorAction.isValid()) {
         emit nativeEditorViewCloseRequested();
     }
 }
@@ -108,12 +104,12 @@ bool AbstractAudioResourceItem::hasNativeEditorSupport() const
     return false;
 }
 
-const muse::UriQuery& AbstractAudioResourceItem::editorUri() const
+const actions::ActionQuery& AbstractAudioResourceItem::editorAction() const
 {
-    return m_editorUri;
+    return m_editorAction;
 }
 
-void AbstractAudioResourceItem::setEditorUri(const UriQuery& uri)
+void AbstractAudioResourceItem::setEditorAction(const actions::ActionQuery& action)
 {
-    m_editorUri = uri;
+    m_editorAction = action;
 }

@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_SEGMENT_H
-#define MU_ENGRAVING_SEGMENT_H
+#pragma once
 
 #include "engravingitem.h"
 
@@ -56,29 +55,6 @@ class System;
 //   @P segmentType     enum (Segment.All, .Ambitus, .BarLine, .Breath, .ChordRest, .Clef, .EndBarLine, .Invalid, .KeySig, .KeySigAnnounce, .StartRepeatBarLine, .TimeSig, .TimeSigAnnounce)
 //   @P tick            int               midi tick position (read only)
 //------------------------------------------------------------------------
-
-struct CrossBeamType
-{
-    bool upDown = false; // This chord is stem-up, next chord is stem-down
-    bool downUp = false; // This chord is stem-down, next chord is stem-up
-    bool canBeAdjusted = true;
-    void reset()
-    {
-        upDown = false;
-        downUp = false;
-        canBeAdjusted = true;
-    }
-};
-
-struct Spring
-{
-    double springConst = 0.0;
-    double width = 0.0;
-    double preTension = 0.0;
-    Segment* segment = nullptr;
-    Spring(double sc, double w, double pt, Segment* s)
-        : springConst(sc), width(w), preTension(pt),  segment(s) {}
-};
 
 class Segment final : public EngravingItem
 {
@@ -178,6 +154,8 @@ public:
     bool empty() const { return flag(ElementFlag::EMPTY); }
     bool written() const { return flag(ElementFlag::WRITTEN); }
     void setWritten(bool val) const { setFlag(ElementFlag::WRITTEN, val); }
+    bool endOfMeasureChange() const { return flag(ElementFlag::END_OF_MEASURE_CHANGE); }         // Key/time sigs which should be placed at the end of the measure
+    void setEndOfMeasureChange(bool val) const { setFlag(ElementFlag::END_OF_MEASURE_CHANGE, val); }
 
     void fixStaffIdx();
 
@@ -191,7 +169,7 @@ public:
     Fraction ticks() const { return m_ticks; }
     void setTicks(const Fraction& v) { m_ticks = v; }
 
-    double widthInStaff(staff_idx_t staffIdx, SegmentType t = SegmentType::ChordRest) const;
+    double widthInStaff(staff_idx_t staffIdx, SegmentType nextSegType = SegmentType::ChordRest) const;
     Fraction ticksInStaff(staff_idx_t staffIdx) const;
 
     bool splitsTuplet() const;
@@ -276,13 +254,24 @@ public:
     bool isKeySigType() const { return m_segmentType == SegmentType::KeySig; }
     bool isAmbitusType() const { return m_segmentType == SegmentType::Ambitus; }
     bool isTimeSigType() const { return m_segmentType == SegmentType::TimeSig; }
+    bool hasTimeSigAboveStaves() const;
+    bool makeSpaceForTimeSigAboveStaves() const;
+    bool hasTimeSigAcrossStaves() const;
     bool isStartRepeatBarLineType() const { return m_segmentType == SegmentType::StartRepeatBarLine; }
     bool isBarLineType() const { return m_segmentType == SegmentType::BarLine; }
     bool isBreathType() const { return m_segmentType == SegmentType::Breath; }
     bool isChordRestType() const { return m_segmentType == SegmentType::ChordRest; }
+    bool isClefRepeatAnnounceType() const { return m_segmentType == SegmentType::ClefRepeatAnnounce; }
+    bool isKeySigRepeatAnnounceType() const { return m_segmentType == SegmentType::KeySigRepeatAnnounce; }
+    bool isTimeSigRepeatAnnounceType() const { return m_segmentType == SegmentType::TimeSigRepeatAnnounce; }
     bool isEndBarLineType() const { return m_segmentType == SegmentType::EndBarLine; }
     bool isKeySigAnnounceType() const { return m_segmentType == SegmentType::KeySigAnnounce; }
     bool isTimeSigAnnounceType() const { return m_segmentType == SegmentType::TimeSigAnnounce; }
+    bool isCourtesySegment() const
+    {
+        return m_segmentType & (SegmentType::CourtesyTimeSigType | SegmentType::CourtesyKeySigType | SegmentType::CourtesyClefType);
+    }
+
     bool isTimeTickType() const { return m_segmentType == SegmentType::TimeTick; }
     bool isRightAligned() const { return isClefType() || isBreathType(); }
     bool isMMRestSegment() const { return isChordRestType() && m_elist.front() && m_elist.front()->isMMRest(); }
@@ -299,7 +288,6 @@ public:
     EngravingItem* preAppendedItem(track_idx_t track) { return m_preAppendedItems[track]; }
     void preAppend(EngravingItem* item, track_idx_t track) { m_preAppendedItems[track] = item; }
     void clearPreAppended(track_idx_t track) { m_preAppendedItems[track] = nullptr; }
-    void addPreAppendedToShape();
 
     bool goesBefore(const Segment* nextSegment) const;
 
@@ -307,6 +295,9 @@ public:
 
     double xPosInSystemCoords() const;
     void setXPosInSystemCoords(double x);
+
+    bool isTupletSubdivision() const;
+    bool isInsideTupletOnStaff(staff_idx_t staffIdx) const;
 
 private:
 
@@ -339,6 +330,4 @@ private:
 
 #ifndef NO_QT_SUPPORT
 Q_DECLARE_METATYPE(mu::engraving::SegmentType)
-#endif
-
 #endif

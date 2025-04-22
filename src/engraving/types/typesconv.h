@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_TYPESCONV_H
-#define MU_ENGRAVING_TYPESCONV_H
+#pragma once
 
 #include "types/string.h"
 #include "types.h"
@@ -38,7 +37,8 @@ public:
     static String toXml(const std::vector<string_idx_t>& v);
     static std::vector<string_idx_t> fromXml(const String& tag, const std::vector<string_idx_t>& def);
 
-    static const TranslatableString& userName(ElementType v);
+    static const TranslatableString& userName(ElementType v, bool plural = false);
+
     static AsciiStringView toXml(ElementType v);
     static ElementType fromXml(const AsciiStringView& tag, ElementType def, bool silent = false);
 
@@ -191,7 +191,7 @@ public:
     static AsciiStringView toXml(ChordLineType v);
     static ChordLineType fromXml(const AsciiStringView& tag, ChordLineType def);
 
-    static const char* userName(DrumNum v);
+    static const String& userName(DrumNum v);
 
     static const TranslatableString& userName(GlissandoType v);
     static AsciiStringView toXml(GlissandoType v);
@@ -244,7 +244,17 @@ public:
 
     static AsciiStringView toXml(AutoOnOff autoOnOff);
     static AutoOnOff fromXml(const AsciiStringView& str, AutoOnOff def);
+
+    static AsciiStringView toXml(PartialSpannerDirection v);
+    static PartialSpannerDirection fromXml(const AsciiStringView& str, PartialSpannerDirection def);
+
+    static AsciiStringView toXml(TimeSigPlacement timeSigPos);
+    static TimeSigPlacement fromXml(const AsciiStringView& str, TimeSigPlacement def);
+
+    static AsciiStringView toXml(TimeSigStyle timeSigStyle);
+    static TimeSigStyle fromXml(const AsciiStringView& str, TimeSigStyle def);
+
+    static AsciiStringView toXml(TimeSigVSMargin timeSigVSMargin);
+    static TimeSigVSMargin fromXml(const AsciiStringView& str, TimeSigVSMargin def);
 };
 }
-
-#endif // MU_ENGRAVING_TYPESCONV_H

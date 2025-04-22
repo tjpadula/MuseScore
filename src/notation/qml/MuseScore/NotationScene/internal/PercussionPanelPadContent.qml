@@ -32,10 +32,23 @@ Column {
 
     property int panelMode: -1
     property bool useNotationPreview: false
+    property alias notationPreviewNumStaffLines: notationPreview.numStaffLines
 
     property alias footerHeight: footerArea.height
 
     property bool padSwapActive: false
+
+    function openContextMenu(pos) {
+        if (!root.padModel) {
+            return
+        }
+
+        if (!pos) {
+            pos = menuLoader.parent.mapFromItem(root, 0, root.height)
+        }
+
+        menuLoader.show(pos, root.padModel.contextMenuItems)
+    }
 
     Item {
         id: mainContentArea
@@ -45,18 +58,27 @@ Column {
 
         MouseArea {
             id: mouseArea
-
             anchors.fill: parent
+
+            enabled: mainContentArea.enabled
             hoverEnabled: true
 
-            onPressed: {
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+            onPressed: function(event) {
                 ui.tooltip.hide(root)
 
                 if (!Boolean(root.padModel)) {
                     return
                 }
 
-                root.padModel.triggerPad()
+                if (event.button === Qt.RightButton) {
+                    let pos = menuLoader.parent.mapFromItem(mouseArea, event.x, event.y)
+                    root.openContextMenu(pos)
+                    return
+                }
+
+                root.padModel.triggerPad(event.modifiers)
             }
 
             onContainsMouseChanged: {
@@ -66,7 +88,7 @@ Column {
                 }
 
                 if (mouseArea.containsMouse && root.useNotationPreview) {
-                    ui.tooltip.show(root, root.padModel.instrumentName)
+                    ui.tooltip.show(root, root.padModel.padName)
                 } else {
                     ui.tooltip.hide(root)
                 }
@@ -74,7 +96,7 @@ Column {
         }
 
         Rectangle {
-            id: instrumentNameBackground
+            id: padNameBackground
 
             visible: !root.useNotationPreview
             anchors.fill: parent
@@ -83,7 +105,7 @@ Column {
         }
 
         StyledTextLabel {
-            id: instrumentNameLabel
+            id: padNameLabel
 
             visible: !root.useNotationPreview
 
@@ -94,7 +116,7 @@ Column {
             maximumLineCount: 4
             font: ui.theme.bodyBoldFont
 
-            text: Boolean(root.padModel) ? root.padModel.instrumentName : ""
+            text: Boolean(root.padModel) ? root.padModel.padName : ""
         }
 
         PaintedEngravingItem {
@@ -115,7 +137,7 @@ Column {
                 name: "MOUSE_HOVERED"
                 when: mouseArea.containsMouse && !mouseArea.pressed && !root.padSwapActive
                 PropertyChanges {
-                    target: instrumentNameBackground
+                    target: padNameBackground
                     color: Utils.colorWithAlpha(ui.theme.accentColor, ui.theme.buttonOpacityHover)
                 }
                 PropertyChanges {
@@ -127,7 +149,7 @@ Column {
                 name: "MOUSE_HIT"
                 when: mouseArea.pressed || root.padSwapActive
                 PropertyChanges {
-                    target: instrumentNameBackground
+                    target: padNameBackground
                     color: Utils.colorWithAlpha(ui.theme.accentColor, ui.theme.buttonOpacityHit)
                 }
                 PropertyChanges {
@@ -153,6 +175,21 @@ Column {
         width: parent.width
 
         color: Utils.colorWithAlpha(ui.theme.buttonColor, ui.theme.buttonOpacityNormal)
+
+        MouseArea {
+            id: footerMouseArea
+
+            anchors.fill: parent
+            enabled: root.panelMode !== PanelMode.EDIT_LAYOUT
+            hoverEnabled: true
+
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+            onPressed: function(event) {
+                let pos = menuLoader.parent.mapFromItem(footerMouseArea, event.x, event.y)
+                root.openContextMenu(pos)
+            }
+        }
 
         StyledTextLabel {
             id: shortcutLabel
@@ -190,5 +227,32 @@ Column {
 
             text: Boolean(root.padModel) ? root.padModel.midiNote : ""
         }
+    }
+
+    ContextMenuLoader {
+        id: menuLoader
+
+        onHandleMenuItem: function(itemId) {
+            root.padModel.handleMenuItem(itemId)
+        }
+
+        states: [
+            State {
+                name: "MOUSE_HOVERED"
+                when: footerMouseArea.containsMouse && !footerMouseArea.pressed
+                PropertyChanges {
+                    target: footerArea
+                    color: Utils.colorWithAlpha(ui.theme.buttonColor, ui.theme.buttonOpacityHover)
+                }
+            },
+            State {
+                name: "MOUSE_HIT"
+                when: footerMouseArea.pressed
+                PropertyChanges {
+                    target: footerArea
+                    color: Utils.colorWithAlpha(ui.theme.buttonColor, ui.theme.buttonOpacityHit)
+                }
+            }
+        ]
     }
 }

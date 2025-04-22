@@ -21,7 +21,7 @@
  */
 #include "uri.h"
 
-#include "../stringutils.h"
+#include "global/stringutils.h"
 
 #include "log.h"
 
@@ -71,6 +71,11 @@ bool Uri::isValid() const
 Uri::Scheme Uri::scheme() const
 {
     return m_scheme;
+}
+
+void Uri::setScheme(const Scheme& scheme)
+{
+    m_scheme = scheme;
 }
 
 std::string Uri::path() const
@@ -191,14 +196,19 @@ std::string UriQuery::toString() const
     return str;
 }
 
+bool UriQuery::isValid() const
+{
+    return m_uri.isValid();
+}
+
 const Uri& UriQuery::uri() const
 {
     return m_uri;
 }
 
-bool UriQuery::isValid() const
+void UriQuery::setScheme(const Uri::Scheme& scheme)
 {
-    return m_uri.isValid();
+    m_uri.setScheme(scheme);
 }
 
 const UriQuery::Params& UriQuery::params() const

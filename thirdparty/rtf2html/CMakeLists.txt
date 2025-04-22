@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>. 
 
-declare_module(rtf2html)
+declare_thirdparty_module(rtf2html)
 
 set(MODULE_SRC
     common.h
@@ -33,6 +33,8 @@ set(MODULE_SRC
     rtf_table.h
     rtf_tools.h
     )
+
+set(MODULE_USE_COVERAGE OFF)
 
 setup_module()
 

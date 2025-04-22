@@ -33,19 +33,27 @@ import "internal"
 ColumnLayout {
     id: root
 
-    property alias contextMenuModel: contextMenuModel
-
     property NavigationSection navigationSection: null
-    property NavigationPanel navigationPanel: mixerPanelModel.count > 0 ? mixerPanelModel.get(0).channelItem.panel : null // first panel
+    property int contentNavigationPanelOrderStart: 1
+
+    property alias contextMenuModel: contextMenuModel
+    property Component toolbarComponent: MixerPanelToolbar {
+        navigation.section: root.navigationSection
+        navigation.order: root.contentNavigationPanelOrderStart
+    }
 
     signal resizeRequested(var newWidth, var newHeight)
 
     spacing: 0
 
-    onImplicitHeightChanged: {
+    function resizePanelToContentHeight() {
         if (contentColumn.completed) {
-            resizeRequested(width, implicitHeight)
+            root.resizeRequested(width, implicitHeight)
         }
+    }
+
+    onImplicitHeightChanged: {
+        root.resizePanelToContentHeight()
     }
 
     QtObject {
@@ -83,6 +91,7 @@ ColumnLayout {
         id: mixerPanelModel
 
         navigationSection: root.navigationSection
+        navigationOrderStart: root.contentNavigationPanelOrderStart + 1 // +1 for toolbar
 
         Component.onCompleted: {
             mixerPanelModel.load()

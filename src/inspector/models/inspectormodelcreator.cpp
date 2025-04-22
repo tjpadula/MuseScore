@@ -55,6 +55,7 @@
 #include "notation/frames/textframesettingsmodel.h"
 #include "notation/frames/verticalframesettingsmodel.h"
 #include "notation/frames/horizontalframesettingsmodel.h"
+#include "notation/frames/fretframesettingsmodel.h"
 #include "notation/articulations/articulationsettingsmodel.h"
 #include "notation/ornaments/ornamentsettingsmodel.h"
 #include "notation/ambituses/ambitussettingsmodel.h"
@@ -153,6 +154,8 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
         return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::Tie);
     case InspectorModelType::TYPE_LAISSEZ_VIB:
         return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::LaissezVib);
+    case InspectorModelType::TYPE_PARTIAL_TIE:
+        return new SlurAndTieSettingsModel(parent, repository, SlurAndTieSettingsModel::PartialTie);
     case InspectorModelType::TYPE_STAFF_TYPE_CHANGES:
         return new StaffTypeSettingsModel(parent, repository);
     case InspectorModelType::TYPE_TEXT_FRAME:
@@ -161,6 +164,8 @@ AbstractInspectorModel* InspectorModelCreator::newInspectorModel(InspectorModelT
         return new VerticalFrameSettingsModel(parent, repository);
     case InspectorModelType::TYPE_HORIZONTAL_FRAME:
         return new HorizontalFrameSettingsModel(parent, repository);
+    case InspectorModelType::TYPE_FRET_FRAME:
+        return new FretFrameSettingsModel(parent, repository);
     case InspectorModelType::TYPE_ARTICULATION:
         return new ArticulationSettingsModel(parent, repository);
     case InspectorModelType::TYPE_ORNAMENT:

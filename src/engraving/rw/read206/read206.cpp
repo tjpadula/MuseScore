@@ -347,6 +347,10 @@ void Read206::readTextStyle206(MStyle* style, XmlReader& e, ReadContext& ctx, st
         ts = textStyle(ss);
     }
     for (const auto& i : *ts) {
+        if (ctx.shouldSkipProperty(i.pid)) {
+            continue;
+        }
+
         PropertyValue value;
         if (i.sid == Sid::NOSTYLE) {
             break;
@@ -2343,7 +2347,7 @@ EngravingItem* Read206::readArticulation(EngravingItem* parent, XmlReader& e, Re
             case SymId::fermataLongBelow:
             case SymId::fermataVeryLongAbove:
             case SymId::fermataVeryLongBelow: {
-                Fermata* fe = Factory::createFermata(ctx.dummy());
+                Fermata* fe = Factory::createFermata(ctx.dummy()->segment());
                 fe->setSymIdAndTimeStretch(sym);
                 el = fe;
             } break;
@@ -2381,7 +2385,7 @@ EngravingItem* Read206::readArticulation(EngravingItem* parent, XmlReader& e, Re
     }
     // Special case for "no type" = ufermata, with missing subtype tag
     if (!el) {
-        Fermata* f = Factory::createFermata(ctx.dummy());
+        Fermata* f = Factory::createFermata(ctx.dummy()->segment());
         f->setSymIdAndTimeStretch(sym);
         el = f;
     }
@@ -2793,6 +2797,12 @@ static void readMeasure206(Measure* m, int staffIdx, XmlReader& e, ReadContext& 
             if (ctx.tick() != m->tick()) {
                 clef->setSmall(true);                 // TODO: layout does this ?
             }
+
+            // Clef segments are sorted on layout now.  Previously, clef barline position could be out of sync with segment placement.
+            if (ctx.tick() != Fraction(0, 1) && ctx.tick() == m->tick() && !(m->prevMeasure() && m->prevMeasure()->repeatEnd())) {
+                clef->setClefToBarlinePosition(ClefToBarlinePosition::AFTER);
+            }
+
             segment->add(clef);
         } else if (tag == "TimeSig") {
             TimeSig* ts = Factory::createTimeSig(ctx.dummy()->segment());
@@ -3413,12 +3423,16 @@ bool Read206::readScore206(Score* score, XmlReader& e, ReadContext& ctx)
     return true;
 }
 
-Err Read206::readScore(Score* score, XmlReader& e, ReadInOutData* out)
+Ret Read206::readScore(Score* score, XmlReader& e, ReadInOutData* out)
 {
     ReadContext ctx(score);
-    if (out && out->overriddenSpatium.has_value()) {
-        ctx.setSpatium(out->overriddenSpatium.value());
-        ctx.setOverrideSpatium(true);
+    if (out) {
+        if (out->overriddenSpatium.has_value()) {
+            ctx.setSpatium(out->overriddenSpatium.value());
+            ctx.setOverrideSpatium(true);
+        }
+
+        ctx.setPropertiesToSkip(out->propertiesToSkip);
     }
     DEFER {
         if (out) {
@@ -3434,7 +3448,10 @@ Err Read206::readScore(Score* score, XmlReader& e, ReadInOutData* out)
             score->setMscoreRevision(e.readInt(nullptr, 16));
         } else if (tag == "Score") {
             if (!readScore206(score, e, ctx)) {
-                return Err::FileBadFormat;
+                if (e.error() == muse::XmlStreamReader::CustomError) {
+                    return make_ret(Err::FileCriticallyCorrupted, e.errorString());
+                }
+                return make_ret(Err::FileBadFormat, e.errorString());
             }
 
             if (ctx.overrideSpatium() && out) {
@@ -3494,7 +3511,7 @@ Err Read206::readScore(Score* score, XmlReader& e, ReadInOutData* out)
 
     compat::CompatUtils::doCompatibilityConversions(score->masterScore());
 
-    return Err::NoError;
+    return make_ok();
 }
 
 bool Read206::pasteStaff(XmlReader&, Segment*, staff_idx_t, Fraction)

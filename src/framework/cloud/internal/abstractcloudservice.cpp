@@ -33,6 +33,7 @@
 #include "multiinstances/resourcelockguard.h"
 #include "network/networkerrors.h"
 #include "global/iapplication.h"
+#include "draw/types/color.h"
 
 #include "oauthhttpserverreplyhandler.h"
 
@@ -48,23 +49,6 @@ const QString muse::cloud::REFRESH_TOKEN_KEY("refresh_token");
 static const std::string CLOUD_ACCESS_TOKEN_RESOURCE_NAME("CLOUD_ACCESS_TOKEN");
 
 static const std::string STATUS_KEY("status");
-
-QString muse::cloud::userAgent()
-{
-    static const QStringList systemInfo {
-        QSysInfo::kernelType(),
-        QSysInfo::kernelVersion(),
-        QSysInfo::productType(),
-        QSysInfo::productVersion(),
-        QSysInfo::currentCpuArchitecture()
-    };
-
-    static GlobalInject<IApplication> app;
-
-    return QString("MS_EDITOR/%1.%2 (%3)")
-           .arg(app()->version().toString(), app()->build())
-           .arg(systemInfo.join(' ')).toLatin1();
-}
 
 int muse::cloud::generateFileNameNumber()
 {
@@ -144,7 +128,13 @@ bool AbstractCloudService::readTokens()
         return false;
     }
 
-    QJsonDocument tokensDoc = QJsonDocument::fromJson(tokensData.val.toQByteArrayNoCopy());
+    QJsonParseError err;
+    QJsonDocument tokensDoc = QJsonDocument::fromJson(tokensData.val.toQByteArrayNoCopy(), &err);
+    if (err.error != QJsonParseError::NoError || !tokensDoc.isObject()) {
+        LOGE() << "Error on parse tokens file: " << err.errorString();
+        return false;
+    }
+
     QJsonObject saveObject = tokensDoc.object();
 
     m_accessToken = saveObject[ACCESS_TOKEN_KEY].toString();
@@ -214,6 +204,11 @@ void AbstractCloudService::onUserAuthorized()
     if (!ret) {
         LOGE() << ret.toString();
     }
+}
+
+RequestHeaders AbstractCloudService::defaultHeaders() const
+{
+    return configuration()->headers();
 }
 
 RetVal<QUrl> AbstractCloudService::prepareUrlForRequest(QUrl apiUrl, const QVariantMap& params) const
@@ -456,10 +451,17 @@ void AbstractCloudService::openUrl(const QUrl& url)
     }
 }
 
-QString AbstractCloudService::logoColorForTheme(const ui::ThemeInfo& theme) const
+QString AbstractCloudService::logoColor() const
 {
-    if (ui::isDarkTheme(theme.codeKey)) {
-        return "#FFFFFF";
+    const ui::ThemeList& themens = uiConfig()->themes();
+    bool isDarkMode = uiConfig()->isDarkMode();
+
+    for (const ui::ThemeInfo& theme : themens) {
+        if ((isDarkMode && theme.codeKey == ui::DARK_THEME_CODE)
+            || (!isDarkMode && theme.codeKey == ui::LIGHT_THEME_CODE)) {
+            return theme.values[ui::FONT_PRIMARY_COLOR].toString();
+        }
     }
-    return "#000000";
+
+    return QString::fromStdString(draw::Color::BLACK.toString());
 }

@@ -34,22 +34,27 @@ Item {
     property NavigationSection navigationSection: null
     property int contentNavigationPanelOrderStart: 1
 
+    signal resizeRequested(var newWidth, var newHeight)
+
     anchors.fill: parent
 
-    //TODO: #22050 needed for this
-    /*
     property Component toolbarComponent: PercussionPanelToolBar {
-        navigation.section: root.navigationSection
-        navigation.order: root.contentNavigationPanelOrderStart
+        navigationSection: root.navigationSection
+        navigationOrderStart: root.contentNavigationPanelOrderStart
 
-        model: percussionPanelModel
+        model: percModel
 
         panelWidth: root.width
     }
-    */
+
+    function resizePanelToContentHeight() {
+        var newHeight = (Math.min(padGrid.numRows, 2) * padGrid.cellHeight) + (soundTitleLabel.height * 2)
+        root.resizeRequested(root.width, newHeight)
+    }
 
     Component.onCompleted: {
         padGrid.model.init()
+        root.resizePanelToContentHeight()
     }
 
     PercussionPanelModel {
@@ -69,34 +74,48 @@ Item {
         }
     }
 
-    // TODO: Will live inside percussion panel until #22050 is implemented
-    PercussionPanelToolBar {
-        id: toolbar
+    StyledIconLabel {
+        id: soundTitleIcon
 
-        anchors.top: parent.top
+        anchors.verticalCenter: soundTitleLabel.verticalCenter
+        anchors.right: soundTitleLabel.left
 
-        width: parent.width
-        height: 36
+        anchors.rightMargin: 6
 
-        navigationSection: root.navigationSection
-        navigationOrderStart: root.contentNavigationPanelOrderStart
+        visible: percModel.enabled && !percModel.soundTitle.isEmpty
 
-        model: percModel
+        color: ui.theme.fontPrimaryColor
 
-        panelWidth: root.width
+        iconCode: IconCode.AUDIO
+    }
+
+    StyledTextLabel {
+        id: soundTitleLabel
+
+        anchors {
+            top: root.top
+            right: root.right
+
+            bottomMargin: 8
+            rightMargin: 16
+        }
+
+        visible: percModel.enabled && !percModel.soundTitle.isEmpty
+
+        text: percModel.soundTitle
     }
 
     StyledFlickable {
         id: flickable
 
-        anchors.top: toolbar.bottom
+        anchors.top: soundTitleLabel.bottom
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
 
         width: Math.min(rowLayout.width, parent.width)
 
         contentWidth: rowLayout.width
-        contentHeight: rowLayout.height
+        contentHeight: rowLayout.height + rowLayout.anchors.topMargin
 
         StyledScrollBar.vertical: verticalScrollBar
 
@@ -111,7 +130,30 @@ Item {
             // side columns being the "delete row" buttons on the left, and the "add row" button on the right
             readonly property int sideColumnsWidth: addRowButton.width
 
+            QtObject {
+                id: navigationPrv
+
+                // This variable ensures we stay within a given pad when tabbing back-and-forth between "main" and
+                // "footer" controls. It's also used to tab to the associated delete button for a given empty row
+                property var currentPadNavigationIndex: [0, 0]
+
+                function onPadNavigationEvent(event) {
+                    var navigationRow = navigationPrv.currentPadNavigationIndex[0]
+                    var navigationColumn = navigationPrv.currentPadNavigationIndex[1]
+
+                    if (navigationRow >= padGrid.numRows || navigationColumn >= padGrid.numColumns) {
+                        navigationPrv.currentPadNavigationIndex = [0, 0]
+                    }
+
+                    if (event.type === NavigationEvent.AboutActive) {
+                        event.setData("controlIndex", navigationPrv.currentPadNavigationIndex)
+                    }
+                }
+            }
+
             height: padGrid.cellHeight * padGrid.numRows
+            anchors.top: parent.top
+            anchors.topMargin: Math.max((flickable.height - height) / 2, 0)
             spacing: padGrid.spacing / 2
 
             NavigationPanel {
@@ -119,9 +161,17 @@ Item {
 
                 name: "PercussionPanelDeleteRowButtons"
                 section: root.navigationSection
-                order: toolbar.navigationOrderEnd + 3
+                order: padFootersNavPanel.order + 1
 
                 enabled: deleteButtonsColumn.visible
+
+                onNavigationEvent: {
+                    // Use the last known "pad navigation row" and tab to the associated delete button if it exists
+                    var padNavigationRow = navigationPrv.currentPadNavigationIndex[0]
+                    if (padGrid.numRows > 1) {
+                        event.setData("controlIndex", [padNavigationRow, 0])
+                    }
+                }
             }
 
             Column {
@@ -152,27 +202,19 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.right: parent.right
 
-                            visible: padGrid.numRows > 1 && padGrid.model.rowIsEmpty(model.index)
+                            visible: padGrid.numRows > 1
 
                             icon: IconCode.DELETE_TANK
                             backgroundRadius: deleteButton.width / 2
 
-                            navigation.panel: deleteButtonsPanel
-                            navigation.row: model.index
+                            navigation {
+                                panel: deleteButtonsPanel
+                                row: model.index
+                                column: 0
+                            }
 
                             onClicked: {
                                 padGrid.model.deleteRow(model.index)
-                            }
-
-                            Connections {
-                                target: padGrid.model
-
-                                function onRowIsEmptyChanged(row, isEmpty) {
-                                    if (row !== model.index) {
-                                        return
-                                    }
-                                    deleteButton.visible = padGrid.numRows > 1 && isEmpty
-                                }
                             }
                         }
                     }
@@ -189,18 +231,8 @@ Item {
                 property Item swapOriginPad: null
                 property bool isKeyboardSwapActive: false
 
-                QtObject {
-                    id: gridPrv
-
-                    // This variable ensures we stay within a given pad when tabbing back-and-forth between
-                    // "main" and "footer" controls
-                    property var currentPadNavigationIndex: [0, 0]
-                }
-
-                Layout.alignment: Qt.AlignTop
-                Layout.fillHeight: true
-
                 width: cellWidth * numColumns
+                Layout.fillHeight: true
 
                 interactive: false
 
@@ -214,12 +246,10 @@ Item {
 
                     name: "PercussionPanelPads"
                     section: root.navigationSection
-                    order: toolbar.navigationOrderEnd + 1
+                    order: root.contentNavigationPanelOrderStart + 2 // +2 for toolbar
 
                     onNavigationEvent: function(event) {
-                        if (event.type === NavigationEvent.AboutActive) {
-                            event.setData("controlIndex", gridPrv.currentPadNavigationIndex)
-                        }
+                        navigationPrv.onPadNavigationEvent(event)
                     }
                 }
 
@@ -228,14 +258,12 @@ Item {
 
                     name: "PercussionPanelFooters"
                     section: root.navigationSection
-                    order: toolbar.navigationOrderEnd + 2
+                    order: padsNavPanel.order + 1
 
                     enabled: percModel.currentPanelMode !== PanelMode.EDIT_LAYOUT
 
                     onNavigationEvent: function(event) {
-                        if (event.type === NavigationEvent.AboutActive) {
-                            event.setData("controlIndex", gridPrv.currentPadNavigationIndex)
-                        }
+                        navigationPrv.onPadNavigationEvent(event)
                     }
                 }
 
@@ -257,6 +285,7 @@ Item {
                         panelEnabled: percModel.enabled
                         panelMode: percModel.currentPanelMode
                         useNotationPreview: percModel.useNotationPreview
+                        notationPreviewNumStaffLines: percModel.notationPreviewNumStaffLines
 
                         // When swapping, only show the outline for the swap origin  and the swap target...
                         showEditOutline: percModel.currentPanelMode === PanelMode.EDIT_LAYOUT
@@ -275,6 +304,9 @@ Item {
                             padGrid.swapOriginPad = pad
                             padGrid.isKeyboardSwapActive = isKeyboardSwap
                             padGrid.model.startPadSwap(index)
+                            if (isKeyboardSwap) {
+                                pad.padNavigation.requestActive()
+                            }
                         }
 
                         onEndPadSwapRequested: {
@@ -293,7 +325,26 @@ Item {
                             if (!pad.hasActiveControl) {
                                 return;
                             }
-                            gridPrv.currentPadNavigationIndex = [pad.navigationRow, pad.navigationColumn]
+                            navigationPrv.currentPadNavigationIndex = [pad.navigationRow, pad.navigationColumn]
+                        }
+
+                        Connections {
+                            target: padGrid.model
+
+                            function onPadFocusRequested(padIndex) {
+                                if (index !== padIndex) {
+                                    return
+                                }
+
+                                // Focus pad only if keyboard navigation has started
+                                if (root.navigationSection.active) {
+                                    pad.padNavigation.requestActive()
+                                }
+                            }
+
+                            function onNumPadsChanged() {
+                                root.resizePanelToContentHeight()
+                            }
                         }
                     }
 
@@ -343,7 +394,7 @@ Item {
 
                 name: "PercussionPanelAddRowButton"
                 section: root.navigationSection
-                order: toolbar.navigationOrderEnd + 4
+                order: deleteButtonsPanel.order + 1
 
                 enabled: addRowButton.visible
             }
@@ -359,13 +410,14 @@ Item {
                 enabled: !padGrid.isKeyboardSwapActive
 
                 icon: IconCode.PLUS
-                text: qsTrc("notation", "Add row")
+                text: qsTrc("notation/percussion", "Add row")
                 orientation: Qt.Horizontal
 
                 navigation.panel: addRowButtonPanel
+                drawFocusBorderInsideRect: true
 
                 onClicked: {
-                    padGrid.model.addEmptyRow()
+                    padGrid.model.addEmptyRow(/*focusFirstInNewRow*/ true)
                     flickable.goToBottom()
                 }
             }
@@ -376,12 +428,11 @@ Item {
 
             visible: !percModel.enabled
 
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.topMargin: (padGrid.cellHeight / 2) - (panelDisabledLabel.height / 2)
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: rowLayout.anchors.topMargin / 2
 
             font: ui.theme.bodyFont
-            text: qsTrc("notation", "Select an unpitched percussion staff to see available sounds")
+            text: qsTrc("notation/percussion", "Select an unpitched percussion staff to see available sounds")
         }
     }
 

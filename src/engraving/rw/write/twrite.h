@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_TWRITE_H
-#define MU_ENGRAVING_TWRITE_H
+#pragma once
 
 #include "../xmlwriter.h"
 #include "writecontext.h"
@@ -257,7 +256,10 @@ public:
 
     static void write(const Page* item, XmlWriter& xml, WriteContext& ctx);
     static void write(const PalmMute* item, XmlWriter& xml, WriteContext& ctx);
+    static void write(const Parenthesis* item, XmlWriter& xml, WriteContext& ctx);
     static void write(const Part* item, XmlWriter& xml, WriteContext& ctx);
+    static void write(const PartialTie* item, XmlWriter& xml, WriteContext& ctx);
+    static void write(const PartialLyricsLine* item, XmlWriter& xml, WriteContext& ctx);
     static void write(const Pedal* item, XmlWriter& xml, WriteContext& ctx);
     static void write(const PickScrape* item, XmlWriter& xml, WriteContext& ctx);
     static void write(const PlayTechAnnotation* item, XmlWriter& xml, WriteContext& ctx);
@@ -350,5 +352,3 @@ private:
     static void writeSystemLock(const SystemLock* systemLock, XmlWriter& xml);
 };
 }
-
-#endif // MU_ENGRAVING_TWRITE_H

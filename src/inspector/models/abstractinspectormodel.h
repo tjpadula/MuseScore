@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_INSPECTOR_ABSTRACTINSPECTORMODEL_H
-#define MU_INSPECTOR_ABSTRACTINSPECTORMODEL_H
+#pragma once
 
 #include <functional>
 #include <set>
@@ -107,12 +106,14 @@ public:
         TYPE_SLUR,
         TYPE_TIE,
         TYPE_LAISSEZ_VIB,
+        TYPE_PARTIAL_TIE,
         TYPE_CRESCENDO,
         TYPE_DIMINUENDO,
         TYPE_STAFF_TYPE_CHANGES,
         TYPE_TEXT_FRAME,
         TYPE_VERTICAL_FRAME,
         TYPE_HORIZONTAL_FRAME,
+        TYPE_FRET_FRAME,
         TYPE_ARTICULATION,
         TYPE_ORNAMENT,
         TYPE_AMBITUS,
@@ -192,7 +193,7 @@ protected:
     PointFPropertyItem* buildPointFPropertyItem(const mu::engraving::Pid& pid, std::function<void(const mu::engraving::Pid propertyId,
                                                                                                   const QVariant& newValue)> onPropertyChangedCallBack = nullptr);
 
-    using ConvertPropertyValueFunc = std::function<QVariant(const QVariant&)>;
+    using ConvertPropertyValueFunc = std::function<QVariant (const QVariant&)>;
     void loadPropertyItem(PropertyItem* propertyItem, ConvertPropertyValueFunc convertElementPropertyValueFunc = nullptr);
     void loadPropertyItem(PropertyItem* propertyItem, const QList<engraving::EngravingItem*>& elements,
                           ConvertPropertyValueFunc convertElementPropertyValueFunc = nullptr);
@@ -255,5 +256,3 @@ using InspectorSectionType = AbstractInspectorModel::InspectorSectionType;
 using InspectorModelTypeSet = std::set<InspectorModelType>;
 using InspectorSectionTypeSet = std::set<InspectorSectionType>;
 }
-
-#endif // MU_INSPECTOR_ABSTRACTINSPECTORMODEL_H

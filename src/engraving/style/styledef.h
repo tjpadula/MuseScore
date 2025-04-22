@@ -115,6 +115,7 @@ enum class Sid {
     lyricsMelismaForce,
     lyricsMelismaMinLength,
     lyricsDashPosAtStartOfSystem,
+    lyricsAvoidBarlines,
 
     lyricsOddFontFace,
     lyricsOddFontSize,
@@ -163,6 +164,7 @@ enum class Sid {
     repeatBarTips,
     startBarlineSingle,
     startBarlineMultiple,
+    maskBarlinesForText,
 
     bracketWidth,
     bracketDistance,
@@ -181,7 +183,6 @@ enum class Sid {
     keysigLeftMargin,
     ambitusMargin,
     timesigLeftMargin,
-    timesigScale,
 
     midClefKeyRightMargin,
     clefKeyRightMargin,
@@ -195,6 +196,29 @@ enum class Sid {
 
     clefBarlineDistance,
     timesigBarlineDistance,
+
+    timeSigPlacement,
+
+    timeSigCenterOnBarline,
+    timeSigVSMarginCentered,
+    timeSigVSMarginNonCentered,
+    timeSigCenterAcrossStaveGroup,
+
+    timeSigNormalStyle,
+    timeSigNormalScale,
+    timeSigNormalScaleLock,
+    timeSigNormalNumDist,
+    timeSigNormalY,
+    timeSigAboveStyle,
+    timeSigAboveScale,
+    timeSigAboveScaleLock,
+    timeSigAboveNumDist,
+    timeSigAboveY,
+    timeSigAcrossStyle,
+    timeSigAcrossScale,
+    timeSigAcrossScaleLock,
+    timeSigAcrossNumDist,
+    timeSigAcrossY,
 
     useStraightNoteFlags,
     stemWidth,
@@ -527,12 +551,14 @@ enum class Sid {
     tieMidWidth,
     tieDottedWidth,
     minTieLength,
+    minHangingTieLength,
     minStraightGlissandoLength,
     minWigglyGlissandoLength,
     slurMinDistance,
     tieMinDistance,
     laissezVibMinDistance,
-    headerToLineStartDistance, // determines start point of "dangling" lines (ties, gliss, lyrics...) at start of system
+    headerToLineStartDistance,   // determines start point of "dangling" lines (ties, gliss, lyrics...) when preceded by header clefs/timesigs/keysigs
+    lineEndToBarlineDistance,  // determines end point of "dangling" lines (ties, gliss, lyrics...) in relation to barlines
 
     tiePlacementSingleNote,
     tiePlacementChord,
@@ -721,6 +747,11 @@ enum class Sid {
     textLinePlacement,
     textLinePosAbove,
     textLinePosBelow,
+    textLineLineWidth,
+    textLineLineStyle,
+    textLineDashLineLen,
+    textLineDashGapLen,
+    textLineHookHeight,
     textLineFrameType,
     textLineFramePadding,
     textLineFrameWidth,
@@ -731,6 +762,11 @@ enum class Sid {
     systemTextLinePlacement,
     systemTextLinePosAbove,
     systemTextLinePosBelow,
+    systemTextLineLineWidth,
+    systemTextLineLineStyle,
+    systemTextLineDashLineLen,
+    systemTextLineDashGapLen,
+    systemTextLineHookHeight,
     systemTextLineFrameType,
     systemTextLineFramePadding,
     systemTextLineFrameWidth,
@@ -1762,6 +1798,26 @@ enum class Sid {
     autoplaceEnabled,
     defaultsVersion,
 
+    changesBeforeBarlineRepeats,
+    changesBeforeBarlineOtherJumps,
+
+    placeClefsBeforeRepeats,
+    changesBetweenEndStartRepeat,
+
+    showCourtesiesRepeats,
+    useParensRepeatCourtesies,
+
+    showCourtesiesOtherJumps,
+    useParensOtherJumpCourtesies,
+
+    showCourtesiesAfterCancellingRepeats,
+    useParensRepeatCourtesiesAfterCancelling,
+
+    showCourtesiesAfterCancellingOtherJumps,
+    useParensOtherJumpCourtesiesAfterCancelling,
+
+    smallParens,
+
     STYLES
     ///\}
 };
@@ -1773,7 +1829,7 @@ using StyleIdSet = std::unordered_set<Sid>;
 //   VerticalAlignRange
 //---------------------------------------------------------
 
-enum class VerticalAlignRange {
+enum class VerticalAlignRange : unsigned char {
     SEGMENT, MEASURE, SYSTEM
 };
 

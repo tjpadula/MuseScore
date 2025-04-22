@@ -45,7 +45,6 @@ DockPage {
     property NotationPageModel pageModel: NotationPageModel {}
 
     property NavigationSection noteInputKeyNavSec: NavigationSection {
-        id: keynavSec
         name: "NoteInputSection"
         order: 2
     }
@@ -124,8 +123,10 @@ DockPage {
             alignment: DockToolBarAlignment.Center
             contentBottomPadding: 2
 
+            navigationSection: root.topToolbarKeyNavSec
+
             NotationToolBar {
-                navigationPanel.section: root.topToolbarKeyNavSec
+                navigationPanel.section: notationToolBar.navigationSection
                 navigationPanel.order: 2
             }
         },
@@ -146,8 +147,10 @@ DockPage {
                 { "dock": notationToolBar, "dropLocation": Location.Right }
             ]
 
+            navigationSection: root.topToolbarKeyNavSec
+
             PlaybackToolBar {
-                navigationPanelSection: root.topToolbarKeyNavSec
+                navigationPanelSection: playbackToolBar.navigationSection
                 navigationPanelOrder: 3
 
                 floating: playbackToolBar.floating
@@ -172,9 +175,13 @@ DockPage {
                 { "dock": playbackToolBar, "dropLocation": Location.Right }
             ]
 
+            navigationSection: root.topToolbarKeyNavSec
+
             ExtensionsToolBar {
                 id: extToolBar
 
+                navigationPanel.section: extDockToolBar.navigationSection
+                navigationPanel.order: 4
 
                 function updateVisible() {
                     if (!extDockToolBar.inited) {
@@ -207,6 +214,8 @@ DockPage {
         },
 */
         DockToolBar {
+            id: undoRedoToolBar
+
             objectName: root.pageModel.undoRedoToolBarName()
             title: qsTrc("appshell", "Undo/redo")
 
@@ -218,15 +227,16 @@ DockPage {
             alignment: DockToolBarAlignment.Right
             contentBottomPadding: 2
 
+            navigationSection: root.topToolbarKeyNavSec
+
             UndoRedoToolBar {
-                navigationPanel.section: root.topToolbarKeyNavSec
-                navigationPanel.order: 4
+                navigationPanel.section: undoRedoToolBar.navigationSection
+                navigationPanel.order: 5
             }
         }
     ]
 
     toolBars: [
-
         DockToolBar {
             id: noteInputBar
 
@@ -242,6 +252,8 @@ DockPage {
 
             thickness: orientation === Qt.Horizontal ? 40 : 76
 
+            navigationSection: root.noteInputKeyNavSec
+
             NoteInputBar {
                 orientation: noteInputBar.orientation
                 floating: noteInputBar.floating
@@ -249,7 +261,7 @@ DockPage {
                 maximumWidth: noteInputBar.width
                 maximumHeight: noteInputBar.height
 
-                navigationPanel.section: root.noteInputKeyNavSec
+                navigationPanel.section: noteInputBar.navigationSection
                 navigationPanel.order: 1
             }
         }
@@ -274,6 +286,7 @@ DockPage {
 
             PalettesPanel {
                 navigationSection: palettesPanel.navigationSection
+                navigationOrderStart: palettesPanel.contentNavigationPanelOrderStart
 
                 Component.onCompleted: {
                     palettesPanel.contextMenuModel = contextMenuModel
@@ -282,12 +295,12 @@ DockPage {
         },
 
         DockPanel {
-            id: instrumentsPanel
+            id: layoutPanel
 
-            objectName: root.pageModel.instrumentsPanelName()
-            title: qsTrc("appshell", "Instruments")
+            objectName: root.pageModel.layoutPanelName()
+            title: qsTrc("appshell", "Layout")
 
-            navigationSection: root.navigationPanelSec(instrumentsPanel.location)
+            navigationSection: root.navigationPanelSec(layoutPanel.location)
 
             width: root.verticalPanelDefaultWidth
             minimumWidth: root.verticalPanelDefaultWidth
@@ -297,11 +310,12 @@ DockPage {
 
             dropDestinations: root.verticalPanelDropDestinations
 
-            InstrumentsPanel {
-                navigationSection: instrumentsPanel.navigationSection
+            LayoutPanel {
+                navigationSection: layoutPanel.navigationSection
+                navigationOrderStart: layoutPanel.contentNavigationPanelOrderStart
 
                 Component.onCompleted: {
-                    instrumentsPanel.contextMenuModel = contextMenuModel
+                    layoutPanel.contextMenuModel = contextMenuModel
                 }
             }
         },
@@ -324,6 +338,7 @@ DockPage {
 
             InspectorForm {
                 navigationSection: inspectorPanel.navigationSection
+                navigationOrderStart: inspectorPanel.contentNavigationPanelOrderStart
                 notationView: root.notationView
             }
         },
@@ -349,6 +364,7 @@ DockPage {
 
             SelectionFilterPanel {
                 navigationSection: selectionFilterPanel.navigationSection
+                navigationOrderStart: selectionFilterPanel.contentNavigationPanelOrderStart
             }
         },
 
@@ -365,6 +381,7 @@ DockPage {
             maximumWidth: root.verticalPanelDefaultWidth
 
             groupName: root.verticalPanelsGroup
+            location: Location.Right
 
             //! NOTE: hidden by default
             visible: false
@@ -373,6 +390,7 @@ DockPage {
 
             UndoHistoryPanel {
                 navigationSection: undoHistoryPanel.navigationSection
+                navigationOrderStart: undoHistoryPanel.contentNavigationPanelOrderStart
             }
         },
         
@@ -402,14 +420,30 @@ DockPage {
             navigationSection: root.navigationPanelSec(mixerPanel.location)
 
             MixerPanel {
+                id: mixerPanelComponent
+
                 navigationSection: mixerPanel.navigationSection
+                contentNavigationPanelOrderStart: mixerPanel.contentNavigationPanelOrderStart
 
                 Component.onCompleted: {
                     mixerPanel.contextMenuModel = contextMenuModel
+                    mixerPanel.toolbarComponent = toolbarComponent
+                }
+
+                Component.onDestruction: {
+                    mixerPanel.contextMenuModel = null
+                    mixerPanel.toolbarComponent = null
                 }
 
                 onResizeRequested: function(newWidth, newHeight) {
                     mixerPanel.resize(newWidth, newHeight)
+                }
+
+                Connections {
+                    target: mixerPanel
+                    function onPanelShown() {
+                        mixerPanelComponent.resizePanelToContentHeight()
+                    }
                 }
             }
         },
@@ -437,6 +471,7 @@ DockPage {
 
             PianoKeyboardPanel {
                 navigationSection: pianoKeyboardPanel.navigationSection
+                contentNavigationPanelOrderStart: pianoKeyboardPanel.contentNavigationPanelOrderStart
 
                 Component.onCompleted: {
                     pianoKeyboardPanel.contextMenuModel = contextMenuModel
@@ -467,6 +502,7 @@ DockPage {
 
             Timeline {
                 navigationSection: timelinePanel.navigationSection
+                contentNavigationPanelOrderStart: timelinePanel.contentNavigationPanelOrderStart
             }
         },
 
@@ -491,7 +527,8 @@ DockPage {
             navigationSection: root.navigationPanelSec(drumsetPanel.location)
 
             DrumsetPanel {
-                navigationSection: timelinePanel.navigationSection
+                navigationSection: drumsetPanel.navigationSection
+                contentNavigationPanelOrderStart: drumsetPanel.contentNavigationPanelOrderStart
             }
         },
 
@@ -517,22 +554,29 @@ DockPage {
             navigationSection: root.navigationPanelSec(percussionPanel.location)
 
             PercussionPanel {
-                navigationSection: percussionPanel.navigationSection
+                id: percussionComponent
 
-                // TODO: #22050 needed for this
-                /*
-                // contentNavigationPanelOrderStart: percussionPanel.contentNavigationPanelOrderStart
+                navigationSection: percussionPanel.navigationSection
+                contentNavigationPanelOrderStart: percussionPanel.contentNavigationPanelOrderStart
 
                 Component.onCompleted: {
-                    percussionPanel.contextMenuModel = contextMenuModel
                     percussionPanel.toolbarComponent = toolbarComponent
                 }
 
                 Component.onDestruction: {
-                    percussionPanel.contextMenuModel = null
                     percussionPanel.toolbarComponent = null
                 }
-                */
+
+                onResizeRequested: function(newWidth, newHeight) {
+                    percussionPanel.resize(newWidth, newHeight)
+                }
+
+                Connections {
+                    target: percussionPanel
+                    function onPanelShown() {
+                        percussionComponent.resizePanelToContentHeight()
+                    }
+                }
             }
         }
     ]
@@ -548,7 +592,7 @@ DockPage {
         Component.onCompleted: {
             root.notationView = notationView.paintView
 
-            root.setDefaultNavigationControl(root.defaultNavigationControl)
+            root.setDefaultNavigationControl(notationView.defaultNavigationControl)
         }
 
         Component.onDestruction: {
@@ -559,10 +603,27 @@ DockPage {
     statusBar: DockStatusBar {
         objectName: root.pageModel.statusBarName()
 
-        contentNavigationPanel: content.navigationPanel
+        navigationSection: content.navigationSection
 
         NotationStatusBar {
             id: content
         }
     }
+
+    tours: [
+        {
+            "eventCode": "project_opened",
+            "tour": {
+                "id": "input-by-duration",
+                "steps": [
+                    {
+                        "title": qsTrc("notation", "Note input modes"),
+                        "description": qsTrc("notation", "Discover different ways to input notes in MuseScore Studio."),
+                        "controlUri": "control://NoteInputSection/NoteInputBar/note-input-by-duration",
+                        "videoExplanationUrl": "https://youtu.be/xm1-XkS9VzA?utm_source=mss-yt&utm_medium=enter-by-duration&utm_campaign=mss-yt-enter-by-duration"
+                    }
+                ]
+            }
+        }
+    ]
 }

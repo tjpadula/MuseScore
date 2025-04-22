@@ -41,7 +41,7 @@ endif()
 set(BUILD_SHARED_LIBS OFF)
 set(SHARED_LIBS_INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-if(MUE_COMPILE_USE_SHARED_LIBS_IN_DEBUG AND BUILD_IS_DEBUG)
+if(MUSE_COMPILE_USE_SHARED_LIBS_IN_DEBUG AND BUILD_IS_DEBUG)
     if(CC_IS_GCC OR CC_IS_MINGW)
         set(BUILD_SHARED_LIBS ON)
     endif()
@@ -83,6 +83,7 @@ if(CC_IS_MSVC)
 
     add_compile_options("/EHsc")
     add_compile_options("/utf-8")
+    add_compile_options("/MP")
 
     add_compile_definitions(WIN32 _WINDOWS)
     add_compile_definitions(_UNICODE UNICODE)

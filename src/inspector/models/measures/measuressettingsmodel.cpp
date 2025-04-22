@@ -42,6 +42,7 @@ void MeasuresSettingsModel::loadProperties()
     updateAllSystemsAreLocked();
     updateScoreIsInPageView();
     updateIsMakeIntoSystemAvailable();
+    updateSystemCount();
 }
 
 void MeasuresSettingsModel::onCurrentNotationChanged()
@@ -148,7 +149,11 @@ bool MeasuresSettingsModel::allSystemsAreLocked() const
 
 void MeasuresSettingsModel::updateAllSystemsAreLocked()
 {
-    std::vector<System*> systems = currentNotation()->elements()->msScore()->selection().selectedSystems();
+    if (isEmpty()) {
+        return;
+    }
+
+    std::vector<System*> systems = selection()->selectedSystems();
 
     bool allLocked = true;
     for (System* system : systems) {
@@ -174,10 +179,14 @@ bool MeasuresSettingsModel::isMakeIntoSystemAvailable() const
     return m_isMakeIntoSystemAvailable;
 }
 
+size_t MeasuresSettingsModel::systemCount() const
+{
+    return m_systemCount;
+}
+
 void MeasuresSettingsModel::updateScoreIsInPageView()
 {
-    const Score* score = currentNotation()->elements()->msScore();
-    bool isInPageView = score->layoutMode() == LayoutMode::PAGE;
+    bool isInPageView = currentNotation()->viewMode() != LayoutMode::LINE;
 
     if (m_scoreIsInPageView != isInPageView) {
         m_scoreIsInPageView = isInPageView;
@@ -187,9 +196,15 @@ void MeasuresSettingsModel::updateScoreIsInPageView()
 
 void MeasuresSettingsModel::updateIsMakeIntoSystemAvailable()
 {
-    const Selection& selection = currentNotation()->elements()->msScore()->selection();
-    const MeasureBase* startMB = selection.startMeasureBase();
-    const MeasureBase* endMB = selection.endMeasureBase();
+    if (isEmpty()) {
+        return;
+    }
+
+    const MeasureBase* startMB = selection()->startMeasureBase();
+    const MeasureBase* endMB = selection()->endMeasureBase();
+    if (!startMB || !endMB) {
+        return;
+    }
 
     bool available = true;
     if (startMB->isStartOfSystemLock() && endMB->isEndOfSystemLock() && startMB->systemLock() == endMB->systemLock()) {
@@ -199,6 +214,19 @@ void MeasuresSettingsModel::updateIsMakeIntoSystemAvailable()
     if (m_isMakeIntoSystemAvailable != available) {
         m_isMakeIntoSystemAvailable = available;
         emit isMakeIntoSystemAvailableChanged(m_isMakeIntoSystemAvailable);
+    }
+}
+
+void MeasuresSettingsModel::updateSystemCount()
+{
+    if (isEmpty()) {
+        return;
+    }
+
+    size_t count = selection()->selectedSystems().size();
+    if (count != m_systemCount) {
+        m_systemCount = count;
+        emit systemCountChanged(count);
     }
 }
 

@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_UNDO_H
-#define MU_ENGRAVING_UNDO_H
+#pragma once
 
 /**
  \file
@@ -29,9 +28,6 @@
 */
 
 #include <map>
-
-#include "modularity/ioc.h"
-#include "../iengravingfontsprovider.h"
 
 #include "../style/style.h"
 #include "../compat/midi/midipatch.h"
@@ -55,17 +51,13 @@
 #include "score.h"
 #include "scoreorder.h"
 #include "select.h"
+#include "soundflag.h"
 #include "spanner.h"
 #include "staff.h"
 #include "stafftype.h"
 #include "stringdata.h"
 #include "stringtunings.h"
-#include "synthesizerstate.h"
-#include "soundflag.h"
-#include "text.h"
-
 #include "tremolotwochord.h"
-#include "tremolobar.h"
 
 namespace mu::engraving {
 class Bend;
@@ -96,11 +88,11 @@ class SystemLock;
 class Text;
 class TremoloBar;
 
-enum class PlayEventType : char;
+enum class PlayEventType : unsigned char;
 
 #define UNDO_TYPE(t) CommandType type() const override { return t; }
 #define UNDO_NAME(a) const char* name() const override { return a; }
-#define UNDO_CHANGED_OBJECTS(...) std::vector<const EngravingObject*> objectItems() const override { return __VA_ARGS__; }
+#define UNDO_CHANGED_OBJECTS(...) std::vector<EngravingObject*> objectItems() const override { return __VA_ARGS__; }
 
 class UndoCommand
 {
@@ -113,7 +105,7 @@ protected:
     void appendChildren(UndoCommand*);
 
 public:
-    enum class Filter {
+    enum class Filter : unsigned char {
         TextEdit,
         AddElement,
         AddElementLinked,
@@ -131,7 +123,7 @@ public:
     size_t childCount() const { return childList.size(); }
     void unwind();
     const std::list<UndoCommand*>& commands() const { return childList; }
-    virtual std::vector<const EngravingObject*> objectItems() const { return {}; }
+    virtual std::vector<EngravingObject*> objectItems() const { return {}; }
     virtual void cleanup(bool undo);
 // #ifndef QT_NO_DEBUG
     virtual const char* name() const { return "UndoCommand"; }
@@ -177,12 +169,12 @@ public:
 
     struct ChangesInfo {
         ElementTypeSet changedObjectTypes;
-        std::set<const EngravingItem*> changedItems;
+        std::map<EngravingItem*, std::unordered_set<CommandType> > changedItems;
         StyleIdSet changedStyleIdSet;
         PropertyIdSet changedPropertyIdSet;
     };
 
-    ChangesInfo changesInfo() const;
+    ChangesInfo changesInfo(bool undo = false) const;
     const TranslatableString& actionName() const;
 
     static bool canRecordSelectedElement(const EngravingItem* e);
@@ -366,6 +358,38 @@ public:
 
     UNDO_TYPE(CommandType::RemoveStaff)
     UNDO_NAME("RemoveStaff")
+    UNDO_CHANGED_OBJECTS({ staff })
+};
+
+class AddSystemObjectStaff : public UndoCommand
+{
+    OBJECT_ALLOCATOR(engraving, AddSystemObjectStaff)
+
+    Staff* staff = nullptr;
+
+public:
+    AddSystemObjectStaff(Staff*);
+    void undo(EditData*) override;
+    void redo(EditData*) override;
+
+    UNDO_TYPE(CommandType::AddSystemObjectStaff)
+    UNDO_NAME("AddSystemObjectStaff")
+    UNDO_CHANGED_OBJECTS({ staff })
+};
+
+class RemoveSystemObjectStaff : public UndoCommand
+{
+    OBJECT_ALLOCATOR(engraving, RemoveSystemObjectStaff)
+
+    Staff* staff = nullptr;
+
+public:
+    RemoveSystemObjectStaff(Staff*);
+    void undo(EditData*) override;
+    void redo(EditData*) override;
+
+    UNDO_TYPE(CommandType::RemoveSystemObjectStaff)
+    UNDO_NAME("RemoveSystemObjectStaff")
     UNDO_CHANGED_OBJECTS({ staff })
 };
 
@@ -667,7 +691,7 @@ public:
 
     bool isFiltered(UndoCommand::Filter f, const EngravingItem* target) const override;
 
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 
     UNDO_TYPE(CommandType::AddElement)
 };
@@ -703,7 +727,7 @@ public:
     void cleanup(bool undo) override;
 
     UNDO_NAME("AddSystemLock")
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 };
 
 class RemoveSystemLock : public UndoCommand
@@ -718,7 +742,7 @@ public:
     void cleanup(bool undo) override;
 
     UNDO_NAME("RemoveSystemLock")
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 };
 
 class ChangePatch : public UndoCommand
@@ -732,8 +756,8 @@ class ChangePatch : public UndoCommand
     void flip(EditData*) override;
 
 public:
-    ChangePatch(Score* s, InstrChannel* c, const MidiPatch* pt)
-        : score(s), channel(c), patch(*pt) {}
+    ChangePatch(Score* s, InstrChannel* c, const MidiPatch& pt)
+        : score(s), channel(c), patch(pt) {}
     UNDO_NAME("ChangePatch")
     UNDO_CHANGED_OBJECTS({ score })
 };
@@ -999,7 +1023,7 @@ public:
     void undo(EditData*) override;
     void redo(EditData*) override;
 
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 
     UNDO_TYPE(CommandType::AddExcerpt)
     UNDO_NAME("AddExcerpt")
@@ -1020,7 +1044,7 @@ public:
     void undo(EditData*) override;
     void redo(EditData*) override;
 
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 
     UNDO_TYPE(CommandType::RemoveExcerpt)
     UNDO_NAME("RemoveExcerpt")
@@ -1183,7 +1207,7 @@ public:
     UNDO_TYPE(CommandType::ChangeProperty)
     UNDO_NAME("ChangeProperty")
 
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 
     bool isFiltered(UndoCommand::Filter f, const EngravingItem* target) const override
     {
@@ -1505,11 +1529,33 @@ class ChangeDrumset : public UndoCommand
     void flip(EditData*) override;
 
 public:
-    ChangeDrumset(Instrument* i, const Drumset* d, Part* p)
-        : instrument(i), drumset(*d), part(p) {}
+    ChangeDrumset(Instrument* i, const Drumset& d, Part* p)
+        : instrument(i), drumset(d), part(p) {}
 
     UNDO_TYPE(CommandType::ChangeDrumset)
     UNDO_NAME("ChangeDrumset")
+};
+
+class FretDataChange : public UndoCommand
+{
+    OBJECT_ALLOCATOR(engraving, FretDataChange)
+
+    FretDiagram* m_diagram = nullptr;
+    FretUndoData m_undoData;
+    String m_harmonyName;
+
+    void redo(EditData*) override;
+    void undo(EditData*) override;
+
+public:
+    FretDataChange(FretDiagram* d, const String& harmonyName)
+        : m_diagram(d), m_harmonyName(harmonyName) {}
+
+    UNDO_TYPE(CommandType::FretDataChange)
+
+    UNDO_NAME("FretDataChange")
+
+    UNDO_CHANGED_OBJECTS({ m_diagram })
 };
 
 class FretDot : public UndoCommand
@@ -1657,7 +1703,7 @@ public:
 
     UNDO_NAME("ChangeHarpPedalState")
 //    UNDO_CHANGED_OBJECTS({ diagram })
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 };
 
 //---------------------------------------------------------
@@ -1684,7 +1730,7 @@ public:
 
     UNDO_NAME("ChangeSingleHarpPedal")
 //    UNDO_CHANGED_OBJECTS({ diagram });
-    std::vector<const EngravingObject*> objectItems() const override;
+    std::vector<EngravingObject*> objectItems() const override;
 };
 
 class ChangeStringData : public UndoCommand
@@ -1733,5 +1779,22 @@ public:
     UNDO_NAME("ChangeSpanArpeggio")
     UNDO_CHANGED_OBJECTS({ m_chord })
 };
+
+class ChangeTieJumpPointActive : public UndoCommand
+{
+    OBJECT_ALLOCATOR(engraving, ChangeTieJumpPointActive)
+
+    TieJumpPointList* m_jumpPointList = nullptr;
+    String m_id;
+    bool m_active = false;
+
+    void flip(EditData*) override;
+
+public:
+    ChangeTieJumpPointActive(TieJumpPointList* jumpPointList, String& id, bool active)
+        : m_jumpPointList(jumpPointList), m_id(id), m_active(active) {}
+
+    UNDO_TYPE(CommandType::ChangeTieEndPointActive)
+    UNDO_NAME("ChangeTieEndPointActive")
+};
 } // namespace mu::engraving
-#endif

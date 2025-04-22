@@ -37,6 +37,7 @@
 
 #include "tlayout.h"
 #include "chordlayout.h"
+#include "stemlayout.h"
 
 #include "log.h"
 
@@ -332,8 +333,9 @@ void BeamTremoloLayout::setSmallInnerBeamPos(const BeamBase::LayoutData* ldata, 
         if (!cr->isChord()) {
             continue;
         }
+        const Chord* c = toChord(cr);
         beamCount = std::max(beamCount, strokeCount(ldata, cr));
-        noteOutsideStaff |= (cr->downLine() < -2 && !ldata->up) || (cr->upLine() >= 11 && ldata->up);
+        noteOutsideStaff |= (c->downLine() < -2 && !ldata->up) || (c->upLine() >= 11 && ldata->up);
     }
 
     // AND stems have been extended to the second stave line when the notes are far enough outside of the stave
@@ -1052,10 +1054,10 @@ int BeamTremoloLayout::getTargetStaffLine(const BeamBase::LayoutData* ldata, con
     bool useWideBeams = ctx.conf().styleB(Sid::useWideBeams);
     int startBeams = strokeCount(ldata, startChord);
     int endBeams = strokeCount(ldata, endChord);
-    int startTargetLine = Chord::minStaffOverlap(ldata->up, staffLines, startBeams, false,
-                                                 ldata->beamSpacing / 4.0, useWideBeams, isFullSize);
-    int endTargetLine = Chord::minStaffOverlap(ldata->up, staffLines, endBeams, false,
-                                               ldata->beamSpacing / 4.0, useWideBeams, !ldata->isGrace);
+    int startTargetLine = StemLayout::minStaffOverlap(ldata->up, staffLines, startBeams, false,
+                                                      ldata->beamSpacing / 4.0, useWideBeams, isFullSize);
+    int endTargetLine = StemLayout::minStaffOverlap(ldata->up, staffLines, endBeams, false,
+                                                    ldata->beamSpacing / 4.0, useWideBeams, !ldata->isGrace);
 
     int diff = 0;
     // Get diff between beam closest staff and actual staff, unless its full cross?
@@ -1278,7 +1280,7 @@ int BeamTremoloLayout::getBeamCount(const BeamBase::LayoutData* ldata, const std
 
 double BeamTremoloLayout::chordBeamAnchorX(const BeamBase::LayoutData* ldata, const ChordRest* cr, ChordBeamAnchorType anchorType)
 {
-    double pagePosX = ldata->trem ? ldata->trem->pagePos().x() : ldata->beam->pagePos().x();
+    double pagePosX = ldata->trem ? ldata->trem->pagePos().x() : ldata->beam ? ldata->beam->pagePos().x() : 0.0;
     double stemPosX = cr->stemPosX() + cr->pagePos().x() - pagePosX;
 
     if (!cr->isChord() || !toChord(cr)->stem()) {

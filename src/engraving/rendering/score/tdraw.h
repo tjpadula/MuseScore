@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_TDRAW_DEV_H
-#define MU_ENGRAVING_TDRAW_DEV_H
+#pragma once
 
 #include "dom/engravingitem.h"
 
@@ -111,6 +110,7 @@ class OttavaSegment;
 
 class PalmMute;
 class PalmMuteSegment;
+class Parenthesis;
 class Pedal;
 class PedalSegment;
 class PickScrapeSegment;
@@ -261,6 +261,8 @@ private:
     static void draw(const OttavaSegment* item, muse::draw::Painter* painter);
 
     static void draw(const Page* item, muse::draw::Painter* painter);
+    static void draw(const Parenthesis* item, muse::draw::Painter* painter);
+    static void draw(const PartialTieSegment* item, muse::draw::Painter* painter);
     static void draw(const PalmMuteSegment* item, muse::draw::Painter* painter);
     static void draw(const PedalSegment* item, muse::draw::Painter* painter);
     static void draw(const PickScrapeSegment* item, muse::draw::Painter* painter);
@@ -316,7 +318,7 @@ private:
     static void draw(const Measure* item, muse::draw::Painter* painter);
     static void draw(const Segment* item, muse::draw::Painter* painter);
     static void draw(const Chord* item, muse::draw::Painter* painter);
+
+    static void setMask(const EngravingItem* item, muse::draw::Painter* painter);
 };
 }
-
-#endif // MU_ENGRAVING_TDRAW_DEV_H

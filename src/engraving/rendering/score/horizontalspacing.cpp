@@ -23,18 +23,21 @@
 
 #include "horizontalspacing.h"
 
+#include "dom/barline.h"
+#include "dom/beam.h"
 #include "dom/chord.h"
 #include "dom/engravingitem.h"
 #include "dom/glissando.h"
-#include "dom/laissezvib.h"
 #include "dom/lyrics.h"
 #include "dom/note.h"
 #include "dom/rest.h"
 #include "dom/score.h"
 #include "dom/stemslash.h"
 #include "dom/staff.h"
+#include "dom/stem.h"
 #include "dom/system.h"
 #include "dom/tie.h"
+#include "dom/timesig.h"
 
 using namespace mu::engraving;
 using namespace mu::engraving::rendering::score;
@@ -42,7 +45,10 @@ using namespace mu::engraving::rendering::score;
 double HorizontalSpacing::computeSpacingForFullSystem(System* system, double stretchReduction, double squeezeFactor,
                                                       bool overrideMinMeasureWidth)
 {
+    TRACEFUNC;
+
     HorizontalSpacingContext ctx;
+    ctx.system = system;
     ctx.spatium = system->spatium();
 
     ctx.stretchReduction = stretchReduction;
@@ -74,9 +80,12 @@ double HorizontalSpacing::computeSpacingForFullSystem(System* system, double str
     return ctx.xCur;
 }
 
-double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system)
+double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system, bool startOfContinuousLayoutRegion)
 {
+    TRACEFUNC;
+
     HorizontalSpacingContext ctx;
+    ctx.system = system;
     ctx.spatium = system->spatium();
     ctx.xLeftBarrier = system->leftMargin();
 
@@ -90,7 +99,7 @@ double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system)
 
     if (secondToLast) {
         ctx.xCur = secondToLast->x();
-        if (secondToLast->isHBox() || last->isHBox()) {
+        if (secondToLast->isHBox() || last->isHBox() || startOfContinuousLayoutRegion) {
             ctx.xCur += secondToLast->width();
         }
     } else {
@@ -101,7 +110,7 @@ double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system)
         last->mutldata()->setPosX(ctx.xCur);
         last->computeMinWidth();
         ctx.xCur += last->width();
-    } else if (!secondToLast || secondToLast->isHBox()) {
+    } else if (!secondToLast || secondToLast->isHBox() || startOfContinuousLayoutRegion) {
         spaceMeasureGroup({ toMeasure(last) }, ctx);
     } else {
         ctx.startMeas = toMeasure(last);
@@ -113,6 +122,8 @@ double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system)
 
 void HorizontalSpacing::squeezeSystemToFit(System* system, double& curSysWidth, double targetSysWidth)
 {
+    TRACEFUNC;
+
     Measure* firstMeasure = system->firstMeasure();
     if (!firstMeasure) {
         return;
@@ -236,7 +247,7 @@ void HorizontalSpacing::spaceMeasureGroup(const std::vector<Measure*>& measureGr
     ctx.xCur = lastMeas->x() + lastMeas->width();
 }
 
-std::vector<HorizontalSpacing::SegmentPosition> HorizontalSpacing::spaceSegments(const std::vector<Segment*> segList, int startSegIdx,
+std::vector<HorizontalSpacing::SegmentPosition> HorizontalSpacing::spaceSegments(const std::vector<Segment*>& segList, int startSegIdx,
                                                                                  HorizontalSpacingContext& ctx)
 {
     std::vector<SegmentPosition> placedSegments;
@@ -245,7 +256,7 @@ std::vector<HorizontalSpacing::SegmentPosition> HorizontalSpacing::spaceSegments
     for (size_t i = 0; i < segList.size(); ++i) {
         Segment* curSeg = segList[i];
         if (ignoreSegmentForSpacing(curSeg)) {
-            placedSegments.emplace_back(curSeg, ctx.xCur);
+            placedSegments.emplace_back(curSeg, ctx.xCur, /*ignoreForSpacing*/ true);
             continue;
         }
 
@@ -289,6 +300,7 @@ std::vector<HorizontalSpacing::SegmentPosition> HorizontalSpacing::spaceSegments
 
     if (ctx.systemIsFull) {
         checkLyricsAgainstRightMargin(placedSegments);
+        checkLargeTimeSigAgainstRightMargin(placedSegments);
     }
 
     return placedSegments;
@@ -302,7 +314,7 @@ bool HorizontalSpacing::ignoreSegmentForSpacing(const Segment* segment)
 bool HorizontalSpacing::ignoreAllSegmentsForSpacing(const std::vector<SegmentPosition>& segmentPositions)
 {
     for (const SegmentPosition& segPos : segmentPositions) {
-        if (!ignoreSegmentForSpacing(segPos.segment)) {
+        if (!segPos.ignoreForSpacing) {
             return false;
         }
     }
@@ -320,28 +332,49 @@ void HorizontalSpacing::spaceAgainstPreviousSegments(Segment* segment, std::vect
         checkLyricsAgainstLeftMargin(segment, x, ctx);
     }
 
+    bool segmentHasTimeSigAboveStaff = segment->hasTimeSigAboveStaves();
+
     for (size_t i = prevSegPositions.size(); i > 0; --i) {
         const SegmentPosition& prevSegPos = prevSegPositions[i - 1];
-        Segment* prevSeg = prevSegPos.segment;
-        double xPrevSeg = prevSegPos.xPosInSystemCoords;
-
-        if (ignoreSegmentForSpacing(prevSeg)) {
+        if (prevSegPos.ignoreForSpacing) {
             continue;
         }
+
+        Segment* prevSeg = prevSegPos.segment;
+        double xPrevSeg = prevSegPos.xPosInSystemCoords;
 
         if (prevSeg->isChordRestType()) {
             ++prevCRSegmentsCount;
         }
 
-        double xNonCollision = xPrevSeg + minHorizontalDistance(prevSeg, segment, ctx.squeezeFactor);
-        x = std::max(x, xNonCollision);
+        bool timeSigAboveBarlineCase = segmentHasTimeSigAboveStaff && prevSeg->isEndBarLineType() && prevSeg->tick() == segment->tick();
+        bool timeSigAboveKeySigCase = segmentHasTimeSigAboveStaff && prevSeg->isType(SegmentType::KeySig)
+                                      && prevSeg->tick() == segment->tick();
+        bool timeSigAboveRepeatKeySigCase = segmentHasTimeSigAboveStaff && prevSeg->isType(SegmentType::KeySigRepeatAnnounce)
+                                            && prevSeg->tick() == segment->tick();
 
-        if (x > ctx.xCur) {
+        if (timeSigAboveBarlineCase) {
+            x = xPrevSeg + prevSeg->minRight() - 0.5 * prevSeg->style().styleMM(Sid::barWidth); // align to the preceding barline
+        } else if (timeSigAboveKeySigCase) {
+            x = xPrevSeg + segment->minLeft(); // align to the preceding keySig
+        } else if (timeSigAboveRepeatKeySigCase) {
+            x = xPrevSeg + prevSeg->minRight();
+        } else {
+            double minHorDist = minHorizontalDistance(prevSeg, segment, ctx.squeezeFactor);
+            minHorDist = std::max(minHorDist, spaceLyricsAgainstBarlines(prevSeg, segment, ctx));
+            double xNonCollision = xPrevSeg + minHorDist;
+            x = std::max(x, xNonCollision);
+        }
+
+        if (x > ctx.xCur || timeSigAboveBarlineCase) {
             if (prevCRSegmentsCount > 0) {
                 double spaceIncrease = (x - ctx.xCur) / prevCRSegmentsCount;
                 double xMovement = spaceIncrease;
                 for (size_t j = i; j < prevSegPositions.size(); ++j) {
                     SegmentPosition& segPos = prevSegPositions[j];
+                    if (segPos.ignoreForSpacing) {
+                        continue;
+                    }
                     segPos.xPosInSystemCoords += xMovement;
                     if (segPos.segment->isChordRestType()) {
                         xMovement += spaceIncrease;
@@ -370,7 +403,7 @@ bool HorizontalSpacing::stopCheckingPreviousSegments(const SegmentPosition& prev
     Fraction prevSegEndTick = prevSeg->tick() + prevSeg->ticks();
     Fraction curSegTick = curSeg->tick();
 
-    if (prevSegEndTick >= curSegTick) {
+    if (prevSegEndTick >= curSegTick || curSeg->hasTimeSigAboveStaves()) {
         return false;
     }
 
@@ -436,6 +469,7 @@ void HorizontalSpacing::checkLyricsAgainstRightMargin(std::vector<SegmentPositio
 
     for (size_t i = segPositions.size(); i > 1; --i) {
         double systemEdge = segPositions.back().xPosInSystemCoords + segPositions.back().segment->minRight();
+
         SegmentPosition& segPos = segPositions[i - 1];
         double x = segPos.xPosInSystemCoords;
         Segment* seg = segPos.segment;
@@ -470,6 +504,98 @@ void HorizontalSpacing::checkLyricsAgainstRightMargin(std::vector<SegmentPositio
     }
 }
 
+double HorizontalSpacing::spaceLyricsAgainstBarlines(Segment* firstSeg, Segment* secondSeg, const HorizontalSpacingContext& ctx)
+{
+    if (!(firstSeg->isType(SegmentType::ChordRest) && secondSeg->isType(SegmentType::BarLineType))
+        && !(firstSeg->isType(SegmentType::BarLineType) && secondSeg->isType(SegmentType::ChordRest))) {
+        return 0.0;
+    }
+
+    double w = 0.0;
+
+    bool crSegIsBefore = firstSeg->isChordRestType();
+    Segment* crSegment = crSegIsBefore ? firstSeg : secondSeg;
+    Segment* barlineSegment = crSegIsBefore ? secondSeg : firstSeg;
+
+    staff_idx_t nstaves = crSegment->score()->nstaves();
+
+    for (staff_idx_t staffIdx = 0; staffIdx < nstaves; ++staffIdx) {
+        if (!ctx.system->staff(staffIdx)->show()) {
+            continue;
+        }
+
+        staff_idx_t nextStaff = ctx.system->nextVisibleStaff(staffIdx);
+        if (nextStaff == muse::nidx) {
+            continue;
+        }
+
+        BarLine* barline = toBarLine(barlineSegment->element(staff2track(staffIdx)));
+        if (!barline || barline->spanStaff() == 0) {
+            continue;
+        }
+
+        Shape barlineShape = barline->shape().translate(barline->pos());
+
+        track_idx_t startTrack = staff2track(staffIdx);
+        track_idx_t endTrack = staff2track(nextStaff) + VOICES;
+        for (track_idx_t track = startTrack; track < endTrack; ++track) {
+            ChordRest* chordRest = toChordRest(crSegment->element(track));
+            if (!chordRest) {
+                continue;
+            }
+
+            for (Lyrics* lyrics : chordRest->lyrics()) {
+                if (!(lyrics->avoidBarlines() && lyrics->visible() && lyrics->autoplace())) {
+                    continue;
+                }
+                staff_idx_t lyricsStaffIdx = lyrics->staffIdx();
+                if ((lyricsStaffIdx == staffIdx && lyrics->placeBelow()) || (lyricsStaffIdx == nextStaff && lyrics->placeAbove())) {
+                    Shape lyricsShape = lyrics->shape().translate(lyrics->pos());
+                    double minDist = crSegIsBefore ? lyricsShape.right() + barlineShape.left() : lyricsShape.left() + barlineShape.right();
+                    const double padding = 0.3 * lyrics->fontMetrics().xHeight();
+                    minDist += padding;
+                    w = std::max(w, minDist);
+                }
+            }
+        }
+    }
+
+    return w;
+}
+
+void HorizontalSpacing::checkLargeTimeSigAgainstRightMargin(std::vector<SegmentPosition>& segPositions)
+{
+    SegmentPosition& cautionaryTSSegPos = segPositions.back();
+    if (!cautionaryTSSegPos.segment->hasTimeSigAboveStaves()) {
+        return;
+    }
+
+    const MStyle& style = cautionaryTSSegPos.segment->style();
+    TimeSigVSMargin timeSigVSMargin = style.styleB(Sid::timeSigCenterOnBarline)
+                                      ? style.styleV(Sid::timeSigVSMarginCentered).value<TimeSigVSMargin>()
+                                      : style.styleV(Sid::timeSigVSMarginNonCentered).value<TimeSigVSMargin>();
+    if (timeSigVSMargin != TimeSigVSMargin::RIGHT_ALIGN_TO_BARLINE) {
+        return;
+    }
+
+    double xMax = 0.0;
+    for (auto iter = segPositions.rbegin(); iter != segPositions.rend(); ++iter) {
+        if (iter->segment->isType(SegmentType::EndBarLine | SegmentType::KeySigAnnounce)) {
+            xMax = std::max(xMax, iter->xPosInSystemCoords + iter->segment->minRight());
+        }
+    }
+
+    if (muse::RealIsNull(xMax)) {
+        return;
+    }
+
+    double curTSPos = cautionaryTSSegPos.xPosInSystemCoords;
+    double xMaxPos = xMax - cautionaryTSSegPos.segment->minRight();
+    if (xMaxPos < curTSPos) {
+        cautionaryTSSegPos.xPosInSystemCoords = xMaxPos;
+    }
+}
+
 void HorizontalSpacing::moveRightAlignedSegments(std::vector<SegmentPosition>& placedSegments, const HorizontalSpacingContext& ctx)
 {
     for (size_t i = 0; i < placedSegments.size(); ++i) {
@@ -481,14 +607,19 @@ void HorizontalSpacing::moveRightAlignedSegments(std::vector<SegmentPosition>& p
         double x = DBL_MAX;
 
         for (size_t j = i + 1; j < placedSegments.size(); ++j) {
-            Segment* followingSeg = placedSegments[j].segment;
-            if (followingSeg->isRightAligned() || ignoreSegmentForSpacing(followingSeg)) {
+            SegmentPosition& segPos = placedSegments[j];
+            if (segPos.ignoreForSpacing) {
+                continue;
+            }
+
+            Segment* followingSeg = segPos.segment;
+            if (followingSeg->isRightAligned() || followingSeg->hasTimeSigAboveStaves()) {
                 continue;
             }
             if (followingSeg->measure() != segment->measure()) {
                 break;
             }
-            double followingSegX = placedSegments[j].xPosInSystemCoords;
+            double followingSegX = segPos.xPosInSystemCoords;
             double minDist = minHorizontalDistance(segment, followingSeg, ctx.squeezeFactor);
             x = std::min(x, followingSegX - minDist);
         }
@@ -501,6 +632,54 @@ void HorizontalSpacing::moveRightAlignedSegments(std::vector<SegmentPosition>& p
                 prevCRSeg->addWidthOffset(-nextSegX + x);
             }
         }
+    }
+}
+
+void HorizontalSpacing::checkCollisionsWithCrossStaffStems(const Segment* thisSeg, const Segment* nextSeg, staff_idx_t staffIdx,
+                                                           double& curMinDist)
+{
+    std::vector<ChordRest*> itemsToCheck;
+    itemsToCheck.reserve(VOICES);
+
+    for (EngravingItem* el : nextSeg->elist()) {
+        if (el && el->vStaffIdx() == staffIdx) {
+            ChordRest* cr = toChordRest(el);
+            if (cr->beam() && cr->beam()->cross()) {
+                itemsToCheck.push_back(toChordRest(el));
+            }
+        }
+    }
+
+    for (ChordRest* cr : itemsToCheck) {
+        Chord* potentialCollidingChord = nullptr;
+        for (ChordRest* beamElement : cr->beam()->elements()) {
+            if (beamElement->isChord() && beamElement->parent() == thisSeg) {
+                potentialCollidingChord = toChord(beamElement);
+                break;
+            }
+        }
+
+        if (!potentialCollidingChord || potentialCollidingChord->up() != cr->up() || !potentialCollidingChord->stem()) {
+            return;
+        }
+
+        bool checkStemCollision = (cr->up() && potentialCollidingChord->vStaffIdx() > cr->vStaffIdx())
+                                  || (!cr->up() && potentialCollidingChord->vStaffIdx() < cr->vStaffIdx());
+        if (!checkStemCollision) {
+            return;
+        }
+
+        Stem* stem = potentialCollidingChord->stem();
+        Shape prevStemShape = stem->shape().translated(stem->pos() + potentialCollidingChord->pos());
+        // We don't know where this stem is vertically, but we know from the beam arrangement that
+        // it's going to be crossed anyway, so we can space to it as if it had infinite height.
+        prevStemShape.adjust(0.0, -100000, 0.0, 100000);
+
+        const Shape& staffShape = nextSeg->staffShape(staffIdx);
+
+        double minDist = minHorizontalDistance(prevStemShape, staffShape, stem->spatium());
+
+        curMinDist = std::max(curMinDist, minDist);
     }
 }
 
@@ -615,36 +794,75 @@ bool HorizontalSpacing::needsCueSizeSpacing(const Segment* segment)
 
 void HorizontalSpacing::applyCrossBeamSpacingCorrection(Segment* thisSeg, Segment* nextSeg, double& width)
 {
-    Measure* m = thisSeg->measure();
-    CrossBeamType crossBeamType = computeCrossBeamType(thisSeg, nextSeg);
+    CrossBeamSpacing crossBeamSpacing = computeCrossBeamSpacing(thisSeg, nextSeg);
 
-    double displacement = m->score()->noteHeadWidth() - m->score()->style().styleMM(Sid::stemWidth);
-    if (crossBeamType.upDown && crossBeamType.canBeAdjusted) {
+    const Score* score = thisSeg->score();
+    const PaddingTable& paddingTable = score->paddingTable();
+    const MStyle& style = score->style();
+
+    double displacement = score->noteHeadWidth() - style.styleMM(Sid::stemWidth);
+
+    if (crossBeamSpacing.upDown && crossBeamSpacing.canBeAdjusted) {
         thisSeg->addWidthOffset(displacement);
         width += displacement;
-    } else if (crossBeamType.downUp && crossBeamType.canBeAdjusted) {
+    } else if (crossBeamSpacing.downUp && crossBeamSpacing.canBeAdjusted) {
         thisSeg->addWidthOffset(-displacement);
         width -= displacement;
     }
 
-    if (crossBeamType.upDown) {
-        if (crossBeamType.hasOpposingBeamlets) {
-            double minBeamletClearance = m->style().styleMM(Sid::beamMinLen) * 2.0
-                                         + m->score()->paddingTable().at(ElementType::BEAM).at(ElementType::BEAM);
+    if (crossBeamSpacing.upDown) {
+        if (crossBeamSpacing.hasOpposingBeamlets) {
+            double minBeamletClearance = style.styleMM(Sid::beamMinLen) * 2.0 + paddingTable.at(ElementType::BEAM).at(ElementType::BEAM);
             width = std::max(width, displacement + minBeamletClearance);
         } else {
             width = std::max(width, 2 * displacement);
         }
     }
+
+    if (crossBeamSpacing.preventCrossStaffKerning) {
+        double padding = crossBeamSpacing.ensureMinStemDistance ? paddingTable.at(ElementType::STEM).at(ElementType::STEM)
+                         : style.styleMM(Sid::minNoteDistance);
+        width = std::max(width, score->noteHeadWidth() + padding);
+    } else if (crossBeamSpacing.ensureMinStemDistance) {
+        width = std::max(width, score->paddingTable().at(ElementType::STEM).at(ElementType::STEM));
+    }
 }
 
-HorizontalSpacing::CrossBeamType HorizontalSpacing::computeCrossBeamType(Segment* thisSeg, Segment* nextSeg)
+HorizontalSpacing::CrossBeamSpacing HorizontalSpacing::computeCrossBeamSpacing(Segment* thisSeg, Segment* nextSeg)
 {
-    CrossBeamType crossBeamType;
+    CrossBeamSpacing crossBeamType;
 
     if (!thisSeg->isChordRestType() || !nextSeg || !nextSeg->isChordRestType()) {
         return crossBeamType;
     }
+
+    bool preventCrossStaffKerning = false;
+    bool ensureMinStemDistance = false;
+    for (EngravingItem* e : thisSeg->elist()) {
+        if (!e || !e->isChord() || !e->visible() || !e->staff()->visible()) {
+            continue;
+        }
+
+        Chord* thisChord = toChord(e);
+        ChordRest* nextCR = toChordRest(nextSeg->element(thisChord->track()));
+        Chord* nextChord = nextCR && nextCR->isChord() ? toChord(nextCR) : nullptr;
+        if (!nextChord) {
+            continue;
+        }
+
+        int thisStaffMove = thisChord->staffMove();
+        int nextStaffMove = nextChord->staffMove();
+        if (thisStaffMove == nextStaffMove) {
+            continue;
+        }
+
+        preventCrossStaffKerning = thisStaffMove > nextStaffMove;
+        ensureMinStemDistance = (thisStaffMove > nextStaffMove && thisChord->up() && !nextChord->up())
+                                || (thisStaffMove < nextStaffMove && thisChord->up() == nextChord->up());
+    }
+
+    crossBeamType.preventCrossStaffKerning = preventCrossStaffKerning;
+    crossBeamType.ensureMinStemDistance = ensureMinStemDistance;
 
     bool upDown = false;
     bool downUp = false;
@@ -813,10 +1031,11 @@ void HorizontalSpacing::setPositionsAndWidths(const std::vector<SegmentPosition>
 {
     size_t segmentsSize = segmentPositions.size();
     for (size_t i = 0; i < segmentsSize; ++i) {
-        Segment* curSeg = segmentPositions[i].segment;
-        double curX = segmentPositions[i].xPosInSystemCoords;
+        const SegmentPosition& segPos = segmentPositions[i];
+        Segment* curSeg = segPos.segment;
+        double curX = segPos.xPosInSystemCoords;
 
-        if (ignoreSegmentForSpacing(curSeg)) {
+        if (segPos.ignoreForSpacing) {
             curSeg->setWidth(0.0);
             continue;
         }
@@ -824,9 +1043,10 @@ void HorizontalSpacing::setPositionsAndWidths(const std::vector<SegmentPosition>
         Segment* nextSeg = curSeg;
         double nextX = curX;
         for (size_t j = i + 1; j < segmentsSize; ++j) {
-            if (!ignoreSegmentForSpacing(segmentPositions[j].segment)) {
-                nextSeg = segmentPositions[j].segment;
-                nextX = segmentPositions[j].xPosInSystemCoords;
+            const SegmentPosition& nextSegPos = segmentPositions[j];
+            if (!nextSegPos.ignoreForSpacing) {
+                nextSeg = nextSegPos.segment;
+                nextX = nextSegPos.xPosInSystemCoords;
                 break;
             }
         }
@@ -834,7 +1054,12 @@ void HorizontalSpacing::setPositionsAndWidths(const std::vector<SegmentPosition>
         Measure* curSegMeasure = curSeg->measure();
         Measure* nextSegMeasure = nextSeg->measure();
 
-        double segWidth = curSegMeasure == nextSegMeasure || nextSeg->isStartRepeatBarLineType() ? nextX - curX : curSeg->minRight();
+        bool leadingNonCRException = ((nextSeg->isKeySigType() || nextSeg->isTimeSigType()
+                                       || nextSeg->isClefType()) && !curSeg->isType(SegmentType::BarLineType));
+        bool computeWidthByDifferenceFromNext = curSegMeasure == nextSegMeasure || nextSeg->isStartRepeatBarLineType()
+                                                || leadingNonCRException;
+
+        double segWidth = computeWidthByDifferenceFromNext ? nextX - curX : curSeg->minRight();
 
         curSeg->setWidth(segWidth);
 
@@ -846,7 +1071,24 @@ void HorizontalSpacing::setPositionsAndWidths(const std::vector<SegmentPosition>
         curSeg->setXPosInSystemCoords(curX);
 
         if (nextSeg == curSeg) {
-            double nextSegWidth = nextSeg->minRight();
+            double nextSegWidth = 0.0;
+            if (nextSeg->hasTimeSigAboveStaves()) {
+                assert(i > 0);
+                if (nextSeg->makeSpaceForTimeSigAboveStaves()) {
+                    nextSegWidth = nextSeg->minRight();
+                }
+                Segment* prevSeg = segmentPositions[i - 1].segment;
+                double xDiff = segmentPositions[i - 1].xPosInSystemCoords - curX;
+                double minSpaceForPrevSeg = xDiff + prevSeg->minRight();
+                if (prevSeg->trailer()) {
+                    minSpaceForPrevSeg += prevSeg->style().styleMM(Sid::systemTrailerRightMargin);
+                }
+                nextSegWidth = std::max(nextSegWidth, minSpaceForPrevSeg);
+            } else if (nextSeg->trailer()) {
+                nextSegWidth = nextSeg->minRight() + nextSeg->style().styleMM(Sid::systemTrailerRightMargin);
+            } else {
+                nextSegWidth = nextSeg->minRight();
+            }
             nextSeg->setWidth(nextSegWidth);
             nextSegMeasure->setWidth(nextX + nextSegWidth - nextSegMeasure->x());
             nextSeg->setXPosInSystemCoords(nextX);
@@ -902,6 +1144,7 @@ double HorizontalSpacing::minHorizontalDistance(const Shape& f, const Shape& s, 
                 continue;
             }
             const EngravingItem* item1 = r1.item();
+
             double ay1 = r1.top();
             double ay2 = r1.bottom();
             double verticalClearance = computeVerticalClearance(item1, item2, spatium) * squeezeFactor;
@@ -957,9 +1200,15 @@ double HorizontalSpacing::minHorizontalDistance(const Segment* f, const Segment*
         }
     }
 
-    bool systemHeaderGap = f->segmentType() != SegmentType::ChordRest && f->segmentType() != SegmentType::StartRepeatBarLine
-                           && f->rtick().isZero() && (ns->measure()->isFirstInSystem() || ns->measure()->prev()->isHBox())
-                           && (ns->isStartRepeatBarLineType() || ns->isChordRestType() || (ns->isClefType() && !ns->header()));
+    if (f->isHeaderClefType() && ns->hasTimeSigAboveStaves()) {
+        Segment* possibleKeySig = f->nextActive();
+        if (possibleKeySig && possibleKeySig->isKeySigType() && !ignoreSegmentForSpacing(possibleKeySig)) {
+            return 0.0;
+        }
+        return f->minRight() + ns->minLeft() + f->style().styleMM(Sid::headerToLineStartDistance);
+    }
+
+    bool systemHeaderGap = needsHeaderSpacingExceptions(f, ns);
 
     double ww = -DBL_MAX;          // can remain negative
     double d = 0.0;
@@ -971,12 +1220,17 @@ double HorizontalSpacing::minHorizontalDistance(const Segment* f, const Segment*
 
         const Shape& fshape = f->staffShape(staffIdx);
         double sp = shapeSpatium(fshape);
-        d = ns ? minHorizontalDistance(fshape, ns->staffShape(staffIdx), sp, squeezeFactor) : 0.0;
-        // first chordrest of a staff should clear the widest header for any staff
-        // so make sure segment is as wide as it needs to be
+        d = minHorizontalDistance(fshape, ns->staffShape(staffIdx), sp, squeezeFactor);
         if (systemHeaderGap) {
+            // first chordrest of a staff should clear the widest header for any staff
+            // so make sure segment is as wide as it needs to be
             d = std::max(d, f->staffShape(staffIdx).right());
         }
+
+        if (f->isChordRestType() && ns->isChordRestType()) {
+            checkCollisionsWithCrossStaffStems(f, ns, staffIdx, d);
+        }
+
         ww = std::max(ww, d);
     }
     double w = std::max(ww, 0.0);        // non-negative
@@ -1022,45 +1276,36 @@ double HorizontalSpacing::minHorizontalDistance(const Segment* f, const Segment*
         }
     }
 
-    // Allocate space to ensure minimum length of "dangling" ties or gliss at start of system
-    if ((systemHeaderGap || f->isStartRepeatBarLineType()) && ns && ns->isChordRestType()) {
-        for (EngravingItem* e : ns->elist()) {
-            if (!e || !e->isChord()) {
-                continue;
-            }
-            double headerTieMargin = systemHeaderGap ? f->style().styleMM(Sid::headerToLineStartDistance)
-                                     : f->style().styleMM(Sid::repeatBarlineDotSeparation);
-            for (Note* note : toChord(e)->notes()) {
-                bool tieOrGlissBack = note->spannerBack().size() || (note->tieBack() && !note->tieBack()->segmentsEmpty());
-                if (!tieOrGlissBack || note->lineAttachPoints().empty()) {
-                    continue;
-                }
-                const EngravingItem* attachedLine = note->lineAttachPoints().front().line();
-                if (!attachedLine->addToSkyline()) {
-                    continue;
-                }
-                double minLength = 0.0;
-                if (attachedLine->isTie()) {
-                    minLength = f->style().styleMM(Sid::minTieLength);
-                } else if (attachedLine->isGlissando()) {
-                    bool straight = toGlissando(attachedLine)->glissandoType() == GlissandoType::STRAIGHT;
-                    minLength = straight ? f->style().styleMM(Sid::minStraightGlissandoLength)
-                                : f->style().styleMM(Sid::minWigglyGlissandoLength);
-                } else if (attachedLine->isNoteLine()) {
-                    minLength = f->style().styleMM(Sid::minStraightGlissandoLength);
-                }
-                double tieStartPointX = f->minRight() + headerTieMargin;
-                double notePosX = w + note->pos().x() + toChord(e)->pos().x() + note->headWidth() / 2;
-                double tieEndPointX = notePosX + note->lineAttachPoints().at(0).pos().x();
-                double tieLength = tieEndPointX - tieStartPointX;
-                if (tieLength < minLength) {
-                    w += minLength - tieLength;
-                }
-            }
-        }
+    // Allocate space to ensure minimum length of hanging ties or gliss at start of system
+    // These only occur when one segment is a ChordRest and the other isn't
+    // Allocate space to ensure minimum length of partial ties
+    if (f->isChordRestType() == ns->isChordRestType()) {
+        return w;
     }
 
+    const bool repeatSeg = f->isStartRepeatBarLineType() || ns->isStartRepeatBarLineType();
+    const bool endOfSystem = f->isChordRestType() && !(ns->isChordRestType() || ns->isStartRepeatBarLineType())
+                             && (f->measure()->isLastInSystem() || f->measure()->next()->isHBox());
+    const bool systemEnd = repeatSeg || endOfSystem;
+
+    computeHangingLineWidth(f, ns, w, systemHeaderGap, systemEnd);
+
     return w;
+}
+
+bool HorizontalSpacing::needsHeaderSpacingExceptions(const Segment* seg, const Segment* nextSeg)
+{
+    static const std::unordered_set<SegmentType> HEADER_SEGMENT_TYPES = { SegmentType::HeaderClef,
+                                                                          SegmentType::KeySig,
+                                                                          SegmentType::KeySigStartRepeatAnnounce,
+                                                                          SegmentType::Ambitus,
+                                                                          SegmentType::TimeSig,
+                                                                          SegmentType::TimeSigStartRepeatAnnounce };
+
+    return muse::contains(HEADER_SEGMENT_TYPES, seg->segmentType())
+           && seg->rtick().isZero() && !seg->hasTimeSigAboveStaves()
+           && (nextSeg->measure()->isFirstInSystem() || nextSeg->measure()->prev()->isHBox())
+           && (nextSeg->isStartRepeatBarLineType() || nextSeg->isChordRestType());
 }
 
 //---------------------------------------------------------
@@ -1240,6 +1485,10 @@ void HorizontalSpacing::computeLyricsPadding(const Lyrics* lyrics1, const Engrav
 
 KerningType HorizontalSpacing::computeKerning(const EngravingItem* item1, const EngravingItem* item2)
 {
+    if (ignoreItems(item1, item2)) {
+        return KerningType::ALLOW_COLLISION;
+    }
+
     if (isSameVoiceKerningLimited(item1) && isSameVoiceKerningLimited(item2) && item1->track() == item2->track()) {
         return KerningType::NON_KERNING;
     }
@@ -1255,8 +1504,9 @@ KerningType HorizontalSpacing::computeKerning(const EngravingItem* item1, const 
 double HorizontalSpacing::computeVerticalClearance(const EngravingItem* item1, const EngravingItem* item2, double spatium)
 {
     // To be possibly expanded to more cases
-    UNUSED(item1);
     if (item2 && item2->isAccidental()) {
+        return 0.1 * spatium;
+    } else if ((item1 && item1->isParenthesis()) || (item2 && item2->isParenthesis())) {
         return 0.1 * spatium;
     }
 
@@ -1290,10 +1540,11 @@ bool HorizontalSpacing::isNeverKernable(const EngravingItem* item)
             return false;
         }
     // fall through
-    case ElementType::TIMESIG:
     case ElementType::KEYSIG:
     case ElementType::BAR_LINE:
         return true;
+    case ElementType::TIMESIG:
+        return !toTimeSig(item)->isAboveStaves();
     default:
         return false;
     }
@@ -1301,7 +1552,17 @@ bool HorizontalSpacing::isNeverKernable(const EngravingItem* item)
 
 bool HorizontalSpacing::isAlwaysKernable(const EngravingItem* item)
 {
-    return item->isTextBase() || item->isChordLine();
+    return item->isTextBase() || item->isChordLine() || item->isParenthesis() || item->isFretDiagram();
+}
+
+bool HorizontalSpacing::ignoreItems(const EngravingItem* item1, const EngravingItem* item2)
+{
+    if (item1->isRest() && toRest(item1)->isFullMeasureRest()) {
+        // Full-measure rest must ignore cross-stave notes
+        return item1->staffIdx() != item2->staffIdx();
+    }
+
+    return false;
 }
 
 KerningType HorizontalSpacing::doComputeKerningType(const EngravingItem* item1, const EngravingItem* item2)
@@ -1309,17 +1570,20 @@ KerningType HorizontalSpacing::doComputeKerningType(const EngravingItem* item1, 
     ElementType type1 = item1->type();
     switch (type1) {
     case ElementType::BAR_LINE:
-        return item2->isLyrics() ? KerningType::ALLOW_COLLISION : KerningType::NON_KERNING;
+        return item2->isLyrics() || item2->isHarmony() || item2->isFretDiagram() ? KerningType::ALLOW_COLLISION : KerningType::NON_KERNING;
     case ElementType::CHORDLINE:
         return item2->isBarLine() ? KerningType::ALLOW_COLLISION : KerningType::KERNING;
     case ElementType::HARMONY:
-        return item2->isHarmony() ? KerningType::NON_KERNING : KerningType::KERNING;
-    case ElementType::LYRICS:
-        return computeLyricsKerningType(toLyrics(item1), item2);
+    case ElementType::FRET_DIAGRAM:
+        return item2->isHarmony() || item2->isFretDiagram() ? KerningType::NON_KERNING : KerningType::KERNING;
+    case ElementType::LYRICS
+        : return computeLyricsKerningType(toLyrics(item1), item2);
     case ElementType::NOTE:
         return computeNoteKerningType(toNote(item1), item2);
     case ElementType::STEM_SLASH:
         return computeStemSlashKerningType(toStemSlash(item1), item2);
+    case ElementType::PARENTHESIS:
+        return item2->isBarLine() ? KerningType::NON_KERNING : KerningType::KERNING;
     default:
         return KerningType::KERNING;
     }
@@ -1402,4 +1666,98 @@ KerningType HorizontalSpacing::computeLyricsKerningType(const Lyrics* lyrics1, c
     }
 
     return KerningType::ALLOW_COLLISION;
+}
+
+void HorizontalSpacing::computeHangingLineWidth(const Segment* firstSeg, const Segment* nextSeg, double& width, bool systemHeaderGap,
+                                                bool systemEnd)
+{
+    const MStyle& style = firstSeg->style();
+    const Segment* crSeg = firstSeg->isChordRestType() ? firstSeg : nextSeg;
+    const Segment* otherSeg = firstSeg->isChordRestType() ? nextSeg : firstSeg;
+    const bool incoming = !firstSeg->isChordRestType();
+    const Measure* crMeasure = crSeg->measure();
+    const size_t ntracks = crSeg->score()->ntracks();
+
+    std::vector<double> tieLengths;
+
+    for (track_idx_t track = 0; track < ntracks; track++) {
+        // Hanging lines only occur at start or end of a measure
+        const ChordRest* cr = incoming ? crMeasure->firstChordRest(track) : crMeasure->lastChordRest(track);
+        if (!cr || !cr->isChord() || cr->segment() != crSeg) {
+            continue;
+        }
+
+        const double headerLineMargin = systemHeaderGap ? otherSeg->style().styleMM(Sid::headerToLineStartDistance)
+                                        : otherSeg->style().styleMM(Sid::repeatBarlineDotSeparation);
+        const double endSystemMargin = style.styleMM(Sid::lineEndToBarlineDistance);
+
+        for (const Note* note : toChord(cr)->notes()) {
+            const bool lineBack = note->spannerBack().size()
+                                  || (note->tieBack() && !note->tieBack()->segmentsEmpty());
+            const bool lineFor = note->spannerFor().size()
+                                 || (note->tieFor() && !note->tieFor()->segmentsEmpty());
+            if (!(lineBack || lineFor) || note->lineAttachPoints().empty()) {
+                continue;
+            }
+
+            for (const LineAttachPoint& lap : note->lineAttachPoints()) {
+                if (lap.start() == incoming) {
+                    continue;
+                }
+                const Spanner* attachedLine = toSpanner(lap.line());
+                if (!attachedLine->addToSkyline()) {
+                    continue;
+                }
+
+                // Partial ties are adjusted wherever they are in the system, other spanners are only adjusted over system breaks
+                if (!(systemEnd || systemHeaderGap) && !attachedLine->isPartialTie()) {
+                    continue;
+                }
+
+                double minLength = 0.0;
+                if (attachedLine->isGlissando()) {
+                    bool straight = toGlissando(attachedLine)->glissandoType() == GlissandoType::STRAIGHT;
+                    minLength = straight ? style.styleMM(Sid::minStraightGlissandoLength)
+                                : style.styleMM(Sid::minWigglyGlissandoLength);
+                } else if (attachedLine->isNoteLine()) {
+                    minLength = style.styleMM(Sid::minStraightGlissandoLength);
+                }
+
+                const double notePosX = note->pos().x() + toChord(cr)->pos().x() + note->headWidth() / 2;
+                const double lineNoteEndPos = (incoming ? width : 0.0) + notePosX + lap.pos().x();
+                const double lineSegEndPos
+                    = (incoming ? otherSeg->minRight() + headerLineMargin : width + otherSeg->minLeft() - endSystemMargin);
+
+                const double lineStartPointX = incoming ? lineSegEndPos : lineNoteEndPos;
+                const double lineEndPointX = incoming ? lineNoteEndPos : lineSegEndPos;
+                const double lineLength = lineEndPointX - lineStartPointX;
+
+                if (attachedLine->isTie()) {
+                    tieLengths.push_back(lineLength);
+                    continue;
+                }
+
+                if (lineLength < minLength) {
+                    width += minLength - lineLength;
+                }
+            }
+        }
+    }
+
+    if (tieLengths.empty()) {
+        return;
+    }
+
+    const double maxLength = *std::max_element(tieLengths.begin(), tieLengths.end());
+    const double oldWidth = width;
+    for (double& tieLength : tieLengths) {
+        // Adjust for new width
+        tieLength += width - oldWidth;
+        const double minLength = muse::RealIsEqual(tieLength, maxLength) ? style.styleMM(Sid::minHangingTieLength) : style.styleMM(
+            Sid::minTieLength);
+
+        if (tieLength < minLength) {
+            width += minLength - tieLength;
+        }
+    }
 }

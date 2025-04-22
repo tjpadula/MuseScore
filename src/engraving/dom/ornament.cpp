@@ -237,7 +237,7 @@ bool Ornament::hasFullIntervalChoice() const
 bool Ornament::showCueNote()
 {
     if (m_showCueNote == AutoOnOff::AUTO) {
-        return style().styleB(Sid::trillAlwaysShowCueNote) || _intervalAbove.step != IntervalStep::SECOND;
+        return (hasFullIntervalChoice() && style().styleB(Sid::trillAlwaysShowCueNote)) || _intervalAbove.step != IntervalStep::SECOND;
     }
 
     return m_showCueNote == AutoOnOff::ON;
@@ -282,6 +282,11 @@ void Ornament::computeNotesAboveAndBelow(AccidentalState* accState)
             note->setPitch(mainNote->pitch());
         }
         note->setTrack(track());
+
+        if (Accidental::isMicrotonal(note->accidentalType())) {
+            // If mainNote has microtonal accidental, don't clone it to the ornament note because microtonal intervals are not supported.
+            note->setAccidentalType(Accidental::value2subtype(tpc2alter(note->tpc())));
+        }
 
         bool autoMode = (above && _intervalAbove.type == IntervalType::AUTO) || (!above && _intervalBelow.type == IntervalType::AUTO);
         if (autoMode) {
