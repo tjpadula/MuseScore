@@ -1,2 +1,5 @@
 arch.c
 .DS_Store
+builds
+src/framework/draw/_deps/
+
