@@ -484,6 +484,8 @@
 	<true/>
     <key>LSRequiresCarbon</key>
     <true/>
+    <key>UIFileSharingEnabled</key>
+    <true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
