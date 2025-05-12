@@ -108,16 +108,14 @@ void FoldersPreferencesModel::load()
         });
     }
     m_folders.append({
-            FolderType::SoundFonts, muse::qtrc("appshell/preferences", "SoundFonts"), pathsToString(
-                audioConfiguration()->userSoundFontDirectories()),
-            configuration()->userDataPath().toQString(), FolderValueType::MultiDirectories
+        FolderType::SoundFonts, muse::qtrc("appshell/preferences", "SoundFonts"), pathsToString(
+            audioConfiguration()->userSoundFontDirectories()),
+        configuration()->userDataPath().toQString(), FolderValueType::MultiDirectories
     });
 #ifdef MUSE_MODULE_VST
     m_folders.append({
-        {
-            FolderType::VST3, muse::qtrc("appshell/preferences", "VST3"), pathsToString(vstConfiguration()->userVstDirectories()),
-            configuration()->userDataPath().toQString(), FolderValueType::MultiDirectories
-        }
+        FolderType::VST3, muse::qtrc("appshell/preferences", "VST3"), pathsToString(vstConfiguration()->userVstDirectories()),
+        configuration()->userDataPath().toQString(), FolderValueType::MultiDirectories
     });
 #endif
 
