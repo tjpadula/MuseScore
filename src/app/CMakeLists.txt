@@ -427,6 +427,8 @@ if(IOS)
     
     find_package(Qt6QmlImportScanner REQUIRED)
     qt_import_qml_plugins(MuseScoreStudio PATH_TO_SCAN ${CMAKE_SOURCE_DIR})
+
+    set_target_properties(MuseScoreStudio PROPERTIES LINK_FLAGS "-Wl,-stack_size -Wl,0x800000")
     
 
 elseif (NOT CC_IS_EMSCRIPTEN)
