@@ -113,10 +113,8 @@ StyledDialogView {
         anchors.leftMargin: 24
         anchors.right: parent.right
         anchors.rightMargin: 16
-     //   anchors.bottom: parent.bottom
-     //   anchors.bottomMargin: 16
-        anchors.top: parent.top
-        anchors.topMargin: 16
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 16
 
         spacing: 12
 
