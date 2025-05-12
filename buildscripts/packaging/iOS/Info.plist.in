@@ -492,8 +492,10 @@
 	<string>${MACOSX_BUNDLE_COPYRIGHT}</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
-	<key>ATSApplicationFontsPath</key>
-	<string>fonts/</string>
+    <key>ATSApplicationFontsPath</key>
+    <string>fonts/</string>
+	<key>QtRunLoopIntegrationStackSize</key>
+	<integer>8388608</integer>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ar</string>
