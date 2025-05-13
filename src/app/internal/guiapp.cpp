@@ -12,6 +12,7 @@
 #include "ui/graphicsapiprovider.h"
 
 #include "log.h"
+#include "ios/IOSNotificationListener.h"
 
 using namespace muse;
 using namespace muse::ui;
@@ -41,7 +42,11 @@ void GuiApp::perform()
     }
 
     setRunMode(runMode);
-
+    
+#if defined(Q_OS_IOS)
+    // See if we can hook in to the notifications.
+    iOSNotificationListenerConnect();
+#endif
 #ifdef MUE_BUILD_APPSHELL_MODULE
     // ====================================================
     // Setup modules: Resources, Exports, Imports, UiTypes
