@@ -82,6 +82,16 @@ elseif(OS_IS_MAC)
     if (MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH)
         list(PREPEND CMAKE_INSTALL_RPATH "${MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH}/lib")
     endif()
+
+    # Additional source files
+    #add_executable(MuseScoreStudio StIntervalTimer.cpp)
+
+    list(APPEND IOS_SOURCES 
+	utils/StIntervalTimer.cpp
+	utils/StIntervalTimer.h)
+
+#    target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR}/utils)
+
     
     if (IOS)
 		message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
@@ -167,9 +177,6 @@ if (NOT (OS_IS_MAC AND IOS))
     list(APPEND LINK_LIB print)
 endif()
 
-# IOS_CONFIG_BUG
-# libloius has memory smasher issues.
-#if (MUE_BUILD_BRAILLE_MODULE AND (NOT IOS))
 if (MUE_BUILD_BRAILLE_MODULE)
     list(APPEND LINK_LIB braille)
 endif()	
@@ -284,6 +291,8 @@ add_executable(MuseScoreStudio
     internal/consoleapp.h
     internal/guiapp.cpp
     internal/guiapp.h
+
+    ${IOS_SOURCES}
 )
 
 ###########################################
@@ -301,6 +310,7 @@ endif()
 
 if (OS_IS_MAC)
     # IOS_CONFIG_BUG
+    
     if (IOS)
         set_target_properties(MuseScoreStudio PROPERTIES
             MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
@@ -319,46 +329,46 @@ if (OS_IS_MAC)
 #            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "V9R6W356UT"
 #            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "HUMBLE EARTH PRODUCTIONS INC"
 
-	# Attempt to get cmake to create the Copy Bundle Resources build phase.
-	set(RESOURCES_IOS_PATH "${PROJECT_SOURCE_DIR}/ios_resources/ResourcesiOS")
-	target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH})
+        # Attempt to get cmake to create the Copy Bundle Resources build phase.
+        set(RESOURCES_IOS_PATH "${PROJECT_SOURCE_DIR}/ios_resources/ResourcesiOS")
+        target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH})
 
-    FILE(GLOB RESOURCES_IOS_CONTENTS RELATIVE ${RESOURCES_IOS_PATH} ${RESOURCES_IOS_PATH}/*)
+        FILE(GLOB RESOURCES_IOS_CONTENTS RELATIVE ${RESOURCES_IOS_PATH} ${RESOURCES_IOS_PATH}/*)
 
-    message(STATUS "RESOURCES_IOS_CONTENTS: ${RESOURCES_IOS_CONTENTS}")
+        message(STATUS "RESOURCES_IOS_CONTENTS: ${RESOURCES_IOS_CONTENTS}")
 
-    foreach (RESOURCE_ITEM ${RESOURCES_IOS_CONTENTS})
+        foreach (RESOURCE_ITEM ${RESOURCES_IOS_CONTENTS})
 
-        if (RESOURCE_ITEM MATCHES "icns")
-            target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
-            #set_target_properties(MuseScoreStudio PROPERTIES RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
-            
-            # This may be how to append to the RESOURCE property, set_target_properties only replaces. We have
-            # multiple files as RESOURCEs.
-            set_property(TARGET MuseScoreStudio
-                APPEND
-                PROPERTY
-                    RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
+            if (RESOURCE_ITEM MATCHES "icns")
+                target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
+                #set_target_properties(MuseScoreStudio PROPERTIES RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
+                
+                # This may be how to append to the RESOURCE property, set_target_properties only replaces. We have
+                # multiple files as RESOURCEs.
+                set_property(TARGET MuseScoreStudio
+                    APPEND
+                    PROPERTY
+                        RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
 
-            #message(STATUS "Put item ${RESOURCE_ITEM} at top level.")
+                #message(STATUS "Put item ${RESOURCE_ITEM} at top level.")
 
-        else()
-            target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
-            set_source_files_properties("${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}" PROPERTIES MACOSX_PACKAGE_LOCATION ResourcesiOS)
-            message(STATUS "Put item ${RESOURCE_ITEM} into ResourcesiOS.")
+            else()
+                target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
+                set_source_files_properties("${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}" PROPERTIES MACOSX_PACKAGE_LOCATION ResourcesiOS)
+                message(STATUS "Put item ${RESOURCE_ITEM} into ResourcesiOS.")
+            endif()
+
+        endforeach()
+
+        if(PROJECT_VERSION)
+            set_target_properties(MuseScoreStudio PROPERTIES
+                  MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
         endif()
-
-    endforeach()
-
-	if(PROJECT_VERSION)
-		set_target_properties(MuseScoreStudio PROPERTIES
-          	  MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
-	endif()
 
         set_target_properties(MuseScoreStudio PROPERTIES
             MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/iOS/Info.plist.in
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
-            
+        
     else(IOS)
         set_target_properties(MuseScoreStudio PROPERTIES
             MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/macOS/Info.plist.in
@@ -391,6 +401,7 @@ target_include_directories(MuseScoreStudio PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
 
     ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src/app/utils
 
     ${MUSE_FRAMEWORK_PATH}
     ${MUSE_FRAMEWORK_PATH}/framework
@@ -428,8 +439,8 @@ if(IOS)
     find_package(Qt6QmlImportScanner REQUIRED)
     qt_import_qml_plugins(MuseScoreStudio PATH_TO_SCAN ${CMAKE_SOURCE_DIR})
 
+    # Set iOS to use 8MB as its stack size, like MacOS does.
     set_target_properties(MuseScoreStudio PROPERTIES LINK_FLAGS "-Wl,-stack_size -Wl,0x800000")
-    
 
 elseif (NOT CC_IS_EMSCRIPTEN)
     target_link_libraries(MuseScoreStudio ${LINK_LIB} ${COVERAGE_LINK_FLAGS})

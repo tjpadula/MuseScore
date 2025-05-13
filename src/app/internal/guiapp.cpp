@@ -12,6 +12,7 @@
 #include "ui/graphicsapiprovider.h"
 
 #include "log.h"
+#include "StIntervalTimer.h"
 
 using namespace muse;
 using namespace muse::ui;
@@ -33,6 +34,7 @@ void GuiApp::addModule(muse::modularity::IModuleSetup* module)
 
 void GuiApp::perform()
 {
+    StIntervalTimer aTimer (std::string("GuiApp::perform enter."), std::string("Done GuiApp::perform."));
     const CmdOptions& options = m_options;
 
     IApplication::RunMode runMode = options.runMode;
@@ -67,6 +69,8 @@ void GuiApp::perform()
         m->resolveImports();
         m->registerApi();
     }
+    
+    aTimer.Split(std::string("Done module register."));
 
     // ====================================================
     // Setup modules: apply the command line options
@@ -80,6 +84,7 @@ void GuiApp::perform()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onPreInit(runMode);
     }
+    aTimer.Split(std::string("Done onPreInit."));
 
     SplashScreen* splashScreen = nullptr;
     if (multiInstancesProvider()->isMainInstance()) {
@@ -115,6 +120,7 @@ void GuiApp::perform()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onInit(runMode);
     }
+    aTimer.Split(std::string("Done onInit."));
 
     // ====================================================
     // Setup modules: onAllInited
@@ -123,6 +129,7 @@ void GuiApp::perform()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onAllInited(runMode);
     }
+    aTimer.Split(std::string("Done onAllInited."));
 
     // ====================================================
     // Setup modules: onStartApp (on next event loop)
@@ -178,6 +185,7 @@ void GuiApp::perform()
             });
         }
     }
+    aTimer.Split(std::string("Done set up graphics api."));
 
     QQmlApplicationEngine* engine = ioc()->resolve<muse::ui::IUiEngine>("app")->qmlAppEngine();
 
@@ -243,12 +251,14 @@ void GuiApp::perform()
             LOGE() << "error: " << e.toString().toStdString() << "\n";
         }
     });
+    aTimer.Split(std::string("Done connecting."));
 
     // ====================================================
     // Load Main qml
     // ====================================================
 
     engine->load(url);
+    aTimer.Split(std::string("Done loading qml."));
 
 #endif // MUE_BUILD_APPSHELL_MODULE
 }
