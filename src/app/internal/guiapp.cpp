@@ -12,8 +12,11 @@
 #include "ui/graphicsapiprovider.h"
 
 #include "log.h"
+
+#if defined(Q_OS_IOS)
 #include "ios/IOSNotificationListener.h"
 #include "StIntervalTimer.h"
+#endif
 
 using namespace muse;
 using namespace muse::ui;
@@ -35,7 +38,9 @@ void GuiApp::addModule(muse::modularity::IModuleSetup* module)
 
 void GuiApp::perform()
 {
+#if defined(Q_OS_IOS)
     StIntervalTimer aTimer (std::string("GuiApp::perform enter."), std::string("Done GuiApp::perform."));
+#endif
     const CmdOptions& options = m_options;
 
     IApplication::RunMode runMode = options.runMode;
@@ -75,7 +80,9 @@ void GuiApp::perform()
         m->registerApi();
     }
     
+#if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done module register."));
+#endif
 
     // ====================================================
     // Setup modules: apply the command line options
@@ -89,7 +96,9 @@ void GuiApp::perform()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onPreInit(runMode);
     }
+#if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done onPreInit."));
+#endif
 
     SplashScreen* splashScreen = nullptr;
     if (multiInstancesProvider()->isMainInstance()) {
@@ -121,12 +130,22 @@ void GuiApp::perform()
     // ====================================================
     // Setup modules: onInit
     // ====================================================
-    m_globalModule.onInit(runMode);
-    for (modularity::IModuleSetup* m : m_modules) {
-        m->onInit(runMode);
+    {
+#if defined(Q_OS_IOS)
+        StIntervalTimer anInitTimer (std::string("onInit enter."), std::string("Done onInit."));
+#endif
+        m_globalModule.onInit(runMode);
+        for (modularity::IModuleSetup* m : m_modules) {
+            m->onInit(runMode);
+#if defined(Q_OS_IOS)
+            anInitTimer.Split(m->moduleName());
+#endif
+        }
+#if defined(Q_OS_IOS)
+        aTimer.Split(std::string("Done onInit."));
+#endif
     }
-    aTimer.Split(std::string("Done onInit."));
-
+    
     // ====================================================
     // Setup modules: onAllInited
     // ====================================================
@@ -134,7 +153,9 @@ void GuiApp::perform()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onAllInited(runMode);
     }
+#if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done onAllInited."));
+#endif
 
     // ====================================================
     // Setup modules: onStartApp (on next event loop)
@@ -190,7 +211,9 @@ void GuiApp::perform()
             });
         }
     }
+#if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done set up graphics api."));
+#endif
 
     QQmlApplicationEngine* engine = ioc()->resolve<muse::ui::IUiEngine>("app")->qmlAppEngine();
 
@@ -256,15 +279,19 @@ void GuiApp::perform()
             LOGE() << "error: " << e.toString().toStdString() << "\n";
         }
     });
+#if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done connecting."));
+#endif
 
     // ====================================================
     // Load Main qml
     // ====================================================
 
     engine->load(url);
+#if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done loading qml."));
-
+#endif
+    
 #endif // MUE_BUILD_APPSHELL_MODULE
 }
 

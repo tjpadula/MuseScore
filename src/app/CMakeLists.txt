@@ -84,15 +84,18 @@ elseif(OS_IS_MAC)
     endif()
 
     # Additional source files
-    #add_executable(MuseScoreStudio StIntervalTimer.cpp)
-
     list(APPEND IOS_SOURCES 
-	utils/StIntervalTimer.cpp
-	utils/StIntervalTimer.h)
-
-#    target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR}/utils)
-
+        utils/StIntervalTimer.cpp
+        utils/StIntervalTimer.h
+        ios/IOSNotificationListener.mm
+        ios/IOSNotificationListener.h
+        )
     
+    list(APPEND IOS_PATHS
+        ${PROJECT_SOURCE_DIR}/src/app/utils
+        ${PROJECT_SOURCE_DIR}/src/app/ios
+        )
+
     if (IOS)
 		message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
     else(IOS)
@@ -401,7 +404,8 @@ target_include_directories(MuseScoreStudio PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
 
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/src/app/utils
+    
+    ${IOS_PATHS}
 
     ${MUSE_FRAMEWORK_PATH}
     ${MUSE_FRAMEWORK_PATH}/framework
