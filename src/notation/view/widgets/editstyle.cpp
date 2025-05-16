@@ -1271,6 +1271,22 @@ EditStyle::EditStyle(QWidget* parent)
 
 void EditStyle::showEvent(QShowEvent* ev)
 {
+#if defined(Q_OS_IOS)
+    QScreen *scrn = this->window()->screen();
+    if (scrn) {
+        QRect desk = scrn->availableGeometry();
+        int extraw = 10, extrah = 40;
+        QSize aSize = this->size();
+        if (aSize.width() > (desk.width() - extraw)) {
+            aSize.setWidth(desk.width() - extraw);
+        }
+        if (aSize.height() > (desk.height() - extrah)) {
+            aSize.setHeight(desk.height() - extrah);
+        }
+        this->setMaximumSize(aSize);
+    }
+    adjustPosition(this);
+#endif
     setValues();
     pageList->setFocus();
     globalContext()->currentNotation()->undoStack()->prepareChanges(muse::TranslatableString("undoableAction", "Edit style"));
