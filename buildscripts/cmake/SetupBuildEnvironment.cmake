@@ -64,10 +64,10 @@ if(OS_IS_MAC)
     if(IOS)
     
     # One of these actually worked. Documentation is contradictory.
-        set(MACOSX_DEPLOYMENT_TARGET 16.0)
-        set(CMAKE_MACOSX_DEPLOYMENT_TARGET 16.0)
-        set(OSX_DEPLOYMENT_TARGET 16.0)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET 16.0)
+        set(MACOSX_DEPLOYMENT_TARGET 15.0)
+        set(CMAKE_MACOSX_DEPLOYMENT_TARGET 15.0)
+        set(OSX_DEPLOYMENT_TARGET 15.0)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 15.0)
         
         set_source_files_properties(build/src/Media.xcassets PROPERTIES
             MACOSX_PACKAGE_LOCATION Resources)
