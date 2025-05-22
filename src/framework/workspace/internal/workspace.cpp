@@ -81,7 +81,13 @@ bool Workspace::isNeedSave() const
 RetVal<QByteArray> Workspace::rawData(const DataKey& key) const
 {
     TRACEFUNC;
-
+#if defined(Q_OS_IOS)
+    // Not sure why, but this assert causes iOS 15 apps to fail here. Returning NotLoaded
+    // results in the creation of a new workspace, as expected.
+    if (!(m_file->isLoaded())) {
+        return RetVal<QByteArray>(make_ret(Err::NotLoaded));
+    }
+#endif
     IF_ASSERT_FAILED(m_file->isLoaded()) {
         return RetVal<QByteArray>(make_ret(Err::NotLoaded));
     }
