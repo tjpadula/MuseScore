@@ -2,4 +2,7 @@ arch.c
 .DS_Store
 builds
 src/framework/draw/_deps/
+*autosave
+CMakeLists.txt.user
+build
 
