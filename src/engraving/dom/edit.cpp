@@ -1114,6 +1114,10 @@ bool Score::rewriteMeasures(Measure* fm, Measure* lm, const Fraction& ns, staff_
         doUndoRemoveElement(seg);
     }
 
+    if (!fm) {
+        return false;
+    }
+    
     ScoreRange range;
     range.read(fm->first(), lm->last());
 
@@ -6635,6 +6639,10 @@ void Score::undoAddElement(EngravingItem* element, bool addToLinkedStaves, bool 
             Note* n2       = tie->endNote();
             Chord* cr1     = n1->chord();
             Chord* cr2     = n2 ? n2->chord() : 0;
+            
+            IF_ASSERT_FAILED(cr2) {
+                return;
+            }
 
             // find corresponding notes in linked staff
             // accounting for grace notes and cross-staff notation

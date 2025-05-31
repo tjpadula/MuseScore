@@ -814,7 +814,9 @@ void FBox::init()
                 fretDiagram->setAutoplace(false);
             }
 
-            add(fretDiagram);
+            if (fretDiagram) {
+                add(fretDiagram);
+            }
         }
     }
 }

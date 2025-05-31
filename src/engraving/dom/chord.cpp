@@ -2514,6 +2514,10 @@ EngravingItem* Chord::nextElement()
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
     }
+    
+    if (!e) {
+        return nullptr;
+    }
 
     switch (e->type()) {
     case ElementType::SYMBOL:

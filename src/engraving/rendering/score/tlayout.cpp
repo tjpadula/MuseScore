@@ -4104,6 +4104,10 @@ void TLayout::layoutMeasureRepeat(const MeasureRepeat* item, MeasureRepeat::Layo
                 placeInSeries++;
                 m = m->prevMeasure();
             }
+            IF_ASSERT_FAILED(ctx.conf().styleI(Sid::mrNumberEveryXMeasures) > 0) {
+                LOGE() << "ctx.conf().styleI(Sid::mrNumberEveryXMeasures) == " << ctx.conf().styleI(Sid::mrNumberEveryXMeasures);
+                break;
+            }
             if (placeInSeries % ctx.conf().styleI(Sid::mrNumberEveryXMeasures) == 0) {
                 if (ctx.conf().styleB(Sid::mrNumberSeriesWithParentheses)) {
                     ldata->setNumberSym(String(u"(%1)").arg(placeInSeries));

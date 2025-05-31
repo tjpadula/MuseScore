@@ -1812,6 +1812,10 @@ EngravingItem* Segment::nextElementOfSegment(EngravingItem* e, staff_idx_t activ
 
 EngravingItem* Segment::prevElementOfSegment(EngravingItem* e, staff_idx_t activeStaff) const
 {
+    if (!e) {
+        return nullptr;
+    }
+    
     for (int track = static_cast<int>(score()->nstaves() * VOICES) - 1; track > 0; --track) {
         if (element(track) == 0) {
             continue;

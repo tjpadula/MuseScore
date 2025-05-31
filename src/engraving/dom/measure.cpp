@@ -554,6 +554,9 @@ bool Measure::showsMeasureNumberInAutoMode()
         if (interval == 1) {
             return true;
         }
+        if (interval == 0) {
+            return false;
+        }
 
         //   2) (measureNumber + 1) % interval == 0 (or 1 if measure number one is numbered.)
         // If measure number 1 is numbered, and the interval is let's say 5, then we should number #1, 6, 11, 16, etc.
@@ -3138,6 +3141,9 @@ EngravingItem* Measure::nextElementStaff(staff_idx_t staff, EngravingItem* fromI
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
     }
+    if (!e) {
+        return nullptr;
+    }
 
     // handle measure elements
     if (e->explicitParent() == this) {
@@ -3174,7 +3180,10 @@ EngravingItem* Measure::prevElementStaff(staff_idx_t staff, EngravingItem* fromI
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
     }
-
+    if (!e) {
+        return nullptr;
+    }
+    
     // handle measure elements
     if (e->explicitParent() == this) {
         auto i = std::find(el().rbegin(), el().rend(), e);

@@ -933,6 +933,11 @@ EngravingItem* ChordRest::nextElement()
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().front();
     }
+    
+    if (!e) {
+        return nullptr;
+    }
+    
     switch (e->type()) {
     case ElementType::ARTICULATION:
     case ElementType::ORNAMENT:
@@ -968,6 +973,11 @@ EngravingItem* ChordRest::prevElement()
     if (!e && !score()->selection().elements().empty()) {
         e = score()->selection().elements().back();
     }
+
+    if (!e) {
+        return nullptr;
+    }
+    
     switch (e->type()) {
     case ElementType::ARTICULATION:
     case ElementType::ORNAMENT:

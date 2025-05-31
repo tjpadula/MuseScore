@@ -5288,7 +5288,7 @@ String Score::createRehearsalMarkText(RehearsalMark* current) const
     String s = u"A";
     String s1 = before ? before->xmlText() : u"";
     String s2 = after ? after->xmlText() : u"";
-    if (s1.isEmpty()) {
+    if (s1.isEmpty() || !before) {
         return s;
     }
     s = nextRehearsalMarkText(before, current);       // try to sequence

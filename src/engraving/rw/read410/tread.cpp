@@ -4659,13 +4659,17 @@ void TRead::read(compat::TremoloCompat* tc, XmlReader& e, ReadContext& ctx)
             if (isTremoloTwoChord(type)) {
                 if (!tc->two) {
                     tc->two = Factory::createTremoloTwoChord(tc->parent);
-                    tc->two->setTrack(tc->parent->track());
+                    if (tc->parent) {
+                        tc->two->setTrack(tc->parent->track());
+                    }
                 }
                 tc->two->setTremoloType(type);
             } else {
                 if (!tc->single) {
                     tc->single = Factory::createTremoloSingleChord(tc->parent);
-                    tc->single->setTrack(tc->parent->track());
+                    if (tc->parent) {
+                        tc->single->setTrack(tc->parent->track());
+                    }
                 }
                 tc->single->setTremoloType(type);
             }

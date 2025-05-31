@@ -1081,6 +1081,10 @@ static MeasureBase* cloneMeasure(MeasureBase* mb, Score* score, const Score* osc
         }
     }
 
+    IF_ASSERT_FAILED(nmb) {
+        return nullptr;
+    }
+
     score->undo(new Link(nmb, mb));
     nmb->setExcludeFromOtherParts(false);
 

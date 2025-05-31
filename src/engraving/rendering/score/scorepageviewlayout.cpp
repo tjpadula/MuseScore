@@ -111,7 +111,7 @@ void ScorePageViewLayout::initLayoutContext(const Score* score, LayoutContext& c
                 mb = mb->findPotentialSectionBreak();
             }
 
-            const LayoutBreak* layoutBreak = mb->sectionBreakElement();
+            const LayoutBreak* layoutBreak = mb ? mb->sectionBreakElement() : nullptr;
             // TODO: also use mb in else clause here?
             // probably not, only actual measures have meaningful numbers
             if (layoutBreak && layoutBreak->startWithMeasureOne()) {
