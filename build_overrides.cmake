@@ -35,10 +35,13 @@ while(i LESS "${nargs}")
     math(EXPR i "${i} + 1") # next argument
 endwhile()
 
-message(STATUS "ENV{QTDIR}: $ENV{QTDIR}")
+if (NOT IOS)
+    set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qt6-build-mac-${UNAME_MACHINE}/qtbase")
+endif ()
 
 #set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qt6-build-ios-simulator-x86_64/qtbase")
-#set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qtbase")
+
+message(STATUS "ENV{QTDIR}: $ENV{QTDIR}")
 
 # Detecting CPU architecture seems to depend on this, but it's not actually
 # defined in the build output --? Or maybe it's a race condition? Deleting the

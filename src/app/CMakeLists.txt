@@ -83,20 +83,21 @@ elseif(OS_IS_MAC)
         list(PREPEND CMAKE_INSTALL_RPATH "${MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH}/lib")
     endif()
 
-    # Additional source files
-    list(APPEND IOS_SOURCES 
-        utils/StIntervalTimer.cpp
-        utils/StIntervalTimer.h
-        ios/IOSNotificationListener.mm
-        ios/IOSNotificationListener.h
-        )
-    
-    list(APPEND IOS_PATHS
-        ${PROJECT_SOURCE_DIR}/src/app/utils
-        ${PROJECT_SOURCE_DIR}/src/app/ios
-        )
-
     if (IOS)
+
+        # Additional source files
+        list(APPEND IOS_SOURCES 
+            utils/StIntervalTimer.cpp
+            utils/StIntervalTimer.h
+            ios/IOSNotificationListener.mm
+            ios/IOSNotificationListener.h
+            )
+        
+        list(APPEND IOS_PATHS
+            ${PROJECT_SOURCE_DIR}/src/app/utils
+            ${PROJECT_SOURCE_DIR}/src/app/ios
+            )
+
 		message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
     else(IOS)
 		message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
