@@ -982,7 +982,9 @@ void Spanner::setNoteSpan(Note* startNote, Note* endNote)
 
 Chord* Spanner::startChord()
 {
-    assert(m_anchor == Anchor::CHORD);
+    if (m_anchor != Anchor::CHORD) {
+        return nullptr;
+    }
     if (!m_startElement) {
         m_startElement = findStartChord();
     }
@@ -1000,7 +1002,9 @@ Chord* Spanner::startChord()
 
 Chord* Spanner::endChord()
 {
-    assert(m_anchor == Anchor::CHORD);
+    if (m_anchor != Anchor::CHORD) {
+        return nullptr;
+    }
     if (!m_endElement && type() == ElementType::SLUR) {
         m_endElement = findEndChord();
     }
@@ -1020,6 +1024,7 @@ ChordRest* Spanner::startCR()
 {
     assert(m_anchor == Anchor::SEGMENT || m_anchor == Anchor::CHORD);
     if (!m_startElement || m_startElement->score() != score()) {
+        // TODO: This is a bit weird and prevents this method from being const...
         m_startElement = findStartCR();
     }
     return (m_startElement && m_startElement->isChordRest()) ? toChordRest(m_startElement) : nullptr;
@@ -1033,6 +1038,7 @@ ChordRest* Spanner::endCR()
 {
     assert(m_anchor == Anchor::SEGMENT || m_anchor == Anchor::CHORD);
     if ((!m_endElement || m_endElement->score() != score())) {
+        // TODO: This is a bit weird and prevents this method from being const...
         m_endElement = findEndCR();
     }
     return (m_endElement && m_endElement->isChordRest()) ? toChordRest(m_endElement) : nullptr;
@@ -1283,9 +1289,6 @@ void Spanner::setEndElement(EngravingItem* e)
     }
 #endif
     m_endElement = e;
-    if (e && ticks() == Fraction() && m_tick >= Fraction()) {
-        setTicks(std::max(e->tick() - m_tick, Fraction()));
-    }
 }
 
 //---------------------------------------------------------
@@ -1466,6 +1469,11 @@ track_idx_t Spanner::effectiveTrack2() const
 
 void Spanner::triggerLayout() const
 {
+    // Don't trigger layout until the tick is correctly set, otherwise is triggers layout of the entire score
+    if (m_tick.numerator() < 0) {
+        return;
+    }
+
     // Spanners do not have parent even when added to a score, so can't check parent here
     const track_idx_t tr2 = effectiveTrack2();
     score()->setLayout(m_tick, m_tick + m_ticks, staffIdx(), track2staff(tr2), this);
@@ -1613,10 +1621,16 @@ String SpannerSegment::formatBarsAndBeats() const
         endSegment = score()->lastSegment()->prev1MM(SegmentType::ChordRest);
     }
 
-    if (endSegment->tick() != score()->lastSegment()->prev1MM(SegmentType::ChordRest)->tick()
+    if (endSegment->tick() > Fraction(0, 1)
+        && endSegment->tick() != score()->lastSegment()->prev1MM(SegmentType::ChordRest)->tick()
         && spanner->type() != ElementType::SLUR
+        && spanner->type() != ElementType::HAMMER_ON_PULL_OFF
         && spanner->type() != ElementType::TIE) {
         endSegment = endSegment->prev1MM(SegmentType::ChordRest);
+    }
+
+    IF_ASSERT_FAILED(endSegment) {
+        return EngravingItem::formatBarsAndBeats();
     }
 
     return formatStartBarsAndBeats(spanner->startSegment()) + u' ' + formatEndBarsAndBeats(endSegment);

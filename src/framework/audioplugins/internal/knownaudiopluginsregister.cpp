@@ -24,7 +24,7 @@
 
 #include "global/serialization/json.h"
 
-#include "audio/audiotypes.h"
+#include "audio/common/audiotypes.h"
 #include "audiopluginsutils.h"
 
 #include "log.h"
@@ -36,6 +36,8 @@ using namespace muse::audio;
 namespace muse::audioplugins {
 static const std::map<audio::AudioResourceType, std::string> RESOURCE_TYPE_TO_STRING_MAP {
     { audio::AudioResourceType::VstPlugin, "VstPlugin" },
+    { audio::AudioResourceType::Lv2Plugin, "Lv2Plugin" },
+    { audio::AudioResourceType::AudioUnit, "AudioUnit" },
 };
 
 static JsonObject attributesToJson(const AudioResourceAttributes& attributes)

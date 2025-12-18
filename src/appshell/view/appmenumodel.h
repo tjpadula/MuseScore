@@ -80,10 +80,15 @@ private:
 
     void onActionsStateChanges(const muse::actions::ActionCodeList& codes) override;
 
+    bool isMuseSamplerModuleAdded() const;
+
     using muse::uicomponents::AbstractMenuModel::makeMenuItem;
     muse::uicomponents::MenuItem* makeMenuItem(const muse::actions::ActionCode& actionCode, muse::uicomponents::MenuItemRole role);
 
     muse::uicomponents::MenuItem* makeFileMenu();
+    muse::uicomponents::MenuItemList makeSaveOtherSubItems();
+    muse::uicomponents::MenuItemList makePublishOnlineSubItems();
+
     muse::uicomponents::MenuItem* makeEditMenu();
     muse::uicomponents::MenuItem* makeViewMenu();
     muse::uicomponents::MenuItem* makeAddMenu();
@@ -102,8 +107,10 @@ private:
     muse::uicomponents::MenuItemList makeTupletsItems();
     muse::uicomponents::MenuItemList makeMeasuresItems();
     muse::uicomponents::MenuItemList makeFramesItems();
+    muse::uicomponents::MenuItemList makeFramesAppendItems();
     muse::uicomponents::MenuItemList makeTextItems();
     muse::uicomponents::MenuItemList makeLinesItems();
+    muse::uicomponents::MenuItemList makeChordAndFretboardDiagramsItems();
     muse::uicomponents::MenuItemList makeToolbarsItems();
     muse::uicomponents::MenuItemList makeWorkspacesItems();
     muse::uicomponents::MenuItemList makeShowItems();

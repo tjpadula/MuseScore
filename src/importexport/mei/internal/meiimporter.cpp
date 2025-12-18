@@ -36,6 +36,7 @@
 #include "engraving/dom/fermata.h"
 #include "engraving/dom/figuredbass.h"
 #include "engraving/dom/fingering.h"
+#include "engraving/dom/glissando.h"
 #include "engraving/dom/hairpin.h"
 #include "engraving/dom/harmony.h"
 #include "engraving/dom/harppedaldiagram.h"
@@ -62,6 +63,7 @@
 #include "engraving/dom/slur.h"
 #include "engraving/dom/staff.h"
 #include "engraving/dom/stafftext.h"
+#include "engraving/dom/systemtext.h"
 #include "engraving/dom/tempotext.h"
 #include "engraving/dom/text.h"
 #include "engraving/dom/textline.h"
@@ -77,7 +79,7 @@
 #include "thirdparty/libmei/shared.h"
 #include "thirdparty/libmei/midi.h"
 
-#include "thirdparty/pugixml.hpp"
+#include "pugixml.hpp"
 
 using namespace muse;
 using namespace mu;
@@ -442,7 +444,7 @@ bool MeiImporter::addGraceNotesToChord(ChordRest* chordRest, bool isAfter)
 EngravingItem* MeiImporter::addAnnotation(const libmei::Element& meiElement, Measure* measure)
 {
     const ChordRest* chordRest = this->findStart(meiElement, measure);
-    if (!chordRest) {
+    if (!chordRest || chordRest->isGrace()) {
         return nullptr;
     }
 
@@ -460,6 +462,8 @@ EngravingItem* MeiImporter::addAnnotation(const libmei::Element& meiElement, Mea
                 chordRest->segment(), PlayingTechniqueType::Natural, TextStyleType::STAFF);
             break;
         case (ElementType::STAFF_TEXT): item = Factory::createStaffText(chordRest->segment());
+            break;
+        case (ElementType::SYSTEM_TEXT): item = Factory::createSystemText(chordRest->segment());
             break;
         default:
             item = Factory::createExpression(chordRest->segment());
@@ -1119,7 +1123,7 @@ bool MeiImporter::readPgHead(pugi::xml_node pgHeadNode)
     }
 
     if (vBox) {
-        m_score->measures()->add(vBox);
+        m_score->measures()->append(vBox);
     }
 
     return true;
@@ -1233,16 +1237,30 @@ bool MeiImporter::readStaffDefs(pugi::xml_node parentNode)
         }
         //m_clefs[meiStaffDef.GetN()] = staff->defaultClefType();
 
+        // try to import MEI from other applications
+        pugi::xml_node meterSigNode = staffDefXpathNode.node().select_node(".//meterSig").node();
+        if (meterSigNode) {
+            meiStaffDef.SetMeterCount(meiStaffDef.AttMeterSigDefaultLog::StrToMetercountPair(meterSigNode.attribute("count").value()));
+            meiStaffDef.SetMeterUnit(meterSigNode.attribute("unit").as_int());
+            meiStaffDef.SetMeterSym(meiStaffDef.AttMeterSigDefaultLog::StrToMetersign(meterSigNode.attribute("sym").value()));
+        }
         if (meiStaffDef.HasMeterSym() || meiStaffDef.HasMeterCount()) {
             m_timeSigs[staffIdx] = Convert::meterFromMEI(meiStaffDef, warning);
             if (warning) {
                 this->addLog("meter signature", staffDefXpathNode.node());
             }
         }
+
         if (meiStaffDef.HasKeysig()) {
             m_keySigs[staffIdx] = Convert::keyFromMEI(meiStaffDef.GetKeysig(), warning);
             if (warning) {
                 this->addLog("key signature", staffDefXpathNode.node());
+            }
+        } else if (pugi::xml_node keySigNode = staffDefXpathNode.node().select_node(".//keySig").node()) {
+            m_keySigs[staffIdx] = Convert::keyFromMEI(
+                meiStaffDef.AttKeySigDefaultLog::StrToKeysignature(keySigNode.attribute("sig").value()), warning);
+            if (warning) {
+                this->addLog("key signature", keySigNode);
             }
         }
     }
@@ -1269,7 +1287,13 @@ bool MeiImporter::readStaffGrps(pugi::xml_node parentNode, int& staffSpan, int c
             Staff* staff = m_score->staff(idx);
             libmei::StaffGrp meiStaffGrp;
             meiStaffGrp.Read(child.node());
-            Convert::BracketStruct bracketSt = Convert::bracketFromMEI(meiStaffGrp);
+            Convert::BracketStruct bracketSt = Convert::staffGrpFromMEI(meiStaffGrp);
+            if (!meiStaffGrp.HasSymbol()) {
+                bracketSt.bracketType = Convert::symbolFromMEI(
+                    meiStaffGrp.AttStaffGroupingSym::StrToStaffGroupingSymSymbol(
+                        child.node().child("grpSym").attribute("symbol").value()));
+            }
+
             staff->setBracketType(column, bracketSt.bracketType);
 
             int childStaffSpan = 0;
@@ -1444,7 +1468,7 @@ bool MeiImporter::readMeasure(pugi::xml_node measureNode)
         measure->setRepeatCount(measureSt.repeatCount);
     }
 
-    m_score->measures()->add(measure);
+    m_score->measures()->append(measure);
     m_ticks += measure->ticks();
 
     m_lastMeasure = measure;
@@ -1993,6 +2017,10 @@ bool MeiImporter::readNote(pugi::xml_node noteNode, Measure* measure, int track,
     int tpc1 = mu::engraving::transposeTpc(pitchSt.tpc2, interval, true);
     note->setPitch(pitchSt.pitch, tpc1, pitchSt.tpc2);
 
+    if (meiNote.HasVel()) {
+        note->setUserVelocity(meiNote.GetVel());
+    }
+
     Accidental* accid = Factory::createAccidental(note);
     Convert::colorFromMEI(accid, meiAccid);
     this->readXmlId(accid, meiAccid.m_xmlId);
@@ -2209,6 +2237,7 @@ bool MeiImporter::readVerse(pugi::xml_node verseNode, Chord* chord)
 
     lyrics->setXmlText(syllable);
     lyrics->setNo(no);
+    lyrics->initTextStyleType(lyrics->isEven() ? TextStyleType::LYRICS_EVEN : TextStyleType::LYRICS_ODD, /*preserveDifferent*/ true);
     lyrics->setTrack(chord->track());
     chord->add(lyrics);
 
@@ -2248,6 +2277,8 @@ bool MeiImporter::readControlEvents(pugi::xml_node parentNode, Measure* measure)
             success = success && this->readFermata(xpathNode.node(), measure);
         } else if (elementName == "fing") {
             success = success && this->readFing(xpathNode.node(), measure);
+        } else if (elementName == "gliss") {
+            success = success && this->readGliss(xpathNode.node(), measure);
         } else if (elementName == "hairpin") {
             success = success && this->readHairpin(xpathNode.node(), measure);
         } else if (elementName == "harm") {
@@ -2343,7 +2374,7 @@ bool MeiImporter::readBreath(pugi::xml_node breathNode, Measure* measure)
 }
 
 /**
- * Read a caesura (
+ * Read a caesura
  */
 
 bool MeiImporter::readCaesura(pugi::xml_node caesuraNode, Measure* measure)
@@ -2577,6 +2608,49 @@ bool MeiImporter::readFing(pugi::xml_node fingNode, Measure* measure)
     Convert::fingFromMEI(fing, meiLines, meiFing, warning);
 
     note->add(fing);
+
+    return true;
+}
+
+/**
+ * Read a gliss.
+ */
+
+bool MeiImporter::readGliss(pugi::xml_node glissNode, Measure* measure)
+{
+    IF_ASSERT_FAILED(measure) {
+        return false;
+    }
+
+    bool warning;
+    libmei::Gliss meiGliss;
+    meiGliss.Read(glissNode);
+
+    // We do not use addSpanner here because Gliss objects are added directly to the start and end Note objects
+    Note* startNote = this->findStartNote(meiGliss);
+    if (!startNote) {
+        // Here we could detect if it's a tied chord (for files not exported from MuseScore)
+        // We would need a dedicated list and tie each note once the second chord has been found.
+        return true;
+    }
+
+    Glissando* gliss = Factory::createGlissando(startNote);
+    m_uids->reg(gliss, meiGliss.m_xmlId);
+    gliss->setAnchor(Spanner::Anchor::NOTE);
+    gliss->setTick(startNote->chord()->tick());
+    gliss->setStartElement(startNote);
+    gliss->setTrack(startNote->track());
+    gliss->setParent(startNote);
+
+    const String glissText = String(glissNode.text().as_string());
+    gliss->setText(glissText);
+
+    m_score->addElement(gliss);
+
+    // Still add the glissando to the open Spanner map, which will handle glissandos differently as appropriate
+    m_openSpannerMap[gliss] = glissNode;
+
+    Convert::glissFromMEI(gliss, meiGliss, warning);
 
     return true;
 }
@@ -2951,7 +3025,7 @@ bool MeiImporter::readTie(pugi::xml_node tieNode, Measure* measure)
     tie->setStartNote(startNote);
     tie->setTrack(startNote->track());
 
-    // Still add the Tie to the open Spanner map, which will handle ties differently as appropriate
+    // Still add the tie to the open Spanner map, which will handle ties differently as appropriate
     m_openSpannerMap[tie] = tieNode;
 
     Convert::tieFromMEI(tie, meiTie, warning);
@@ -3196,7 +3270,7 @@ bool MeiImporter::buildTextFrame()
 
     if (vBox) {
         vBox->setTick(Fraction(0, 1));
-        m_score->measures()->add(vBox);
+        m_score->measures()->append(vBox);
     }
 
     return true;
@@ -3390,6 +3464,17 @@ void MeiImporter::addSpannerEnds()
             Tie* tie = toTie(spannerMapEntry.first);
             endNote->setTieBack(tie);
             tie->setEndNote(endNote);
+        } else if (spannerMapEntry.first->isGlissando()) {
+            Note* endNote = this->findEndNote(spannerMapEntry.second);
+            if (!endNote) {
+                continue;
+            }
+            Glissando* gliss = toGlissando(spannerMapEntry.first);
+            gliss->setEndElement(endNote);
+            gliss->setTick2(endNote->chord()->tick());
+            gliss->setTrack2(endNote->track());
+            endNote->addSpannerBack(gliss);
+
             // All other Spanners
         } else if (spannerMapEntry.first->startCR()) {
             ChordRest* chordRest = this->findEnd(spannerMapEntry.second, spannerMapEntry.first->startCR());

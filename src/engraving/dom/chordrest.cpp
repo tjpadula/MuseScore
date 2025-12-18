@@ -80,7 +80,7 @@ ChordRest::ChordRest(const ElementType& type, Segment* parent)
 }
 
 ChordRest::ChordRest(const ChordRest& cr, bool link)
-    : DurationElement(cr)
+    : DurationElement(cr, link)
 {
     m_durationType = cr.m_durationType;
     m_staffMove    = cr.m_staffMove;
@@ -286,12 +286,8 @@ EngravingItem* ChordRest::drop(EditData& data)
         Interval interval = staff()->transpose(tick());
         if (!style().styleB(Sid::concertPitch) && !interval.isZero()) {
             interval.flip();
-            int rootTpc = transposeTpc(harmony->rootTpc(), interval, true);
-            int baseTpc = transposeTpc(harmony->baseTpc(), interval, true);
-            score()->undoTransposeHarmony(harmony, rootTpc, baseTpc);
+            score()->undoTransposeHarmony(harmony, interval);
         }
-        // render
-        harmony->render();
     }
     // fall through
     case ElementType::TEXT:
@@ -941,6 +937,7 @@ EngravingItem* ChordRest::nextElement()
     switch (e->type()) {
     case ElementType::ARTICULATION:
     case ElementType::ORNAMENT:
+    case ElementType::TAPPING:
     case ElementType::LYRICS: {
         EngravingItem* next = nextArticulationOrLyric(e);
         if (next) {
@@ -981,6 +978,7 @@ EngravingItem* ChordRest::prevElement()
     switch (e->type()) {
     case ElementType::ARTICULATION:
     case ElementType::ORNAMENT:
+    case ElementType::TAPPING:
     case ElementType::LYRICS: {
         EngravingItem* prev = prevArticulationOrLyric(e);
         if (prev) {
@@ -1225,26 +1223,29 @@ bool ChordRest::isBefore(const EngravingItem* o) const
         return EngravingItem::isBefore(o);
     }
 
-    int otick = o->tick().ticks();
-    int t     = tick().ticks();
-    if (t == otick) {   // At least one of the chord is a grace, order the grace notes
-        bool oGraceAfter = otherCr->isGraceAfter();
-        bool graceAfter  = isGraceAfter();
-        bool oGrace      = otherCr->isGrace();
-        bool grace       = isGrace();
-        // normal note are initialized at graceIndex 0 and graceIndex is 0 based
-        size_t oGraceIndex  = oGrace ? toChord(o)->graceIndex() + 1 : 0;
-        size_t graceIndex   = grace ? toChord(this)->graceIndex() + 1 : 0;
-        if (oGrace) {
-            oGraceIndex = toChord(o->explicitParent())->graceNotes().size() - oGraceIndex;
-        }
-        if (grace) {
-            graceIndex = toChord(explicitParent())->graceNotes().size() - graceIndex;
-        }
-        otick = otick + (oGraceAfter ? 1 : -1) * static_cast<int>(oGraceIndex);
-        t     = t + (graceAfter ? 1 : -1) * static_cast<int>(graceIndex);
+    Fraction thisTick = tick();
+    Fraction otherTick = otherCr->tick();
+    if (thisTick != otherTick) {
+        return thisTick < otherTick;
     }
-    return t < otick;
+
+    bool thisIsGraceBefore = isGraceBefore();
+    bool otherIsGraceBefore = otherCr->isGraceBefore();
+    if (thisIsGraceBefore != otherIsGraceBefore) {
+        return thisIsGraceBefore;
+    } else if (thisIsGraceBefore) {
+        return toChord(this)->graceIndex() < toChord(otherCr)->graceIndex();
+    }
+
+    bool thisIsGraceAfter = isGraceAfter();
+    bool otherIsGraceAfter = otherCr->isGraceAfter();
+    if (thisIsGraceAfter != otherIsGraceAfter) {
+        return !thisIsGraceAfter;
+    } else if (thisIsGraceAfter) {
+        return toChord(this)->graceIndex() > toChord(otherCr)->graceIndex();
+    }
+
+    return false;
 }
 
 //---------------------------------------------------------

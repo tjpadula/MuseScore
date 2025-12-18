@@ -171,6 +171,8 @@ struct HarmonyDesc
     engraving::Harmony* m_harmony;
     engraving::FretDiagram* m_fretDiagram;
 
+    const engraving::ChordDescription* descr() const;
+
     HarmonyDesc(engraving::track_idx_t m_track, engraving::Harmony* m_harmony, engraving::FretDiagram* m_fretDiagram)
         : m_track(m_track), m_harmony(m_harmony),
         m_fretDiagram(m_fretDiagram) {}
@@ -348,6 +350,7 @@ public:
     bool hasTremolo() const { return m_hasTremolo; }
     muse::String tremoloType() const { return m_tremoloType; }
     muse::String tremoloSmufl() const { return m_tremoloSmufl; }
+    engraving::Color tremoloColor() const { return m_tremoloColor; }
     int tremoloNr() const { return m_tremoloNr; }
     bool mustStopGraceAFter() const { return m_slurStop || m_wavyLineStop; }
 private:
@@ -377,6 +380,7 @@ private:
     MusicXmlLogger* m_logger = nullptr;                              // the error logger
     muse::String m_errors;                    // errors to present to the user
     MusicXmlTupletDesc m_tupletDesc;
+    engraving::Color m_dynamicsColor;
     muse::String m_dynamicsPlacement;
     engraving::StringList m_dynamicsList;
     std::vector<Notation> m_notations;
@@ -384,6 +388,7 @@ private:
     muse::String m_tremoloType;
     int m_tremoloNr = 0;
     muse::String m_tremoloSmufl;
+    engraving::Color m_tremoloColor;
     muse::String m_wavyLineType;
     int m_wavyLineNo = 0;
     muse::String m_arpeggioType;
@@ -554,6 +559,7 @@ public:
 
     double totalY() const { return m_defaultY + m_relativeY; }
     muse::String placement() const;
+    void setBpm(const double bpm) { m_tpoSound = bpm; }
 
 private:
     void directionType(std::vector<MusicXmlSpannerDesc>& starts, std::vector<MusicXmlSpannerDesc>& stops);
@@ -572,6 +578,7 @@ private:
     void play();
     void swing();
     void dynamics();
+    void harpPedal();
     void otherDirection();
     void handleRepeats(engraving::Measure* measure, const engraving::Fraction tick, bool& measureHasCoda, SegnoStack& segnos,
                        DelayedDirectionsList& delayedDirections);
@@ -614,12 +621,15 @@ private:
     engraving::Color m_color;
     engraving::Hairpin* m_inferredHairpinStart = nullptr;
     engraving::GradualTempoChange* m_inferredTempoLineStart = nullptr;
+    engraving::Color m_dynamicsColor;
+    muse::String m_dynamicsPlacement;
     muse::StringList m_dynamicsList;
     muse::String m_fontFamily;
     muse::String m_enclosure;
     muse::String m_wordsText;
     muse::String m_metroText;
     muse::String m_rehearsalText;
+    muse::String m_justify;
     muse::String m_dynaVelocity;
     muse::String m_sndCoda;
     muse::String m_sndDacapo;

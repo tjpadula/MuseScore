@@ -29,7 +29,7 @@
 #include "draw/types/color.h"
 #include "draw/types/geometry.h"
 
-#include "../types/fraction.h"
+#include "../types/types.h"
 
 namespace mu::engraving {
 class XmlReader : public muse::XmlStreamReader
@@ -70,14 +70,14 @@ public:
     String docName() const { return m_docName; }
 
     // for reading old files (< 3.01)
-    void setOffsetLines(int64_t val) { m_offsetLines = val; }
+    void setByteOffsetAdjustment(int64_t val) { m_byteOffsetAdjustment = val; }
 
 private:
 
     void htmlToString(int level, String*);
 
     String m_docName;    // used for error reporting
-    int64_t m_offsetLines = 0;
+    int64_t m_byteOffsetAdjustment = 0;
 };
 }
 

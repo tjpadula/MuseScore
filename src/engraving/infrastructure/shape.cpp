@@ -333,11 +333,6 @@ double Shape::right() const
     return dist;
 }
 
-/* NOTE: these top() and bottom() methods look very weird to me, as they
- * seem to return the opposite of what they say. Or it seems like the
- * rectangles are defined upside down, for some reason. Needs some
- * more understanding. [M.S.] */
-
 //---------------------------------------------------------
 //   top
 //---------------------------------------------------------
@@ -366,6 +361,30 @@ double Shape::bottom() const
         }
     }
     return dist;
+}
+
+double Shape::topAtX(double x) const
+{
+    double localTop = DBL_MAX;
+    for (const ShapeElement& el : m_elements) {
+        if (el.left() < x && el.right() > x) {
+            localTop = std::min(localTop, el.top());
+        }
+    }
+
+    return localTop != DBL_MAX ? localTop : top();
+}
+
+double Shape::bottomAtX(double x) const
+{
+    double localBottom = -DBL_MAX;
+    for (const ShapeElement& el : m_elements) {
+        if (el.left() < x && el.right() > x) {
+            localBottom = std::max(localBottom, el.bottom());
+        }
+    }
+
+    return localBottom != DBL_MAX ? localBottom : bottom();
 }
 
 double Shape::rightMostEdgeAtHeight(double yAbove, double yBelow) const

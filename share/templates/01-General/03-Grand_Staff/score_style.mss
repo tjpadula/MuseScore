@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.50">
+<museScore version="4.60">
   <Style>
     <pageWidth>8.26772</pageWidth>
     <pageHeight>11.6929</pageHeight>
@@ -127,7 +127,7 @@
     <shortStemStartLocation>1</shortStemStartLocation>
     <shortestStem>2.5</shortestStem>
     <beginRepeatLeftMargin>1</beginRepeatLeftMargin>
-    <minNoteDistance>0.5</minNoteDistance>
+    <minNoteDistance>0.35</minNoteDistance>
     <barNoteDistance>1.25</barNoteDistance>
     <barAccidentalDistance>0.65</barAccidentalDistance>
     <noteBarDistance>1.5</noteBarDistance>
@@ -198,9 +198,9 @@
     <pedalLineWidth>0.11</pedalLineWidth>
     <pedalListStyle>1</pedalListStyle>
     <pedalBeginTextOffset x="0" y="0.15"/>
-    <pedalHookHeight>-1.2</pedalHookHeight>
+    <pedalHookHeight>1.2</pedalHookHeight>
     <pedalFontFace>Edwin</pedalFontFace>
-    <pedalFontSize>12</pedalFontSize>
+    <pedalFontSize>10</pedalFontSize>
     <pedalLineSpacing>1</pedalLineSpacing>
     <pedalFontSpatiumDependent>1</pedalFontSpatiumDependent>
     <pedalFontStyle>0</pedalFontStyle>
@@ -243,7 +243,7 @@
     <chordSymbolAFontSpatiumDependent>1</chordSymbolAFontSpatiumDependent>
     <chordSymbolAFontStyle>0</chordSymbolAFontStyle>
     <chordSymbolAColor r="0" g="0" b="0" a="255"/>
-    <chordSymbolAAlign>left,baseline</chordSymbolAAlign>
+    <chordSymbolAAlign>center,baseline</chordSymbolAAlign>
     <chordSymbolAFrameType>0</chordSymbolAFrameType>
     <chordSymbolAFramePadding>0.2</chordSymbolAFramePadding>
     <chordSymbolAFrameWidth>0.1</chordSymbolAFrameWidth>
@@ -256,7 +256,7 @@
     <chordSymbolBFontSpatiumDependent>1</chordSymbolBFontSpatiumDependent>
     <chordSymbolBFontStyle>2</chordSymbolBFontStyle>
     <chordSymbolBColor r="0" g="0" b="0" a="255"/>
-    <chordSymbolBAlign>left,baseline</chordSymbolBAlign>
+    <chordSymbolBAlign>center,baseline</chordSymbolBAlign>
     <chordSymbolBFrameType>0</chordSymbolBFrameType>
     <chordSymbolBFramePadding>0.2</chordSymbolBFramePadding>
     <chordSymbolBFrameWidth>0.1</chordSymbolBFrameWidth>
@@ -297,11 +297,11 @@
     <fretMag>1</fretMag>
     <fretPlacement>0</fretPlacement>
     <fretStrings>6</fretStrings>
-    <fretFrets>5</fretFrets>
+    <fretFrets>4</fretFrets>
     <fretNut>1</fretNut>
     <fretDotSize>1</fretDotSize>
     <fretStringSpacing>0.7</fretStringSpacing>
-    <fretFretSpacing>0.8</fretFretSpacing>
+    <fretFretSpacing>0.7</fretFretSpacing>
     <fretOrientation>0</fretOrientation>
     <maxFretShiftAbove>0</maxFretShiftAbove>
     <maxFretShiftBelow>0</maxFretShiftBelow>
@@ -446,7 +446,7 @@
     <ottavaPosAbove x="0" y="-2"/>
     <ottavaPosBelow x="0" y="2"/>
     <ottavaHookAbove>1</ottavaHookAbove>
-    <ottavaHookBelow>-1</ottavaHookBelow>
+    <ottavaHookBelow>1</ottavaHookBelow>
     <ottavaLineWidth>0.11</ottavaLineWidth>
     <ottavaLineStyle>2</ottavaLineStyle>
     <ottavaNumbersOnly>1</ottavaNumbersOnly>
@@ -500,7 +500,7 @@
     <tupletFrameRound>0</tupletFrameRound>
     <tupletFrameFgColor r="0" g="0" b="0" a="255"/>
     <tupletFrameBgColor r="255" g="255" b="255" a="0"/>
-    <barreLineWidth>1</barreLineWidth>
+    <barreLineWidth>0.85</barreLineWidth>
     <scaleBarlines>0</scaleBarlines>
     <barGraceDistance>1</barGraceDistance>
     <minVerticalDistance>0.5</minVerticalDistance>
@@ -778,7 +778,7 @@
     <measureNumberPosBelow x="0" y="2"/>
     <measureNumberOffsetType>1</measureNumberOffsetType>
     <measureNumberVPlacement>0</measureNumberVPlacement>
-    <measureNumberHPlacement>0</measureNumberHPlacement>
+    <measureNumberHPlacement>left</measureNumberHPlacement>
     <measureNumberAlign>left,baseline</measureNumberAlign>
     <measureNumberFrameType>0</measureNumberFrameType>
     <measureNumberFramePadding>0.2</measureNumberFramePadding>
@@ -797,7 +797,7 @@
     <measureNumberPosBelow x="0" y="2"/>
     <mmRestRangeOffsetType>1</mmRestRangeOffsetType>
     <mmRestRangeVPlacement>1</mmRestRangeVPlacement>
-    <mmRestRangeHPlacement>1</mmRestRangeHPlacement>
+    <mmRestRangeHPlacement>center</mmRestRangeHPlacement>
     <mmRestRangeAlign>center,baseline</mmRestRangeAlign>
     <mmRestRangeFrameType>0</mmRestRangeFrameType>
     <mmRestRangeFramePadding>0.2</mmRestRangeFramePadding>
@@ -873,7 +873,7 @@
     <rehearsalMarkPosBelow x="0" y="4"/>
     <rehearsalMarkMinDistance>0.5</rehearsalMarkMinDistance>
     <repeatLeftFontFace>Edwin</repeatLeftFontFace>
-    <repeatLeftFontSize>18</repeatLeftFontSize>
+    <repeatLeftFontSize>10</repeatLeftFontSize>
     <repeatLeftLineSpacing>1</repeatLeftLineSpacing>
     <repeatLeftFontSpatiumDependent>1</repeatLeftFontSpatiumDependent>
     <repeatLeftFontStyle>0</repeatLeftFontStyle>
@@ -887,7 +887,7 @@
     <repeatLeftFrameFgColor r="0" g="0" b="0" a="255"/>
     <repeatLeftFrameBgColor r="255" g="255" b="255" a="0"/>
     <repeatRightFontFace>Edwin</repeatRightFontFace>
-    <repeatRightFontSize>11</repeatRightFontSize>
+    <repeatRightFontSize>10</repeatRightFontSize>
     <repeatRightLineSpacing>1</repeatRightLineSpacing>
     <repeatRightFontSpatiumDependent>1</repeatRightFontSpatiumDependent>
     <repeatRightFontStyle>0</repeatRightFontStyle>
@@ -980,7 +980,7 @@
     <footerFontSpatiumDependent>0</footerFontSpatiumDependent>
     <footerFontStyle>0</footerFontStyle>
     <footerColor r="0" g="0" b="0" a="255"/>
-    <footerAlign>center,center</footerAlign>
+    <footerAlign>center,bottom</footerAlign>
     <footerOffset x="0" y="0"/>
     <footerFrameType>0</footerFrameType>
     <footerFramePadding>0.2</footerFramePadding>

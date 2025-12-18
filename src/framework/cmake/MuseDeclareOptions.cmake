@@ -25,6 +25,8 @@ option(MUSE_MODULE_DIAGNOSTICS_CRASHPAD_CLIENT "Enable crashpad client" OFF) # e
 option(MUSE_MODULE_DIAGNOSTICS_CRASHPAD_HANDLER_PATH "Path to custom crashpad_handler executable (optional)" "")
 set(MUSE_MODULE_DIAGNOSTICS_CRASHREPORT_URL "" CACHE STRING "URL where to send crash reports")
 
+declare_muse_module_opt(DOCKWINDOW ON)
+
 declare_muse_module_opt(DRAW ON)
 option(MUSE_MODULE_DRAW_TRACE "Trace draw objects" OFF)
 option(MUSE_MODULE_DRAW_USE_QTFONTMETRICS "Use Qt font metrics (for some metrics)" ON)
@@ -53,6 +55,8 @@ declare_muse_module_opt(TOURS ON)
 
 declare_muse_module_opt(UI ON)
 option(MUSE_MODULE_UI_DISABLE_MODALITY "Disable dialogs modality for testing purpose" OFF)
+option(MUSE_MODULE_UI_SYSTEMDRAG_SUPPORTED "System drag supported" ON)
+option(MUSE_MODULE_UI_SYNCINTERACTIVE_SUPPORTED "Sync interactive supported" ON)
 
 declare_muse_module_opt(UPDATE ON)
 
@@ -63,6 +67,7 @@ set(MUSE_MODULE_VST_VST3_SDK_PATH "" CACHE PATH "Path to VST3_SDK. SDK version >
 declare_muse_module_opt(WORKSPACE ON)
 
 # === Enviropment ===
+option(MUSE_THREADS_SUPPORT "Build with threads support" ON)
 option(MUSE_COMPILE_BUILD_64 "Build 64 bit version" ON)
 option(MUSE_COMPILE_ASAN "Enable Address Sanitizer" OFF)
 option(MUSE_COMPILE_USE_PCH "Use precompiled headers." ON)

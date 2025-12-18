@@ -34,17 +34,21 @@ BaseSection {
     property alias playChordSymbolWhenEditing: playChordSymbolBox.checked
     property alias playPreviewNotesInInputByDuration: playPreviewNotesInInputByDurationBox.checked
     property alias notePlayDurationMilliseconds: notePlayDurationControl.currentValue
+    property alias playNotesWithScoreDynamics: playNotesWithScoreDynamicsBox.checked
 
-    property alias playNotesOnMidiInput: playNotesOnMidiInputBox.checked
     property alias playNotesOnMidiInputBoxEnabled: playNotesOnMidiInputBox.enabled
+    property alias playNotesOnMidiInput: playNotesOnMidiInputBox.checked
+    property alias useMidiVelocityAndDurationDuringNoteInput: useMidiVelocityAndDurationDuringNoteInputBox.checked
 
     signal playNotesWhenEditingChangeRequested(bool play)
     signal playChordWhenEditingChangeRequested(bool play)
     signal playChordSymbolWhenEditingChangeRequested(bool play)
     signal playPreviewNotesInInputByDurationChangeRequested(bool play)
     signal notePlayDurationChangeRequested(int duration)
+    signal playNotesWithScoreDynamicsChangeRequested(bool play)
 
     signal playNotesOnMidiInputChangeRequested(bool play)
+    signal useMidiVelocityAndDurationDuringNoteInputChangeRequested(bool use)
 
     title: qsTrc("appshell/preferences", "Note preview")
 
@@ -82,7 +86,7 @@ BaseSection {
     IncrementalPropertyControlWithTitle {
         id: notePlayDurationControl
 
-        title: qsTrc("appshell/preferences", "Playback duration:")
+        title: qsTrc("appshell/preferences", "Playback duration")
 
         enabled: root.playNotesWhenEditing
 
@@ -153,6 +157,23 @@ BaseSection {
     }
 
     CheckBox {
+        id: playNotesWithScoreDynamicsBox
+        width: parent.width
+
+        text: qsTrc("appshell/preferences", "Play preview notes with score dynamics")
+
+        enabled: root.playNotesWhenEditing
+
+        navigation.name: "PlayNotesWithScoreDynamics"
+        navigation.panel: root.navigation
+        navigation.row: 5
+
+        onClicked: {
+            root.playNotesWithScoreDynamicsChangeRequested(!checked)
+        }
+    }
+
+    CheckBox {
         id: playNotesOnMidiInputBox
         width: parent.width
 
@@ -160,10 +181,27 @@ BaseSection {
 
         navigation.name: "PlayNotesOnMidiInputBox"
         navigation.panel: root.navigation
-        navigation.row: 5
+        navigation.row: 6
 
         onClicked: {
             root.playNotesOnMidiInputChangeRequested(!checked)
+        }
+    }
+
+    CheckBox {
+        id: useMidiVelocityAndDurationDuringNoteInputBox
+        width: parent.width
+
+        text: qsTrc("appshell/preferences", "Play MIDI notes with velocity and duration during note input")
+
+        enabled: root.playNotesWhenEditing && playNotesOnMidiInputBox.checked
+
+        navigation.name: "UseMidiVelocityAndDurationDuringNoteInputBox"
+        navigation.panel: root.navigation
+        navigation.row: 7
+
+        onClicked: {
+            root.useMidiVelocityAndDurationDuringNoteInputChangeRequested(!checked)
         }
     }
 }

@@ -58,6 +58,7 @@ FocusableItem {
 
                 titleText: qsTrc("inspector", "Scale")
                 propertyItem: root.model ? root.model.scale : null
+                enabled: root.model ? !root.model.isInFretBox : false
 
                 measureUnitsSymbol: "%"
                 step: 1
@@ -167,6 +168,17 @@ FocusableItem {
 
             navigationPanel: root.navigationPanel
             navigationRowStart: orientationSection.navigationRowEnd + 1
+        }
+
+        PropertyCheckBox {
+            id: verticalAlignCheckBox
+
+            text: qsTrc("inspector", "Exclude from vertical alignment")
+            propertyItem: root.model ? root.model.verticalAlign : null
+
+            navigation.name: "Exclude from vertical alignment"
+            navigation.panel: root.navigationPanel
+            navigation.row: placementSection.navigationRowEnd + 1
         }
     }
 }

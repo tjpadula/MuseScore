@@ -85,5 +85,7 @@ else(IOS)
 endif(IOS)
 endif(OS_IS_MAC)
 
+list(APPEND MODULE_LINK Qt::Gui Qt::Qml)
+
 setup_module()
 

@@ -49,7 +49,7 @@ void RegisterAudioPluginsScenario::init()
     }
 }
 
-Ret RegisterAudioPluginsScenario::registerNewPlugins()
+io::paths_t RegisterAudioPluginsScenario::scanForNewPluginPaths() const
 {
     TRACEFUNC;
 
@@ -65,6 +65,17 @@ Ret RegisterAudioPluginsScenario::registerNewPlugins()
         }
     }
 
+    return newPluginPaths;
+}
+
+Ret RegisterAudioPluginsScenario::registerNewPlugins(io::paths_t newPluginPaths)
+{
+    TRACEFUNC;
+
+    if (newPluginPaths.empty()) {
+        newPluginPaths = scanForNewPluginPaths();
+    }
+
     if (newPluginPaths.empty()) {
         return muse::make_ok();
     }
@@ -77,10 +88,7 @@ Ret RegisterAudioPluginsScenario::registerNewPlugins()
 
 void RegisterAudioPluginsScenario::processPluginsRegistration(const io::paths_t& pluginPaths)
 {
-    Ret ret = interactive()->showProgress(muse::trc("audio", "Scanning audio plugins"), &m_progress);
-    if (!ret) {
-        LOGE() << ret.toString();
-    }
+    interactive()->showProgress(muse::trc("audio", "Scanning audio plugins"), &m_progress);
 
     m_aborted = false;
     m_progress.start();
@@ -159,11 +167,7 @@ Ret RegisterAudioPluginsScenario::registerFailedPlugin(const io::path_t& pluginP
     AudioPluginInfo info;
     info.meta.id = io::completeBasename(pluginPath).toStdString();
 
-    std::string ext = io::suffix(pluginPath);
-    if (ext.find("vst") != std::string::npos) {
-        info.meta.type = AudioResourceType::VstPlugin;
-    }
-
+    info.meta.type = metaType(pluginPath);
     info.path = pluginPath;
     info.enabled = false;
     info.errorCode = failCode;
@@ -181,4 +185,10 @@ IAudioPluginMetaReaderPtr RegisterAudioPluginsScenario::metaReader(const io::pat
     }
 
     return nullptr;
+}
+
+audio::AudioResourceType RegisterAudioPluginsScenario::metaType(const io::path_t& pluginPath) const
+{
+    const IAudioPluginMetaReaderPtr reader = metaReader(pluginPath);
+    return reader ? reader->metaType() : audio::AudioResourceType::Undefined;
 }

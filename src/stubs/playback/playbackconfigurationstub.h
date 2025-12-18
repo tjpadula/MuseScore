@@ -81,6 +81,16 @@ public:
     bool needToShowResetSoundFlagsWhenChangePlaybackProfileWarning() const override;
     void setNeedToShowResetSoundFlagsWhenChangePlaybackProfileWarning(bool show) override;
 
+    bool shouldShowOnlineSoundsProcessingError() const override;
+    void setShouldShowOnlineSoundsProcessingError(bool show) override;
+    muse::async::Notification shouldShowOnlineSoundsProcessingErrorChanged() const override;
+
+    muse::String onlineSoundsHandbookUrl() const override;
+
+    OnlineSoundsShowProgressBarMode onlineSoundsShowProgressBarMode() const override;
+    void setOnlineSoundsShowProgressBarMode(OnlineSoundsShowProgressBarMode mode) override;
+    muse::async::Notification onlineSoundsShowProgressBarModeChanged() const override;
+
     bool shouldMeasureInputLag() const override;
 };
 }

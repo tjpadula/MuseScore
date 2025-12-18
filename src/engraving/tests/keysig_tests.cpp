@@ -47,7 +47,7 @@ TEST_F(Engraving_KeySigTests, keysig)
     String writeFile2("keysig02-test.mscx");
     String reference2(KEYSIG_DATA_DIR + "keysig02-ref.mscx");     // with Eb maj
     String writeFile3("keysig03-test.mscx");
-    String reference3(KEYSIG_DATA_DIR + "keysig.mscx");           // orig
+    String reference3(KEYSIG_DATA_DIR + "keysig03bis-ref.mscx");           // orig
     String writeFile4("keysig04-test.mscx");
     String reference4(KEYSIG_DATA_DIR + "keysig02-ref.mscx");     // with Eb maj
     String writeFile5("keysig05-test.mscx");
@@ -78,10 +78,7 @@ TEST_F(Engraving_KeySigTests, keysig)
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, writeFile2, reference2));
 
     // remove key signature in measure 2
-    Segment* s = m2->first();
-    while (!(s->isKeySigType())) {
-        s = s->next();
-    }
+    Segment* s = m2->first(SegmentType::KeySig);
     EngravingItem* e = s->element(0);
     score->startCmd(TranslatableString::untranslatable("Key signature tests"));
     score->undoRemoveElement(e);

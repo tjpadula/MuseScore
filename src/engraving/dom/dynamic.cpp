@@ -121,7 +121,6 @@ Dynamic::Dynamic(Segment* parent)
     : TextBase(ElementType::DYNAMIC, parent, TextStyleType::DYNAMICS, ElementFlag::MOVABLE | ElementFlag::ON_STAFF)
 {
     m_velocity    = -1;
-    m_dynRange    = DynamicRange::PART;
     m_dynamicType = DynamicType::OTHER;
     m_changeInVelocity = 128;
     m_velChangeSpeed = DynamicSpeed::NORMAL;
@@ -133,7 +132,6 @@ Dynamic::Dynamic(const Dynamic& d)
 {
     m_dynamicType = d.m_dynamicType;
     m_velocity    = d.m_velocity;
-    m_dynRange    = d.m_dynRange;
     m_changeInVelocity = d.m_changeInVelocity;
     m_velChangeSpeed = d.m_velChangeSpeed;
     _avoidBarLines = d._avoidBarLines;
@@ -148,13 +146,6 @@ Dynamic::Dynamic(const Dynamic& d)
 int Dynamic::velocity() const
 {
     return m_velocity <= 0 ? DYN_LIST[int(dynamicType())].velocity : m_velocity;
-}
-
-void Dynamic::setDynRange(DynamicRange range)
-{
-    m_dynRange = range;
-
-    setVoiceAssignment(dynamicRangeToVoiceAssignment(range));
 }
 
 //---------------------------------------------------------
@@ -351,6 +342,24 @@ EngravingItem* Dynamic::drop(EditData& ed)
 int Dynamic::dynamicVelocity(DynamicType t)
 {
     return DYN_LIST[int(t)].velocity;
+}
+
+void Dynamic::startEdit(EditData& ed)
+{
+    if (ed.curGrip != Grip::NO_GRIP) {
+        EngravingItem::startEdit(ed);
+    } else {
+        TextBase::startEdit(ed);
+    }
+}
+
+void Dynamic::endEdit(EditData& ed)
+{
+    if (cursor() && cursor()->editing()) {
+        TextBase::endEdit(ed);
+    } else {
+        EngravingItem::endEdit(ed);
+    }
 }
 
 TranslatableString Dynamic::subtypeUserName() const
@@ -586,26 +595,13 @@ String Dynamic::screenReaderInfo() const
 }
 }
 
-//---------------------------------------------------------
-//   drawEditMode
-//---------------------------------------------------------
-
-void Dynamic::drawEditMode(Painter* p, EditData& ed, double currentViewScaling)
-{
-    if (ed.editTextualProperties) {
-        TextBase::drawEditMode(p, ed, currentViewScaling);
-    } else {
-        EngravingItem::drawEditMode(p, ed, currentViewScaling);
-    }
-}
-
-bool Dynamic::isTextualEditAllowed(EditData& ed) const
+bool Dynamic::isEditAllowed(EditData& ed) const
 {
     if (ed.key == Key_Tab) {
         return false;
     }
 
-    return TextBase::isTextualEditAllowed(ed);
+    return TextBase::isEditAllowed(ed);
 }
 
 //---------------------------------------------------------

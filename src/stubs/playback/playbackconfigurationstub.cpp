@@ -204,6 +204,39 @@ void PlaybackConfigurationStub::setNeedToShowResetSoundFlagsWhenChangePlaybackPr
 {
 }
 
+bool PlaybackConfigurationStub::shouldShowOnlineSoundsProcessingError() const
+{
+    return false;
+}
+
+void PlaybackConfigurationStub::setShouldShowOnlineSoundsProcessingError(bool)
+{
+}
+
+muse::async::Notification PlaybackConfigurationStub::shouldShowOnlineSoundsProcessingErrorChanged() const
+{
+    return {};
+}
+
+muse::String PlaybackConfigurationStub::onlineSoundsHandbookUrl() const
+{
+    return muse::String();
+}
+
+OnlineSoundsShowProgressBarMode PlaybackConfigurationStub::onlineSoundsShowProgressBarMode() const
+{
+    return OnlineSoundsShowProgressBarMode::Never;
+}
+
+void PlaybackConfigurationStub::setOnlineSoundsShowProgressBarMode(OnlineSoundsShowProgressBarMode)
+{
+}
+
+muse::async::Notification PlaybackConfigurationStub::onlineSoundsShowProgressBarModeChanged() const
+{
+    return {};
+}
+
 bool PlaybackConfigurationStub::shouldMeasureInputLag() const
 {
     return false;

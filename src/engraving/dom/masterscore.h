@@ -99,7 +99,7 @@ public:
     UndoStack* undoStack() const override { return m_undoStack; }
     TimeSigMap* sigmap() const override { return m_sigmap; }
     TempoMap* tempomap() const override { return m_tempomap; }
-    muse::async::Channel<ScoreChangesRange> changesChannel() const override { return m_changesRangeChannel; }
+    muse::async::Channel<ScoreChanges> changesChannel() const override { return m_changesChannel; }
 
     bool playlistDirty() const override { return m_playlistDirty; }
     void setPlaylistDirty() override;
@@ -155,7 +155,6 @@ public:
     void rebuildAndUpdateExpressive(Synthesizer* synth);
     void updateExpressive(Synthesizer* synth);
     void updateExpressive(Synthesizer* synth, bool expressive, bool force = false);
-    void rebuildFretDiagramLegend();
 
     using Score::loopBoundaryTick;
     Fraction loopBoundaryTick(LoopBoundaryType type) const;
@@ -227,7 +226,7 @@ private:
     std::vector<Excerpt*> m_excerpts;
     std::vector<PartChannelSettingsLink> m_playbackSettingsLinks;
     Score* m_playbackScore = nullptr;
-    muse::async::Channel<ScoreChangesRange> m_changesRangeChannel;
+    muse::async::Channel<ScoreChanges> m_changesChannel;
 
     bool m_readOnly = false;
 

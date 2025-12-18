@@ -27,8 +27,8 @@
 
 using namespace mu::engraving;
 
-Parenthesis::Parenthesis(Segment* parent)
-    : EngravingItem(ElementType::PARENTHESIS, parent, ElementFlag::ON_STAFF | ElementFlag::GENERATED)
+Parenthesis::Parenthesis(EngravingItem* parent)
+    : EngravingItem(ElementType::PARENTHESIS, parent, ElementFlag::GENERATED)
 {
 }
 
@@ -74,4 +74,24 @@ PropertyValue Parenthesis::propertyDefault(Pid pid) const
 String Parenthesis::accessibleInfo() const
 {
     return String(u"%1: %2").arg(EngravingItem::accessibleInfo(), TConv::translatedUserName(direction()));
+}
+
+bool Parenthesis::followParentCurColor() const
+{
+    return m_followParentColor;
+}
+
+void Parenthesis::setFollowParentColor(bool val)
+{
+    m_followParentColor = val;
+}
+
+Color Parenthesis::curColor() const
+{
+    if (m_followParentColor) {
+        return parentItem()->curColor();
+    }
+
+    return EngravingItem::curColor(getProperty(Pid::VISIBLE).toBool(),
+                                   getProperty(Pid::COLOR).value<Color>());
 }

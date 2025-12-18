@@ -27,8 +27,6 @@ import Muse.Ui 1.0
 RadioDelegate {
     id: root
 
-    default property Component contentComponent: null
-
     //! NOTE Don't use the `icon` property.
     //!      It's a property of the ancestor of RadioDelegate
     //!      and has the wrong type (QQuickIcon).
@@ -52,9 +50,24 @@ RadioDelegate {
 
     ButtonGroup.group: ListView.view && ListView.view instanceof RadioButtonGroup ? ListView.view.radioButtonGroup : null
 
-    implicitHeight: ListView.view ? ListView.view.height : ui.theme.defaultButtonSize
-    implicitWidth: ListView.view ? (ListView.view.width - (ListView.view.spacing * (ListView.view.count - 1))) / ListView.view.count
-                                 : ui.theme.defaultButtonSize
+    implicitHeight: {
+        if (ListView.view && ListView.view.orientation === ListView.Horizontal) {
+            return ListView.view.height
+        } else {
+            return ui.theme.defaultButtonSize
+        }
+    }
+    implicitWidth: {
+        if (ListView.view) {
+            if (ListView.view.orientation === ListView.Horizontal) {
+                return (ListView.view.width - (ListView.view.spacing * (ListView.view.count - 1))) / ListView.view.count
+            } else {
+                return ListView.view.width
+            }
+        } else {
+            return ui.theme.defaultButtonSize
+        }
+    }
 
     hoverEnabled: root.enabled
 
@@ -133,18 +146,17 @@ RadioDelegate {
 
     contentItem: Loader {
         id: contentLoader
-        anchors.fill: parent
 
         sourceComponent: {
-            if (root.contentComponent) {
-                return root.contentComponent
-            }
-
             if (root.iconCode && root.iconCode !== IconCode.NONE) {
                 return iconComponent
             }
 
-            return textComponent
+            if (root.text) {
+                return textComponent
+            }
+
+            return null
         }
 
         Component {
@@ -166,5 +178,5 @@ RadioDelegate {
         }
     }
 
-    indicator: Item {}
+    indicator: null
 }

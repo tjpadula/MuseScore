@@ -38,32 +38,19 @@ using namespace mu::engraving;
 static const String GUITARPRO_DIR(u"guitarbendimporter_data/");
 
 namespace mu::iex::guitarpro {
-extern Err importGTP(MasterScore*, muse::io::IODevice* io, const muse::modularity::ContextPtr& iocCtx, bool createLinkedTabForce = false,
-                     bool experimental = false);
+extern Err importGTP(MasterScore*, muse::io::IODevice* io, const muse::modularity::ContextPtr& iocCtx, bool experimental = false);
 class GuitarBendImporter_Tests : public ::testing::Test, public muse::Injectable
 {
 public:
     muse::Inject<mu::engraving::IEngravingConfiguration> engravingConfiguration = { this };
 
     GuitarBendImporter_Tests();
-    void SetUp() override;
-    void TearDown() override;
     void gpReadTest(const String& folderName, const String& extension);
 };
 
 GuitarBendImporter_Tests::GuitarBendImporter_Tests()
     : muse::Injectable(muse::modularity::globalCtx())
 {
-}
-
-void GuitarBendImporter_Tests::SetUp()
-{
-    engravingConfiguration()->setExperimentalGuitarBendImport(true);
-}
-
-void GuitarBendImporter_Tests::TearDown()
-{
-    engravingConfiguration()->setExperimentalGuitarBendImport(false);
 }
 
 void GuitarBendImporter_Tests::gpReadTest(const String& fileName, const String& extension)
@@ -73,7 +60,7 @@ void GuitarBendImporter_Tests::gpReadTest(const String& fileName, const String& 
 
     auto importFunc = [](MasterScore* score, const muse::io::path_t& path) -> Err {
         muse::io::File file(path);
-        return importGTP(score, &file, muse::modularity::globalCtx(), true, true);
+        return importGTP(score, &file, muse::modularity::globalCtx(), true);
     };
 
     MasterScore* score = ScoreRW::readScore(gpFileName, false, importFunc);
@@ -113,7 +100,7 @@ TEST_F(GuitarBendImporter_Tests, DISABLED_gpPrebendChord) {
     gpReadTest(u"prebend_chord", u"gp");
 }
 
-#ifdef SPLIT_BEND_CHORD_DURATION
+#ifdef SPLIT_CHORD_DURATIONS
 TEST_F(GuitarBendImporter_Tests, gpBend_1) {
     gpReadTest(u"bend_1", u"gp");
 }
@@ -176,6 +163,43 @@ TEST_F(GuitarBendImporter_Tests, gpDottedDurations) {
 #else
 TEST_F(GuitarBendImporter_Tests, gpSimpleBend) {
     gpReadTest(u"simple_bend", u"gp");
+}
+
+TEST_F(GuitarBendImporter_Tests, gpBendRelease) {
+    gpReadTest(u"bend_release", u"gp");
+}
+
+TEST_F(GuitarBendImporter_Tests, gpPrebendBend) {
+    gpReadTest(u"prebend_bend", u"gp");
+}
+
+TEST_F(GuitarBendImporter_Tests, gpSimpleBendChord) {
+    gpReadTest(u"simple_bend_chord", u"gp");
+}
+
+TEST_F(GuitarBendImporter_Tests, gpBendsTied1) {
+    gpReadTest(u"bends_tied_1", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpBendsTied2) {
+    gpReadTest(u"bends_tied_2", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpBendsTied3) {
+    gpReadTest(u"bends_tied_3", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpBendHold) {
+    gpReadTest(u"bend_hold", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpBendOnTuplet) {
+    gpReadTest(u"bend_on_tuplet", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpBendOnUnequalChords) {
+    gpReadTest(u"bend_on_unequal_chords", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpGraceChordDiffBends) {
+    gpReadTest(u"grace_chord_diff_bends", u"gp");
+}
+TEST_F(GuitarBendImporter_Tests, gpTiedBendsReleaseOrHold) {
+    gpReadTest(u"tied_bends_release_or_hold", u"gp");
 }
 #endif
 }

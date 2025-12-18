@@ -570,7 +570,8 @@ MenuItemList NoteInputBarModel::makeAddItems()
         makeMenu(TranslatableString("notation", "Measures"), makeMeasuresItems()),
         makeMenu(TranslatableString("notation", "Frames"), makeFramesItems()),
         makeMenu(TranslatableString("notation", "Text"), makeTextItems()),
-        makeMenu(TranslatableString("notation", "Lines"), makeLinesItems())
+        makeMenu(TranslatableString("notation", "Lines"), makeLinesItems()),
+        makeMenu(TranslatableString("notation", "Chords and fretboard diagrams"), makeChordAndFretboardDiagramsItems()),
     };
 
     return items;
@@ -611,6 +612,7 @@ MenuItemList NoteInputBarModel::makeIntervalsItems()
         makeMenuItem("interval7"),
         makeMenuItem("interval8"),
         makeMenuItem("interval9"),
+        makeMenuItem("interval10"),
         makeSeparator(),
         makeMenuItem("interval-2"),
         makeMenuItem("interval-3"),
@@ -619,7 +621,8 @@ MenuItemList NoteInputBarModel::makeIntervalsItems()
         makeMenuItem("interval-6"),
         makeMenuItem("interval-7"),
         makeMenuItem("interval-8"),
-        makeMenuItem("interval-9")
+        makeMenuItem("interval-9"),
+        makeMenuItem("interval-10")
     };
 
     return items;
@@ -644,10 +647,21 @@ MenuItemList NoteInputBarModel::makeFramesItems()
         makeMenuItem("insert-hbox"),
         makeMenuItem("insert-vbox"),
         makeMenuItem("insert-textframe"),
+        makeMenuItem("insert-fretframe"),
         makeSeparator(),
+        makeMenu(TranslatableString("notation", "Insert at end of score"), makeFramesAppendItems())
+    };
+
+    return items;
+}
+
+MenuItemList NoteInputBarModel::makeFramesAppendItems()
+{
+    MenuItemList items {
         makeMenuItem("append-hbox"),
         makeMenuItem("append-vbox"),
-        makeMenuItem("append-textframe")
+        makeMenuItem("append-textframe"),
+        makeMenuItem("append-fretframe")
     };
 
     return items;
@@ -691,6 +705,18 @@ MenuItemList NoteInputBarModel::makeLinesItems()
         makeMenuItem("add-8va"),
         makeMenuItem("add-8vb"),
         makeMenuItem("add-noteline")
+    };
+
+    return items;
+}
+
+MenuItemList NoteInputBarModel::makeChordAndFretboardDiagramsItems()
+{
+    MenuItemList items {
+        makeMenuItem("chord-text"),
+        makeMenuItem("add-fretboard-diagram"),
+        makeSeparator(),
+        makeMenuItem("insert-fretframe", TranslatableString("notation", "Fretboard diagram legend"))
     };
 
     return items;

@@ -22,7 +22,6 @@
 
 #include "soundprofilesrepository.h"
 
-#include "audio/itracks.h"
 #include "log.h"
 
 using namespace mu::playback;
@@ -44,10 +43,7 @@ void SoundProfilesRepository::init()
 
 void SoundProfilesRepository::refresh()
 {
-    if (!playback()->tracks()) {
-        return;
-    }
-    playback()->tracks()->availableInputResources()
+    playback()->availableInputResources()
     .onResolve(this, [this](const AudioResourceMetaList& availableResources) {
         SoundProfile& basicProfile = m_profilesMap.at(config()->basicSoundProfileName());
         SoundProfile& museProfile = m_profilesMap.at(config()->museSoundsProfileName());

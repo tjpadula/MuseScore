@@ -50,13 +50,15 @@ public:
 
     void init();
 
-    Ret registerNewPlugins() override;
+    io::paths_t scanForNewPluginPaths() const override;
+    Ret registerNewPlugins(io::paths_t newPluginPaths = {}) override;
     Ret registerPlugin(const io::path_t& pluginPath) override;
     Ret registerFailedPlugin(const io::path_t& pluginPath, int failCode) override;
 
 private:
     void processPluginsRegistration(const io::paths_t& pluginPaths);
     IAudioPluginMetaReaderPtr metaReader(const io::path_t& pluginPath) const;
+    audio::AudioResourceType metaType(const io::path_t& pluginPath) const;
 
     Progress m_progress;
     bool m_aborted = false;

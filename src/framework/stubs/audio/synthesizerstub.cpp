@@ -30,7 +30,7 @@ SynthesizerStub::SynthesizerStub(const AudioSourceParams& params)
 {
 }
 
-void SynthesizerStub::setSampleRate(unsigned int)
+void SynthesizerStub::setOutputSpec(const OutputSpec&)
 {
 }
 
@@ -89,6 +89,20 @@ void SynthesizerStub::setPlaybackPosition(const msecs_t)
 {
 }
 
+void SynthesizerStub::prepareToPlay()
+{
+}
+
+bool SynthesizerStub::readyToPlay() const
+{
+    return false;
+}
+
+async::Notification SynthesizerStub::readyToPlayChanged() const
+{
+    return async::Notification();
+}
+
 void SynthesizerStub::revokePlayingNotes()
 {
 }
@@ -108,5 +122,18 @@ bool SynthesizerStub::isActive() const
 }
 
 void SynthesizerStub::setIsActive(bool)
+{
+}
+
+void SynthesizerStub::processInput()
+{
+}
+
+InputProcessingProgress SynthesizerStub::inputProcessingProgress() const
+{
+    return InputProcessingProgress();
+}
+
+void SynthesizerStub::clearCache()
 {
 }

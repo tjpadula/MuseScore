@@ -19,15 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MUSE_VST_VSTSYNTHESISER_H
-#define MUSE_VST_VSTSYNTHESISER_H
+#pragma once
 
 #include <memory>
 
-#include "audio/internal/abstractsynthesizer.h"
-#include "audio/iaudioconfiguration.h"
-#include "audio/audiotypes.h"
+#include "audio/worker/internal/synthesizers/abstractsynthesizer.h"
+#include "audio/worker/iaudioworkerconfiguration.h"
+#include "audio/common/audiotypes.h"
 #include "modularity/ioc.h"
 #include "mpe/events.h"
 
@@ -40,14 +38,14 @@ namespace muse::vst {
 class VstSynthesiser : public muse::audio::synth::AbstractSynthesizer
 {
     Inject<IVstInstancesRegister> instancesRegister = { this };
-    Inject<muse::audio::IAudioConfiguration> config = { this };
+    Inject<audio::worker::IAudioWorkerConfiguration> config = { this };
 
 public:
     explicit VstSynthesiser(const muse::audio::TrackId trackId, const muse::audio::AudioInputParams& params,
                             const modularity::ContextPtr& iocCtx);
     ~VstSynthesiser() override;
 
-    void init();
+    void init(const audio::OutputSpec& spec);
 
     bool isValid() const override;
 
@@ -68,7 +66,7 @@ public:
     void setPlaybackPosition(const muse::audio::msecs_t newPosition) override;
 
     // IAudioSource
-    void setSampleRate(unsigned int sampleRate) override;
+    void setOutputSpec(const audio::OutputSpec& spec) override;
     unsigned int audioChannelsCount() const override;
     async::Channel<unsigned int> audioChannelsCountChanged() const override;
     muse::audio::samples_t process(float* buffer, muse::audio::samples_t samplesPerChannel) override;
@@ -80,7 +78,7 @@ private:
     IVstPluginInstancePtr m_pluginPtr = nullptr;
     std::unique_ptr<VstAudioClient> m_vstAudioClient = nullptr;
 
-    unsigned int m_audioChannelsCount = 2;
+    audio::OutputSpec m_outputSpec;
     async::Channel<unsigned int> m_streamsCountChanged;
 
     VstSequencer m_sequencer;
@@ -92,5 +90,3 @@ private:
 
 using VstSynthPtr = std::shared_ptr<VstSynthesiser>;
 }
-
-#endif // MUSE_VST_VSTSYNTHESISER_H

@@ -25,7 +25,7 @@ import QtQuick.Controls 2.15
 import Muse.Ui 1.0
 import Muse.UiComponents 1.0
 
-Rectangle {
+Item {
     id: root
 
     property alias model: repeater.model
@@ -41,6 +41,7 @@ Rectangle {
     property int separatorHeight: rowHeight
 
     property int maximumWidth: -1
+    property bool isMultiline: height > rowHeight
 
     property NavigationPanel navigationPanel: NavigationPanel {
         name: root.objectName !== "" ? root.objectName : "ToolBarView"
@@ -55,10 +56,10 @@ Rectangle {
     width: content.width + leftPadding + rightPadding
     height: content.height + topPadding + bottomPadding
 
-    color: ui.theme.backgroundPrimaryColor
-
     Component.onCompleted: {
-        root.model.load()
+        if (root.model) {
+            root.model.load()
+        }
     }
 
     Flow {
@@ -70,12 +71,15 @@ Rectangle {
         anchors.topMargin: root.topPadding
 
         width: {
+            if (root.model.length === 0) {
+                return 0
+            }
+
             var result = 0
             var children = content.children
 
             for (var i = 0; i < children.length; ++i) {
                 result += children[i].width + spacing
-
             }
 
             if (result > 0) {

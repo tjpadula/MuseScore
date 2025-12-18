@@ -21,10 +21,17 @@
  */
 #include "process.h"
 
+#include "muse_framework_config.h"
+
+#ifdef QT_QPROCESS_SUPPORTED
 #include <QProcess>
+#endif
+
+#include "log.h"
 
 using namespace muse;
 
+#ifdef QT_QPROCESS_SUPPORTED
 static QStringList toQList(const std::vector<std::string>& args)
 {
     QStringList list;
@@ -34,22 +41,44 @@ static QStringList toQList(const std::vector<std::string>& args)
     return list;
 }
 
+#endif
+
 int Process::execute(const std::string& program, const std::vector<std::string>& args)
 {
 #if defined(Q_OS_IOS)
+    UNUSED(program);
+    UNUSED(args);
+    NOT_SUPPORTED;
     return -1;
 #else
+#ifdef QT_QPROCESS_SUPPORTED
     int ret = QProcess::execute(QString::fromStdString(program), toQList(args));
     return ret;
+#else
+    UNUSED(program);
+    UNUSED(args);
+    NOT_SUPPORTED;
+    return -1;
+#endif
 #endif
 }
 
 bool Process::startDetached(const std::string& program, const std::vector<std::string>& args)
 {
 #if defined(Q_OS_IOS)
+    UNUSED(program);
+    UNUSED(args);
+    NOT_SUPPORTED;
     return -1;
 #else
+#ifdef QT_QPROCESS_SUPPORTED
     bool ok = QProcess::startDetached(QString::fromStdString(program), toQList(args));
     return ok;
+#else
+    UNUSED(program);
+    UNUSED(args);
+    NOT_SUPPORTED;
+    return false;
+#endif
 #endif
 }

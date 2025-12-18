@@ -38,6 +38,7 @@
 #include "engraving/dom/fermata.h"
 #include "engraving/dom/figuredbass.h"
 #include "engraving/dom/fingering.h"
+#include "engraving/dom/glissando.h"
 #include "engraving/dom/hairpin.h"
 #include "engraving/dom/harmony.h"
 #include "engraving/dom/harppedaldiagram.h"
@@ -388,6 +389,7 @@ bool MeiExporter::writePgHead(const VBox* vBox)
     m_currentNode = m_currentNode.append_child();
 
     libmei::PgHead pgHead;
+    pgHead.SetFunc(libmei::PGFUNC_first);
     pgHead.Write(m_currentNode);
 
     std::list<std::pair<libmei::Rend, String> > cells[CellCount];
@@ -614,7 +616,7 @@ bool MeiExporter::writeStaffGrpStart(const Staff* staff, std::vector<int>& ends,
 
     for (size_t j = 0; j < staff->bracketLevels() + 1; j++) {
         if (staff->bracketType(j) != BracketType::NO_BRACKET) {
-            libmei::StaffGrp meiStaffGrp = Convert::bracketToMEI(staff->bracketType(j), staff->barLineSpan());
+            libmei::StaffGrp meiStaffGrp = Convert::staffGrpToMEI(staff->bracketType(j), staff->barLineSpan());
             // mark at which staff we will need to close the staffGrp
             int end = static_cast<int>(staff->idx() + staff->bracketSpan(j)) - 1;
             // Something is wrong, maybe a staff was delete in the MuseScore file?
@@ -860,16 +862,18 @@ bool MeiExporter::writeMeasure(const Measure* measure, int& measureN, bool& isFi
             success = success && this->writeArpeg(dynamic_cast<const Arpeggio*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isBreath()) {
             success = success && this->writeBreath(dynamic_cast<const Breath*>(controlEvent.first), controlEvent.second);
-        } else if (controlEvent.first->isExpression() || controlEvent.first->isPlayTechAnnotation() || controlEvent.first->isStaffText()) {
-            success = success && this->writeDir(dynamic_cast<const TextBase*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isDynamic()) {
             success = success && this->writeDynam(dynamic_cast<const Dynamic*>(controlEvent.first), controlEvent.second);
+        } else if (controlEvent.first->isExpression() || controlEvent.first->isPlayTechAnnotation()) {
+            success = success && this->writeDir(dynamic_cast<const TextBase*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isFermata()) {
             success = success && this->writeFermata(dynamic_cast<const Fermata*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isFiguredBass()) {
             success = success && this->writeFb(dynamic_cast<const FiguredBass*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isFingering()) {
             success = success && this->writeFing(dynamic_cast<const Fingering*>(controlEvent.first), controlEvent.second);
+        } else if (controlEvent.first->isGlissando()) {
+            success = success && this->writeGliss(dynamic_cast<const Glissando*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isHairpin()) {
             success = success && this->writeHairpin(dynamic_cast<const Hairpin*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isHarmony()) {
@@ -886,6 +890,10 @@ bool MeiExporter::writeMeasure(const Measure* measure, int& measureN, bool& isFi
             success = success && this->writeRehearsalMark(dynamic_cast<const RehearsalMark*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isSlur()) {
             success = success && this->writeSlur(dynamic_cast<const Slur*>(controlEvent.first), controlEvent.second);
+        } else if (controlEvent.first->isStaffText()) {
+            success = success && this->writeDir(dynamic_cast<const TextBase*>(controlEvent.first), controlEvent.second);
+        } else if (controlEvent.first->isSystemText()) {
+            success = success && this->writeDir(dynamic_cast<const TextBase*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isTempoText()) {
             success = success && this->writeTempo(dynamic_cast<const TempoText*>(controlEvent.first), controlEvent.second);
         } else if (controlEvent.first->isTie()) {
@@ -1334,6 +1342,10 @@ bool MeiExporter::writeNote(const Note* note, const Chord* chord, const Staff* s
         this->writeArtics(chord);
         this->writeVerses(chord);
     }
+    const int velocity = note->userVelocity();
+    if (velocity != 0) {
+        meiNote.SetVel(velocity);
+    }
     Convert::colorToMEI(note, meiNote);
     std::string xmlId = this->getXmlIdFor(note, 'n');
     meiNote.Write(m_currentNode, xmlId);
@@ -1346,6 +1358,17 @@ bool MeiExporter::writeNote(const Note* note, const Chord* chord, const Staff* s
     }
     if (note->tieBack()) {
         m_endingControlEventMap[note->tieBack()] = "#" + xmlId;
+    }
+
+    for (Spanner* spanner : note->spannerFor()) {
+        if (spanner->isGlissando()) {
+            m_startingControlEventList.push_back(std::make_pair(spanner, "#" + xmlId));
+        }
+    }
+    for (Spanner* spanner : note->spannerBack()) {
+        if (spanner->isGlissando()) {
+            m_endingControlEventMap[spanner] = "#" + xmlId;
+        }
     }
 
     for (const EngravingItem* element : note->el()) {
@@ -1710,7 +1733,7 @@ bool MeiExporter::writeF(const FiguredBassItem* figuredBassItem)
 }
 
 /**
- * Write a fb (FigureBass).
+ * Write a fb (figured bass).
  */
 
 bool MeiExporter::writeFb(const FiguredBass* figuredBass, const std::string& startid)
@@ -1800,6 +1823,32 @@ bool MeiExporter::writeFing(const Fingering* fing, const std::string& startid)
     meiFing.Write(fingNode, this->getXmlIdFor(fing, 'f'));
 
     this->writeLines(fingNode, meiLines);
+
+    return true;
+}
+
+/**
+ * Write a gliss and its text content.
+ */
+
+bool MeiExporter::writeGliss(const Glissando* gliss, const std::string& startid)
+{
+    IF_ASSERT_FAILED(gliss) {
+        return false;
+    }
+
+    pugi::xml_node glissNode = m_currentNode.append_child();
+    String text = gliss->text();
+    libmei::Gliss meiGliss = Convert::glissToMEI(gliss);
+    meiGliss.SetStartid(startid);
+    meiGliss.Write(glissNode, this->getXmlIdFor(gliss, 'g'));
+
+    if (text.size() > 0) {
+        glissNode.text().set(text.toStdString().c_str());
+    }
+
+    // Add the node to the map of open control events
+    this->addNodeToOpenControlEvents(glissNode, gliss, startid);
 
     return true;
 }
@@ -2242,12 +2291,14 @@ void MeiExporter::fillControlEventMap(const std::string& xmlId, const ChordRest*
 
     track_idx_t trackIdx = chordRest->track();
 
-    for (const EngravingItem* element : chordRest->segment()->annotations()) {
-        if (element->track() == trackIdx) {
-            m_startingControlEventList.push_back(std::make_pair(element, "#" + xmlId));
+    if (!chordRest->isGrace()) {
+        for (const EngravingItem* element : chordRest->segment()->annotations()) {
+            if (element->track() == trackIdx) {
+                m_startingControlEventList.push_back(std::make_pair(element, "#" + xmlId));
+            }
         }
     }
-    // Breath a handled differently
+    // Breath is handled differently
     const Breath* breath = chordRest->hasBreathMark();
     if (breath) {
         m_startingControlEventList.push_back(std::make_pair(breath, "#" + xmlId));

@@ -24,6 +24,11 @@
 using namespace muse::audio;
 using namespace muse;
 
+AudioWorkerConfig AudioConfigurationStub::workerConfig() const
+{
+    return {};
+}
+
 std::vector<std::string> AudioConfigurationStub::availableAudioApiList() const
 {
     return {};
@@ -71,16 +76,6 @@ async::Notification AudioConfigurationStub::driverBufferSizeChanged() const
     return async::Notification();
 }
 
-msecs_t AudioConfigurationStub::audioWorkerInterval(const samples_t, const sample_rate_t) const
-{
-    return 0;
-}
-
-samples_t AudioConfigurationStub::minSamplesToReserve(RenderMode) const
-{
-    return 0;
-}
-
 samples_t AudioConfigurationStub::samplesToPreallocate() const
 {
     return 0;
@@ -105,22 +100,7 @@ async::Notification AudioConfigurationStub::sampleRateChanged() const
     return async::Notification();
 }
 
-size_t AudioConfigurationStub::desiredAudioThreadNumber() const
-{
-    return 0;
-}
-
-size_t AudioConfigurationStub::minTrackCountForMultithreading() const
-{
-    return 0;
-}
-
 // synthesizers
-AudioInputParams AudioConfigurationStub::defaultAudioInputParams() const
-{
-    return {};
-}
-
 io::paths_t AudioConfigurationStub::soundFontDirectories() const
 {
     return {};
@@ -138,6 +118,20 @@ void AudioConfigurationStub::setUserSoundFontDirectories(const io::paths_t&)
 async::Channel<io::paths_t> AudioConfigurationStub::soundFontDirectoriesChanged() const
 {
     return async::Channel<io::paths_t>();
+}
+
+bool AudioConfigurationStub::autoProcessOnlineSoundsInBackground() const
+{
+    return false;
+}
+
+void AudioConfigurationStub::setAutoProcessOnlineSoundsInBackground(bool)
+{
+}
+
+async::Channel<bool> AudioConfigurationStub::autoProcessOnlineSoundsInBackgroundChanged() const
+{
+    return {};
 }
 
 bool AudioConfigurationStub::shouldMeasureInputLag() const

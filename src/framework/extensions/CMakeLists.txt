@@ -86,6 +86,10 @@ set(MODULE_SRC
 
 set(MODULE_QML_IMPORT ${CMAKE_CURRENT_LIST_DIR}/qml )
 
+if (QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Quick)
+endif()
+
 setup_module()
 
 endif(NOT IOS)

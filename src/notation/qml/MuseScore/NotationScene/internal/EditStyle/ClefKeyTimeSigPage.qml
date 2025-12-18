@@ -218,12 +218,8 @@ StyledFlickable {
                                 delegate: FlatRadioButton {
                                     width: 40
 
-                                    StyledIconLabel {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        iconCode: modelData.iconCode
-                                        font.pixelSize: 16
-                                    }
+                                    iconCode: modelData.iconCode
+                                    iconFontSize: 16
 
                                     checked: root.numeralStyle.value === modelData.value
                                     onToggled: root.numeralStyle.value = modelData.value
@@ -266,15 +262,11 @@ StyledFlickable {
                                 delegate: FlatRadioButton {
                                     width: 28
 
-                                    StyledIconLabel {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        iconCode: modelData.iconCode
-                                        font.pixelSize: 16
-                                    }
+                                    iconCode: modelData.iconCode
+                                    iconFontSize: 16
 
                                     checked: root.timeSigAlignment ? root.timeSigAlignment.value === modelData.value : false
-                                    onToggled: function() {
+                                    onToggled: {
                                         if (root.timeSigAlignment) {
                                             root.timeSigAlignment.value = modelData.value
                                         }
@@ -301,6 +293,7 @@ StyledFlickable {
                                     measureUnitsSymbol: 'x'
                                     prefixIcon: IconCode.HORIZONTAL
                                     minValue: 1.0
+                                    step: 0.25
 
                                     currentValue: root.timeSigScale.value.width
                                     onValueEdited: function(newValue) {
@@ -318,6 +311,7 @@ StyledFlickable {
                                     measureUnitsSymbol: 'x'
                                     prefixIcon: IconCode.VERTICAL
                                     minValue: 1.0
+                                    step: 0.25
 
                                     currentValue: root.timeSigScale.value.height
                                     onValueEdited: function(newValue) {
@@ -352,14 +346,15 @@ StyledFlickable {
                             StyledTextLabel {
                                 Layout.preferredWidth: styleGroupBox.labelWidth
                                 horizontalAlignment: Text.AlignLeft
-                                text: qsTrc("notation/editstyle/timesignatures", "Gap between numbers\n(scaled):")
+                                text: qsTrc("notation/editstyle/timesignatures", "Gap between numbers (scaled):")
+                                wrapMode: Text.Wrap
                             }
 
                             IncrementalPropertyControl {
                                 Layout.preferredWidth: 100
                                 decimals: 2
                                 step: 0.1
-                                measureUnitsSymbol: 'sp'
+                                measureUnitsSymbol: qsTrc("global", "sp")
 
                                 currentValue: root.numDist.value
                                 onValueEdited: function(newValue) {

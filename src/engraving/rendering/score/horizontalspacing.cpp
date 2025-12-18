@@ -22,6 +22,7 @@
 #include <cfloat>
 
 #include "horizontalspacing.h"
+#include "parenthesislayout.h"
 
 #include "dom/barline.h"
 #include "dom/beam.h"
@@ -53,6 +54,7 @@ double HorizontalSpacing::computeSpacingForFullSystem(System* system, double str
 
     ctx.stretchReduction = stretchReduction;
     ctx.squeezeFactor = squeezeFactor;
+    ctx.spacingDensity = system->style().styleD(Sid::spacingDensity);
     ctx.overrideMinMeasureWidth = overrideMinMeasureWidth;
 
     ctx.xCur = system->leftMargin();
@@ -88,6 +90,7 @@ double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system, bool 
     ctx.system = system;
     ctx.spatium = system->spatium();
     ctx.xLeftBarrier = system->leftMargin();
+    ctx.spacingDensity = system->style().styleD(Sid::spacingDensity);
 
     size_t measureCount = system->measures().size();
     IF_ASSERT_FAILED(measureCount > 0) {
@@ -280,6 +283,13 @@ std::vector<HorizontalSpacing::SegmentPosition> HorizontalSpacing::spaceSegments
         placedSegments.back().xPosInSystemCoords += leadingSpace;
 
         if (curSeg->isChordRestType()) {
+            bool isFirstCROfSystem = curSeg->rtick().isZero() && curSeg->measure()->isFirstInSystem();
+            if (isFirstCROfSystem) {
+                double xMinSystemHeaderDist = ctx.system->leftMargin() + curSeg->style().styleMM(Sid::systemHeaderMinStartOfSystemDistance);
+                placedSegments.back().xPosInSystemCoords = std::max(placedSegments.back().xPosInSystemCoords, xMinSystemHeaderDist);
+                ctx.xCur = std::max(ctx.xCur, xMinSystemHeaderDist);
+            }
+
             double chordRestSegWidth = chordRestSegmentNaturalWidth(curSeg, ctx);
 
             Segment* nextSeg = i < segList.size() - 1 ? segList[i + 1] : nullptr;
@@ -299,7 +309,7 @@ std::vector<HorizontalSpacing::SegmentPosition> HorizontalSpacing::spaceSegments
     }
 
     if (ctx.systemIsFull) {
-        checkLyricsAgainstRightMargin(placedSegments);
+        checkLyricsAgainstRightMargin(placedSegments, ctx);
         checkLargeTimeSigAgainstRightMargin(placedSegments);
     }
 
@@ -463,13 +473,20 @@ void HorizontalSpacing::checkLyricsAgainstLeftMargin(Segment* segment, double& x
     }
 }
 
-void HorizontalSpacing::checkLyricsAgainstRightMargin(std::vector<SegmentPosition>& segPositions)
+void HorizontalSpacing::checkLyricsAgainstRightMargin(std::vector<SegmentPosition>& segPositions, const HorizontalSpacingContext& ctx)
 {
+    const double systemEdge = segPositions.back().xPosInSystemCoords + segPositions.back().segment->minRight();
+    const MStyle& style = ctx.system->style();
+    const bool lyricsDashForce = style.styleB(Sid::lyricsDashForce);
+    const bool lyricsMelismaForce = style.styleB(Sid::lyricsMelismaForce);
+    const double minSpaceForDash = lyricsDashForce ? style.styleMM(Sid::lyricsDashPad) + style.styleMM(Sid::lyricsDashMinLength)
+                                   + style.styleMM(Sid::lineEndToBarlineDistance) + segPositions.back().segment->minRight() : 0.0;
+    const double minSpaceForMelisma = lyricsMelismaForce ? style.styleMM(Sid::lyricsMelismaPad) + style.styleMM(Sid::lyricsMelismaMinLength)
+                                      + style.styleMM(Sid::lineEndToBarlineDistance) + segPositions.back().segment->minRight() : 0.0;
+
     int chordRestSegmentsCount = 0;
 
     for (size_t i = segPositions.size(); i > 1; --i) {
-        double systemEdge = segPositions.back().xPosInSystemCoords + segPositions.back().segment->minRight();
-
         SegmentPosition& segPos = segPositions[i - 1];
         double x = segPos.xPosInSystemCoords;
         Segment* seg = segPos.segment;
@@ -485,7 +502,16 @@ void HorizontalSpacing::checkLyricsAgainstRightMargin(std::vector<SegmentPositio
         for (const Shape& shape : seg->shapes()) {
             for (const ShapeElement& shapeEl : shape.elements()) {
                 if (shapeEl.item() && shapeEl.item()->isLyrics()) {
-                    xMaxLyrics = std::max(xMaxLyrics, x + shapeEl.right());
+                    const Lyrics* lyrics = toLyrics(shapeEl.item());
+                    bool hasMelisma = lyrics->separator() && lyrics->separator()->isEndMelisma();
+                    bool hasDash = lyrics->syllabic() == LyricsSyllabic::BEGIN || lyrics->syllabic() == LyricsSyllabic::MIDDLE;
+                    double rightEdge = x + shapeEl.right();
+                    if (hasDash) {
+                        rightEdge += minSpaceForDash;
+                    } else if (hasMelisma) {
+                        rightEdge += minSpaceForMelisma;
+                    }
+                    xMaxLyrics = std::max(xMaxLyrics, rightEdge);
                 }
             }
         }
@@ -616,7 +642,7 @@ void HorizontalSpacing::moveRightAlignedSegments(std::vector<SegmentPosition>& p
             if (followingSeg->isRightAligned() || followingSeg->hasTimeSigAboveStaves()) {
                 continue;
             }
-            if (followingSeg->measure() != segment->measure()) {
+            if (followingSeg->measure() != segment->measure() && followingSeg->rtick().isNotZero()) {
                 break;
             }
             double followingSegX = segPos.xPosInSystemCoords;
@@ -693,13 +719,10 @@ double HorizontalSpacing::chordRestSegmentNaturalWidth(Segment* segment, Horizon
     double segTotalStretch = durationStretch * userStretch;
     segment->setStretch(segTotalStretch);
 
-    double stdNoteHeadWidth = measure->score()->noteHeadWidth();
-    double minNoteDist = measure->score()->style().styleMM(Sid::minNoteDistance);
-    double minNoteSpace = stdNoteHeadWidth + minNoteDist;
+    static constexpr double DEFAULT_QUARTER_NOTE_SPACE = 3.5; // In units of spatium
+    double defaultQuarterNoteSpace = measure->spatium() * DEFAULT_QUARTER_NOTE_SPACE;
 
-    static constexpr double QUARTER_NOTE_SPACING = 1.5;
-
-    double naturalWidth = minNoteSpace * segTotalStretch * ctx.stretchReduction * QUARTER_NOTE_SPACING;
+    double naturalWidth = defaultQuarterNoteSpace * segTotalStretch * ctx.stretchReduction / ctx.spacingDensity;
 
     return naturalWidth;
 }
@@ -828,6 +851,47 @@ void HorizontalSpacing::applyCrossBeamSpacingCorrection(Segment* thisSeg, Segmen
     }
 }
 
+double HorizontalSpacing::minStemDistOnNonAdjacentCross(const Segment* thisSeg, const Segment* nextSeg)
+{
+    // Extreme edge-case of chords that are a) adjacent in a cross-staff beam but b) on non-adjacent segments
+    // (which causes them to escape the previous cross-staff spacing checks) c) stemmed up->down (see #27786)
+    double dist = -DBL_MAX;
+    for (EngravingItem* item : nextSeg->elist()) {
+        if (!item || !item->isChord()) {
+            continue;
+        }
+
+        Chord* chord = toChord(item);
+        if (!chord->stem() || chord->up() || !(chord->beam() && chord->beam()->cross())) {
+            continue;
+        }
+
+        Beam* beam = chord->beam();
+        std::vector<ChordRest*> beamElements = beam->elements();
+        Chord* prevChordOnBeam = nullptr;
+        for (size_t i = 0; i < beamElements.size(); ++i) {
+            if (beamElements[i] == chord) {
+                if (i > 0) {
+                    ChordRest* prevChordRest = beamElements[i - 1];
+                    prevChordOnBeam = prevChordRest->isChord() ? toChord(prevChordRest) : nullptr;
+                }
+                break;
+            }
+        }
+
+        if (!prevChordOnBeam || prevChordOnBeam->parent() != thisSeg || !prevChordOnBeam->up() || !prevChordOnBeam->stem()) {
+            continue;
+        }
+
+        double minStemDist = prevChordOnBeam->x() + prevChordOnBeam->stem()->x() - (chord->x() + chord->stem()->x());
+        minStemDist += chord->score()->paddingTable().at(ElementType::STEM).at(ElementType::STEM);
+
+        dist = std::max(dist, minStemDist);
+    }
+
+    return dist;
+}
+
 HorizontalSpacing::CrossBeamSpacing HorizontalSpacing::computeCrossBeamSpacing(Segment* thisSeg, Segment* nextSeg)
 {
     CrossBeamSpacing crossBeamType;
@@ -879,11 +943,13 @@ HorizontalSpacing::CrossBeamSpacing HorizontalSpacing::computeCrossBeamSpacing(S
         if (!thisCR->visible() || thisCR->isFullMeasureRest() || (thisCR->isRest() && toRest(thisCR)->isGap())) {
             continue;
         }
-        if (!thisCR->beam()) {
+        Beam* beam = thisCR->beam();
+        if (!beam && thisCR->actualTicks() <= thisSeg->ticks()) {
             canBeAdjusted = false;
+        }
+        if (!beam || (beam->elements().size() == 2 && thisCR->up())) {
             continue;
         }
-        Beam* beam = thisCR->beam();
         for (EngravingItem* ee : nextSeg->elist()) {
             if (!ee || !ee->isChordRest() || !ee->staff()->visible()) {
                 continue;
@@ -1109,6 +1175,7 @@ double HorizontalSpacing::getFirstSegmentXPos(Segment* segment, HorizontalSpacin
         Shape leftBarrier(RectF(0.0, -0.5 * DBL_MAX, 0.0, DBL_MAX));
         x = minLeft(segment, leftBarrier);
         x += style.styleMM(segment->hasAccidentals() ? Sid::barAccidentalDistance : Sid::barNoteDistance);
+        x = std::max(x, style.styleMM(Sid::systemHeaderMinStartOfSystemDistance).val());
         break;
     }
     case SegmentType::Clef:
@@ -1136,6 +1203,7 @@ double HorizontalSpacing::minHorizontalDistance(const Shape& f, const Shape& s, 
         if (r2.isNull()) {
             continue;
         }
+
         const EngravingItem* item2 = r2.item();
         double by1 = r2.top();
         double by2 = r2.bottom();
@@ -1143,6 +1211,7 @@ double HorizontalSpacing::minHorizontalDistance(const Shape& f, const Shape& s, 
             if (r1.isNull()) {
                 continue;
             }
+
             const EngravingItem* item1 = r1.item();
 
             double ay1 = r1.top();
@@ -1157,11 +1226,31 @@ double HorizontalSpacing::minHorizontalDistance(const Shape& f, const Shape& s, 
                 padding = std::max(padding, absoluteMinPadding);
                 kerningType = computeKerning(item1, item2);
             }
-            if ((intersection && kerningType != KerningType::ALLOW_COLLISION)
+
+            if (kerningType == KerningType::ALLOW_COLLISION) {
+                continue;
+            }
+
+            if (kerningType == KerningType::NON_KERNING
+                || intersection
                 || (r1.width() == 0 || r2.width() == 0)  // Temporary hack: shapes of zero-width are assumed to collide with everyghin
-                || (!item1 && item2 && item2->isLyrics())  // Temporary hack: avoids collision with melisma line
-                || kerningType == KerningType::NON_KERNING) {
+                || (!item1 && item2 && item2->isLyrics())) {
                 dist = std::max(dist, r1.right() - r2.left() + padding);
+                continue;
+            }
+
+            switch (kerningType) {
+            case KerningType::KERN_UNTIL_LEFT_EDGE:
+                dist = std::max(dist, r1.left() - r2.left());
+                break;
+            case KerningType::KERN_UNTIL_CENTER:
+                dist = std::max(dist, r1.left() + 0.5 * r1.width() - r2.left());
+                break;
+            case KerningType::KERN_UNTIL_RIGHT_EDGE:
+                dist = std::max(dist, r1.right() - r2.left());
+                break;
+            default:
+                break;
             }
         }
     }
@@ -1280,6 +1369,7 @@ double HorizontalSpacing::minHorizontalDistance(const Segment* f, const Segment*
     // These only occur when one segment is a ChordRest and the other isn't
     // Allocate space to ensure minimum length of partial ties
     if (f->isChordRestType() == ns->isChordRestType()) {
+        w = std::max(w, minStemDistOnNonAdjacentCross(f, ns));
         return w;
     }
 
@@ -1329,6 +1419,9 @@ double HorizontalSpacing::minLeft(const Segment* seg, const Shape& ls)
 
 double HorizontalSpacing::computePadding(const EngravingItem* item1, const EngravingItem* item2)
 {
+    if (item1->isParenthesis() != item2->isParenthesis()) {
+        return ParenthesisLayout::computeParenthesisPadding(item1, item2);
+    }
     const PaddingTable& paddingTable = item1->score()->paddingTable();
     ElementType type1 = item1->type();
     ElementType type2 = item2->type();
@@ -1368,7 +1461,8 @@ void HorizontalSpacing::computeNotePadding(const Note* note, const EngravingItem
     const MStyle& style = note->style();
 
     bool sameVoiceNoteOrStem = (item2->isNote() || item2->isStem()) && note->track() == item2->track();
-    if (sameVoiceNoteOrStem) {
+    bool areAdjacentByDuration = (note->rtick() + note->chord()->actualTicks()) == item2->rtick();
+    if (sameVoiceNoteOrStem || areAdjacentByDuration) {
         bool intersection = note->shape().translate(note->pos()).intersects(item2->shape().translate(item2->pos()));
         if (intersection) {
             padding = std::max(padding, static_cast<double>(style.styleMM(Sid::minNoteDistance)));
@@ -1390,6 +1484,11 @@ void HorizontalSpacing::computeNotePadding(const Note* note, const EngravingItem
     } else if (!note->isGrace() && item2->isNote() && toNote(item2)->isGrace()) {
         // Main-to-grace
         padding = std::max(padding, static_cast<double>(style.styleMM(Sid::graceToMainNoteDist)));
+    }
+
+    if (!note->fretString().empty() && item2->isNote()) { // This is a TAB fret mark
+        static constexpr double tabFretPaddingIncrease = 1.5; // TODO: style?
+        padding *= tabFretPaddingIncrease;
     }
 
     if (!item2->isNote()) {
@@ -1427,7 +1526,7 @@ void HorizontalSpacing::computeNotePadding(const Note* note, const EngravingItem
                 minEndPointsDistance = style.styleMM(Sid::minStraightGlissandoLength);
             }
 
-            double lapPadding = (laPoint1.pos().x() - note->headWidth()) + minEndPointsDistance - laPoint2.pos().x();
+            double lapPadding = (laPoint1.pos().x() - note->width()) + minEndPointsDistance - laPoint2.pos().x();
             lapPadding *= scaling;
 
             padding = std::max(padding, lapPadding);
@@ -1485,6 +1584,10 @@ void HorizontalSpacing::computeLyricsPadding(const Lyrics* lyrics1, const Engrav
 
 KerningType HorizontalSpacing::computeKerning(const EngravingItem* item1, const EngravingItem* item2)
 {
+    if (item1->isArticulationOrFermata() || item2->isArticulationOrFermata()) {
+        return computeArticulationAndFermataKerning(item1, item2);
+    }
+
     if (ignoreItems(item1, item2)) {
         return KerningType::ALLOW_COLLISION;
     }
@@ -1580,10 +1683,14 @@ KerningType HorizontalSpacing::doComputeKerningType(const EngravingItem* item1, 
         : return computeLyricsKerningType(toLyrics(item1), item2);
     case ElementType::NOTE:
         return computeNoteKerningType(toNote(item1), item2);
+    case ElementType::CLEF:
+        return item2->isNote() ? KerningType::KERN_UNTIL_RIGHT_EDGE : KerningType::KERNING;
     case ElementType::STEM_SLASH:
         return computeStemSlashKerningType(toStemSlash(item1), item2);
     case ElementType::PARENTHESIS:
         return item2->isBarLine() ? KerningType::NON_KERNING : KerningType::KERNING;
+    case ElementType::GUITAR_BEND_SEGMENT:
+        return item2->isNote() || item2->isRest() ? KerningType::NON_KERNING : KerningType::KERNING;
     default:
         return KerningType::KERNING;
     }
@@ -1591,6 +1698,10 @@ KerningType HorizontalSpacing::doComputeKerningType(const EngravingItem* item1, 
 
 KerningType HorizontalSpacing::computeNoteKerningType(const Note* note, const EngravingItem* item2)
 {
+    if (item2->isClef()) {
+        return KerningType::KERN_UNTIL_RIGHT_EDGE;
+    }
+
     EngravingItem* nextParent = item2->parentItem(true);
     if (nextParent && nextParent->isNote() && toNote(nextParent)->isTrillCueNote()) {
         return KerningType::NON_KERNING;
@@ -1668,6 +1779,21 @@ KerningType HorizontalSpacing::computeLyricsKerningType(const Lyrics* lyrics1, c
     return KerningType::ALLOW_COLLISION;
 }
 
+KerningType HorizontalSpacing::computeArticulationAndFermataKerning(const EngravingItem* item1, const EngravingItem* item2)
+{
+    if (item1->isArticulationOrFermata()) {
+        if (item2->isArticulationOrFermata()) {
+            bool firstAbove = item1->isArticulationFamily() ? toArticulation(item1)->up() : item1->placeAbove();
+            bool secondAbove = item2->isArticulationFamily() ? toArticulation(item2)->up() : item2->placeAbove();
+            if (firstAbove == secondAbove) {
+                return KerningType::NON_KERNING;
+            }
+        }
+    }
+
+    return KerningType::KERNING;
+}
+
 void HorizontalSpacing::computeHangingLineWidth(const Segment* firstSeg, const Segment* nextSeg, double& width, bool systemHeaderGap,
                                                 bool systemEnd)
 {
@@ -1723,7 +1849,7 @@ void HorizontalSpacing::computeHangingLineWidth(const Segment* firstSeg, const S
                     minLength = style.styleMM(Sid::minStraightGlissandoLength);
                 }
 
-                const double notePosX = note->pos().x() + toChord(cr)->pos().x() + note->headWidth() / 2;
+                const double notePosX = note->pos().x() + toChord(cr)->pos().x();
                 const double lineNoteEndPos = (incoming ? width : 0.0) + notePosX + lap.pos().x();
                 const double lineSegEndPos
                     = (incoming ? otherSeg->minRight() + headerLineMargin : width + otherSeg->minLeft() - endSystemMargin);

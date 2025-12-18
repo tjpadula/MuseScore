@@ -31,10 +31,13 @@
 #include "engraving/types/types.h"
 #include "notation/inotationconfiguration.h"
 #include "notation/inotationplayback.h"
-#include "audio/iplayer.h"
-#include "audio/iplayback.h"
-#include "audio/audiotypes.h"
+#include "audio/main/iplayer.h"
+#include "audio/main/iplayback.h"
+#include "audio/main/iaudioconfiguration.h"
+#include "audio/common/audiotypes.h"
 #include "iinteractive.h"
+#include "tours/itoursservice.h"
+
 #include "drumsetloader.h"
 
 #include "../iplaybackcontroller.h"
@@ -49,8 +52,10 @@ class PlaybackController : public IPlaybackController, public muse::actions::Act
     INJECT_STATIC(IPlaybackConfiguration, configuration)
     INJECT_STATIC(notation::INotationConfiguration, notationConfiguration)
     INJECT_STATIC(muse::audio::IPlayback, playback)
+    INJECT_STATIC(muse::audio::IAudioConfiguration, audioConfiguration)
     INJECT_STATIC(ISoundProfilesRepository, profilesRepo)
     INJECT_STATIC(muse::IInteractive, interactive)
+    INJECT_STATIC(muse::tours::IToursService, tours)
 
 public:
     void init();
@@ -84,9 +89,13 @@ public:
     void setTrackSoloMuteState(const engraving::InstrumentTrackId& trackId,
                                const notation::INotationSoloMuteState::SoloMuteState& state) override;
 
-    void playElements(const std::vector<const notation::EngravingItem*>& elements, bool isMidi = false) override;
-    void playNotes(const notation::NoteValList& notes, const notation::staff_idx_t staffIdx, const notation::Segment* segment) override;
+    void playElements(const std::vector<const notation::EngravingItem*>& elements,
+                      const PlayParams& params = PlayParams(), bool isMidi = false) override;
+    void playNotes(const notation::NoteValList& notes, notation::staff_idx_t staffIdx, const notation::Segment* segment,
+                   const PlayParams& params = PlayParams()) override;
     void playMetronome(int tick) override;
+
+    void triggerControllers(const muse::mpe::ControllerChangeEventList& list, notation::staff_idx_t staffIdx, int tick) override;
 
     void seekElement(const notation::EngravingItem* element) override;
     void seekBeat(int measureIndex, int beatIndex) override;
@@ -114,6 +123,10 @@ public:
     void setIsExportingAudio(bool exporting) override;
 
     bool canReceiveAction(const muse::actions::ActionCode& code) const override;
+
+    const std::map<muse::audio::TrackId, muse::audio::AudioResourceMeta>& onlineSounds() const override;
+    muse::async::Notification onlineSoundsChanged() const override;
+    muse::Progress onlineSoundsProcessingProgress() const override;
 
 private:
     muse::audio::IPlayerPtr currentPlayer() const;
@@ -144,10 +157,10 @@ private:
     void seekListSelection();
     void seekRangeSelection();
 
-    void onAudioResourceChanged(const mu::engraving::InstrumentTrackId& trackId, const muse::audio::AudioResourceMeta& oldMeta,
-                                const muse::audio::AudioResourceMeta& newMeta);
+    void onAudioResourceChanged(const muse::audio::TrackId trackId, const mu::engraving::InstrumentTrackId& instrumentTrackId,
+                                const muse::audio::AudioResourceMeta& oldMeta, const muse::audio::AudioResourceMeta& newMeta);
 
-    bool shouldLoadDrumset(const engraving::InstrumentTrackId& trackId, const muse::audio::AudioResourceMeta& oldMeta,
+    bool shouldLoadDrumset(const engraving::InstrumentTrackId& instrumentTrackId, const muse::audio::AudioResourceMeta& oldMeta,
                            const muse::audio::AudioResourceMeta& newMeta) const;
 
     void addSoundFlagsIfNeed(const std::vector<engraving::EngravingItem*>& selection);
@@ -155,7 +168,7 @@ private:
     void togglePlay();
     void rewind(const muse::actions::ActionData& args);
     void play();
-    void pause();
+    void pause(bool select = false);
     void stop();
     void resume();
 
@@ -168,9 +181,9 @@ private:
     void togglePlayChordSymbols();
     void toggleAutomaticallyPan();
     void toggleMetronome();
+    void toggleCountIn();
     void toggleMidiInput();
     void setMidiUseWrittenPitch(bool useWrittenPitch);
-    void toggleCountIn();
     void toggleLoopPlayback();
     void toggleHearPlaybackWhenEditing();
 
@@ -195,8 +208,6 @@ private:
     void setupSequenceTracks();
     void setupSequencePlayer();
 
-    void initMuteStates();
-
     void updateSoloMuteStates();
     void updateAuxMuteStates();
 
@@ -213,6 +224,14 @@ private:
     void removeTrack(const engraving::InstrumentTrackId& instrumentTrackId);
 
     void onTrackNewlyAdded(const engraving::InstrumentTrackId& instrumentTrackId);
+
+    void addToOnlineSounds(const muse::audio::TrackId trackId, const muse::audio::AudioResourceMeta& meta);
+    void removeFromOnlineSounds(const muse::audio::TrackId trackId);
+    void listenOnlineSoundsProcessingProgress(const muse::audio::TrackId trackId);
+    bool shouldShowOnlineSoundsProcessingError() const;
+    void showOnlineSoundsProcessingError();
+    void processOnlineSounds();
+    void clearOnlineSoundsCache();
 
     muse::audio::secs_t playedTickToSecs(int tick) const;
 
@@ -250,6 +269,12 @@ private:
     DrumsetLoader m_drumsetLoader;
 
     bool m_measureInputLag = false;
+
+    std::map<muse::audio::TrackId, muse::audio::AudioResourceMeta> m_onlineSounds;
+    std::set<muse::audio::TrackId> m_onlineSoundsBeingProcessed;
+    muse::async::Notification m_onlineSoundsChanged;
+    muse::Progress m_onlineSoundsProcessingProgress;
+    bool m_onlineSoundsErrorDetected = false;
 };
 }
 

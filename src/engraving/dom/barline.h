@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_BARLINE_H
-#define MU_ENGRAVING_BARLINE_H
+#pragma once
 
 #include "engravingitem.h"
 
@@ -56,6 +55,19 @@ struct BarLineTableItem {
 };
 
 //---------------------------------------------------------
+//   BarLineEditData
+//---------------------------------------------------------
+
+class BarLineEditData : public ElementEditData
+{
+    OBJECT_ALLOCATOR(engraving, BarLineEditData)
+public:
+    double yoff1;
+    double yoff2;
+    virtual EditDataType type() override { return EditDataType::BarLineEditData; }
+};
+
+//---------------------------------------------------------
 //   @@ BarLine
 //
 //   @P barLineType  enum  (BarLineType.NORMAL, .DOUBLE, .START_REPEAT, .END_REPEAT, .BROKEN, .END, .END_START_REPEAT, .DOTTED)
@@ -67,8 +79,7 @@ class BarLine final : public EngravingItem
     DECLARE_CLASSOF(ElementType::BAR_LINE)
 
 public:
-
-    virtual ~BarLine();
+    ~BarLine() override;
 
     BarLine& operator=(const BarLine&) = delete;
 
@@ -79,7 +90,6 @@ public:
     EngravingObjectList scanChildren() const override;
 
     BarLine* clone() const override { return new BarLine(*this); }
-    Fraction playTick() const override;
     PointF canvasPos() const override;      ///< position in canvas coordinates
     PointF pagePos() const override;        ///< position in page coordinates
 
@@ -92,7 +102,7 @@ public:
     bool isEditable() const override { return true; }
 
     Segment* segment() const { return toSegment(explicitParent()); }
-    Measure* measure() const { return toMeasure(explicitParent()->explicitParent()); }
+    Measure* measure() const { return explicitParent() ? toMeasure(explicitParent()->explicitParent()) : nullptr; }
 
     void setSpanStaff(int val) { m_spanStaff = val; }
     void setSpanFrom(int val) { m_spanFrom = val; }
@@ -127,6 +137,12 @@ public:
     PropertyValue propertyDefault(Pid propertyId) const override;
     void undoChangeProperty(Pid id, const PropertyValue&, PropertyFlags ps) override;
     using EngravingObject::undoChangeProperty;
+    EngravingItem* propertyDelegate(Pid) override;
+
+    void setPlayCount(int playCount) { m_playCount = playCount; }
+    int playCount() const { return m_playCount; }
+
+    PlayCountText* playCountText() const;
 
     EngravingItem* nextSegmentElement() override;
     EngravingItem* prevSegmentElement() override;
@@ -134,11 +150,14 @@ public:
     String accessibleInfo() const override;
     String accessibleExtraInfo() const override;
 
+    void setSelected(bool f) override;
     bool needStartEditingAfterSelecting() const override { return true; }
     int gripsCount() const override { return 1; }
     Grip initialEditModeGrip() const override { return Grip::START; }
     Grip defaultGrip() const override { return Grip::START; }
     std::vector<PointF> gripsPositions(const EditData&) const override;
+
+    void styleChanged() override;
 
     static const std::vector<BarLineTableItem> barLineTable;
 
@@ -157,15 +176,13 @@ private:
     BarLine(Segment* parent);
     BarLine(const BarLine&);
 
-    void drawEditMode(muse::draw::Painter* painter, EditData& editData, double currentViewScaling) override;
-
     int m_spanStaff = 0;         // span barline to next staff if true, values > 1 are used for importing from 2.x
-    int m_spanFrom = 0;         // line number on start and end staves
+    int m_spanFrom = 0;          // line number on start and end staves
     int m_spanTo = 0;
     BarLineType m_barLineType = BarLineType::NORMAL;
 
     ElementList m_el;          ///< fermata or other articulations
+
+    int m_playCount = -1;                 // For use during copy & paste
 };
 } // namespace mu::engraving
-
-#endif

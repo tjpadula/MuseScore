@@ -56,9 +56,9 @@ public:
     MOCK_METHOD(void, clearSelection, (), (override));
     MOCK_METHOD(muse::async::Notification, selectionChanged, (), (const, override));
     MOCK_METHOD(void, selectTopOrBottomOfChord, (MoveDirection), (override));
+    MOCK_METHOD(void, findAndSelectChordRest, (const Fraction&), (override));
 
-    MOCK_METHOD(bool, isSelectionTypeFiltered, (SelectionFilterType), (const, override));
-    MOCK_METHOD(void, setSelectionTypeFiltered, (SelectionFilterType, bool), (override));
+    MOCK_METHOD(INotationSelectionFilterPtr, selectionFilter, (), (const, override));
 
     MOCK_METHOD(bool, isDragStarted, (), (const, override));
     MOCK_METHOD(void, startDrag, (const std::vector<EngravingItem*>&, const muse::PointF&, const IsDraggable&), (override));
@@ -74,9 +74,10 @@ public:
 
     MOCK_METHOD(bool, startDropSingle, (const QByteArray&), (override));
     MOCK_METHOD(bool, startDropRange, (const QByteArray&), (override));
+    MOCK_METHOD(bool, startDropRange, (const Fraction&, const Fraction&, engraving::staff_idx_t, size_t, bool), (override));
     MOCK_METHOD(bool, startDropImage, (const QUrl&), (override));
-    MOCK_METHOD(bool, isDropSingleAccepted, (const muse::PointF&, Qt::KeyboardModifiers), (override));
-    MOCK_METHOD(bool, isDropRangeAccepted, (const muse::PointF&), (override));
+    MOCK_METHOD(bool, updateDropSingle, (const muse::PointF&, Qt::KeyboardModifiers), (override));
+    MOCK_METHOD(bool, updateDropRange, (const muse::PointF&, std::optional<bool>), (override));
     MOCK_METHOD(bool, dropSingle, (const muse::PointF&, Qt::KeyboardModifiers), (override));
     MOCK_METHOD(bool, dropRange, (const QByteArray&, const muse::PointF&, bool), (override));
     MOCK_METHOD(void, setDropTarget, (EngravingItem*, bool), (override));
@@ -130,11 +131,14 @@ public:
     MOCK_METHOD(void, endEditGrip, (), (override));
 
     MOCK_METHOD(bool, isElementEditStarted, (), (const, override));
-    MOCK_METHOD(void, startEditElement, (EngravingItem*, bool), (override));
+    MOCK_METHOD(void, startEditElement, (EngravingItem*), (override));
     MOCK_METHOD(void, changeEditElement, (EngravingItem*), (override));
     MOCK_METHOD(bool, isEditAllowed, (QKeyEvent*), (override));
     MOCK_METHOD(void, editElement, (QKeyEvent*), (override));
     MOCK_METHOD(void, endEditElement, (), (override));
+
+    MOCK_METHOD(void, updateTimeTickAnchors, (QKeyEvent*), (override));
+    MOCK_METHOD(void, moveElementAnchors, (QKeyEvent*), (override));
 
     MOCK_METHOD(void, splitSelectedMeasure, (), (override));
     MOCK_METHOD(void, joinSelectedMeasures, (), (override));
@@ -155,6 +159,7 @@ public:
     MOCK_METHOD(void, addLaissezVibToSelection, (), (override));
     MOCK_METHOD(void, addTiedNoteToChord, (), (override));
     MOCK_METHOD(void, addSlurToSelection, (), (override));
+    MOCK_METHOD(void, addHammerOnPullOffToSelection, (), (override));
     MOCK_METHOD(void, addOttavaToSelection, (OttavaType), (override));
     MOCK_METHOD(void, addHairpinOnGripDrag, (engraving::EditData&, bool), (override));
     MOCK_METHOD(void, addHairpinsToSelection, (HairpinType), (override));
@@ -238,6 +243,9 @@ public:
 
     MOCK_METHOD(muse::Ret, canAddGuitarBend, (), (const, override));
     MOCK_METHOD(void, addGuitarBend, (GuitarBendType), (override));
+
+    MOCK_METHOD(muse::Ret, canAddFretboardDiagram, (), (const, override));
+    MOCK_METHOD(void, addFretboardDiagram, (), (override));
 
     MOCK_METHOD(void, navigateToLyrics, (MoveDirection, bool), (override));
     MOCK_METHOD(void, navigateToLyricsVerse, (MoveDirection), (override));

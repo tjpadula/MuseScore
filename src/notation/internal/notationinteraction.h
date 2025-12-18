@@ -28,6 +28,7 @@
 #include "async/asyncable.h"
 #include "iinteractive.h"
 #include "engraving/rendering/isinglerenderer.h"
+#include "engraving/rendering/ieditmoderenderer.h"
 
 #include "../inotationinteraction.h"
 #include "../inotationconfiguration.h"
@@ -48,12 +49,14 @@ class QDrag;
 namespace mu::notation {
 class Notation;
 class NotationSelection;
+class NotationSelectionFilter;
 class NotationInteraction : public INotationInteraction, public muse::Injectable, public muse::async::Asyncable
 {
     muse::Inject<INotationConfiguration> configuration = { this };
     muse::Inject<ISelectInstrumentsScenario> selectInstrumentScenario = { this };
     muse::Inject<muse::IInteractive> interactive = { this };
     muse::Inject<engraving::rendering::ISingleRenderer> engravingRenderer = { this };
+    muse::Inject<engraving::rendering::IEditModeRenderer> editModeRenderer = { this };
 
 public:
     NotationInteraction(Notation* notation, INotationUndoStackPtr undoStack);
@@ -92,13 +95,13 @@ public:
     void clearSelection() override;
     muse::async::Notification selectionChanged() const override;
     void selectTopOrBottomOfChord(MoveDirection d) override;
+    void findAndSelectChordRest(const Fraction& tick) override;
     void moveSegmentSelection(MoveDirection d) override;
 
     EngravingItem* contextItem() const override;
 
     // SelectionFilter
-    bool isSelectionTypeFiltered(SelectionFilterType type) const override;
-    void setSelectionTypeFiltered(SelectionFilterType type, bool filtered) override;
+    INotationSelectionFilterPtr selectionFilter() const override;
 
     // Drag
     bool isDragStarted() const override;
@@ -116,9 +119,11 @@ public:
     // Drop
     bool startDropSingle(const QByteArray& edata) override;
     bool startDropRange(const QByteArray& data) override;
+    bool startDropRange(const Fraction& sourceTick, const Fraction& tickLength, engraving::staff_idx_t sourceStaffIdx, size_t numStaves,
+                        bool preserveMeasureAlignment) override;
     bool startDropImage(const QUrl& url) override;
-    bool isDropSingleAccepted(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) override;
-    bool isDropRangeAccepted(const muse::PointF& pos) override;
+    bool updateDropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) override;
+    bool updateDropRange(const muse::PointF& pos, std::optional<bool> preserveMeasureAlignment = std::nullopt) override;
     bool dropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) override;
     bool dropRange(const QByteArray& data, const muse::PointF& pos, bool deleteSourceMaterial) override;
     void setDropTarget(EngravingItem* item, bool notify = true) override;
@@ -171,11 +176,15 @@ public:
     void endEditGrip() override;
 
     bool isElementEditStarted() const override;
-    void startEditElement(EngravingItem* element, bool editTextualProperties = true) override;
+    void startEditElement(EngravingItem* element) override;
     void changeEditElement(EngravingItem* newElement) override;
     bool isEditAllowed(QKeyEvent* event) override;
     void editElement(QKeyEvent* event) override;
     void endEditElement() override;
+
+    // Anchors edit
+    void updateTimeTickAnchors(QKeyEvent* event) override;
+    void moveElementAnchors(QKeyEvent* event) override;
 
     // Measure
     void splitSelectedMeasure() override;
@@ -197,6 +206,7 @@ public:
     void addLaissezVibToSelection() override;
     void addTiedNoteToChord() override;
     void addSlurToSelection() override;
+    void addHammerOnPullOffToSelection() override;
     void addOttavaToSelection(OttavaType type) override;
     void addHairpinOnGripDrag(engraving::EditData& ed, bool isLeftGrip) override;
     void addHairpinsToSelection(HairpinType type) override;
@@ -296,6 +306,9 @@ public:
     muse::Ret canAddGuitarBend() const override;
     void addGuitarBend(GuitarBendType bendType) override;
 
+    muse::Ret canAddFretboardDiagram() const override;
+    void addFretboardDiagram() override;
+
     void toggleBold() override;
     void toggleItalic() override;
     void toggleUnderline() override;
@@ -344,6 +357,12 @@ private:
     void doEndEditElement();
     void doEndDrag();
 
+    //! NOTE: Helper methods for applyPaletteElement
+    void applyPaletteElementToList(EngravingItem* element, bool isMeasureAnchoredElement, mu::engraving::Score* score,
+                                   const mu::engraving::Selection& sel, Qt::KeyboardModifiers modifiers = {});
+    void applyPaletteElementToRange(EngravingItem* element, bool isMeasureAnchoredElement, mu::engraving::Score* score,
+                                    const mu::engraving::Selection& sel, Qt::KeyboardModifiers modifiers = {});
+
     bool doDropStandard();
     bool doDropTextBaseAndSymbols(const muse::PointF& pos, bool applyUserOffset);
 
@@ -367,7 +386,8 @@ private:
     void toggleVerticalAlignment(mu::engraving::VerticalAlignment);
     void navigateToLyrics(bool, bool, bool);
 
-    mu::engraving::Harmony* editedHarmony() const;
+    Harmony* editedHarmony() const;
+    Segment* harmonySegment(const Harmony* harmony) const;
     mu::engraving::Harmony* findHarmonyInSegment(const mu::engraving::Segment* segment, engraving::track_idx_t track,
                                                  mu::engraving::TextStyleType textStyleType) const;
     mu::engraving::Harmony* createHarmony(mu::engraving::Segment* segment, engraving::track_idx_t track,
@@ -415,6 +435,8 @@ private:
     bool dropCanvas(EngravingItem* e);
     void resetDropData();
 
+    void doFinishAddFretboardDiagram();
+
     bool selectInstrument(mu::engraving::InstrumentChange* instrumentChange);
     void cleanupDrumsetChanges(mu::engraving::InstrumentChange* instrumentChange) const;
 
@@ -434,8 +456,6 @@ private:
 
     void resetGripEdit();
     void resetHitElementContext();
-
-    bool elementsSelected(const std::set<ElementType>& elementsTypes) const;
 
     template<typename P>
     void execute(void (mu::engraving::Score::* function)(P), P param, const muse::TranslatableString& actionName);
@@ -473,6 +493,8 @@ private:
         engraving::Fraction tickLength;
         size_t numStaves = 0;
 
+        bool preserveMeasureAlignment = false;
+
         engraving::Segment* targetSegment = nullptr;
         engraving::staff_idx_t targetStaffIdx = 0;
 
@@ -495,6 +517,8 @@ private:
 
     std::shared_ptr<NotationSelection> m_selection = nullptr;
     muse::async::Notification m_selectionChanged;
+
+    std::shared_ptr<NotationSelectionFilter> m_selectionFilter = nullptr;
 
     DragData m_dragData;
     muse::async::Notification m_dragChanged;

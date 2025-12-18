@@ -84,7 +84,7 @@ void ExportMidi::writeHeader(const CompatMidiRendererInternal::Context& context)
     TimeSigMap* sigmap = m_score->sigmap();
     for (const RepeatSegment* rs : m_score->repeatList()) {
         int startTick  = rs->tick;
-        int endTick    = startTick + rs->len();
+        int endTick    = rs->endTick();
         int tickOffset = rs->utick - rs->tick;
 
         auto bs = sigmap->lower_bound(startTick);
@@ -361,8 +361,7 @@ bool ExportMidi::write(QIODevice* device, bool midiExpandRepeats, bool exportRPN
 
         // Export lyrics and RehearsalMarks as Meta events
         for (const RepeatSegment* rs : m_score->repeatList()) {
-            int startTick  = rs->tick;
-            int endTick    = startTick + rs->len();
+            int endTick    = rs->endTick();
             int tickOffset = rs->utick - rs->tick;
 
             // export Lyrics
@@ -372,7 +371,13 @@ bool ExportMidi::write(QIODevice* device, bool midiExpandRepeats, bool exportRPN
                     ChordRest* cr = toChordRest(seg->element(i));
                     if (cr) {
                         for (const auto& lyric : cr->lyrics()) {
+                            LyricsSyllabic syllabic = lyric->syllabic();
                             muse::ByteArray lyricText = lyric->plainText().toUtf8();
+                            if ((syllabic == LyricsSyllabic::SINGLE || syllabic == LyricsSyllabic::END)
+                                && (lyricText.empty() || lyricText[lyricText.size() - 1] != ' ')) {
+                                lyricText.push_back(' ');
+                            }
+
                             size_t len = lyricText.size() + 1;
                             std::vector<unsigned char> data(lyricText.constData(), lyricText.constData() + len);
 

@@ -28,6 +28,7 @@
 #include "notationtypes.h"
 #include "inotationnoteinput.h"
 #include "inotationselection.h"
+#include "inotationselectionfilter.h"
 
 class QKeyEvent;
 class QInputMethodEvent;
@@ -82,12 +83,12 @@ public:
     virtual void clearSelection() = 0;
     virtual muse::async::Notification selectionChanged() const = 0;
     virtual void selectTopOrBottomOfChord(MoveDirection d) = 0;
+    virtual void findAndSelectChordRest(const Fraction& tick) = 0;
 
     virtual EngravingItem* contextItem() const = 0;
 
     // SelectionFilter
-    virtual bool isSelectionTypeFiltered(SelectionFilterType type) const = 0;
-    virtual void setSelectionTypeFiltered(SelectionFilterType type, bool filtered) = 0;
+    virtual INotationSelectionFilterPtr selectionFilter() const = 0;
 
     // Drag
     using IsDraggable = std::function<bool (const EngravingItem*)>;
@@ -107,9 +108,11 @@ public:
     //! TODO Change KeyboardModifiers to modes
     virtual bool startDropSingle(const QByteArray& edata) = 0;
     virtual bool startDropRange(const QByteArray& data) = 0;
+    virtual bool startDropRange(const Fraction& sourceTick, const Fraction& tickLength, engraving::staff_idx_t sourceStaffIdx,
+                                size_t numStaves, bool preserveMeasureAlignment) = 0;
     virtual bool startDropImage(const QUrl& url) = 0;
-    virtual bool isDropSingleAccepted(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) = 0; //! NOTE Also may set drop target
-    virtual bool isDropRangeAccepted(const muse::PointF& pos) = 0;
+    virtual bool updateDropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) = 0; //! NOTE Also may set drop target
+    virtual bool updateDropRange(const muse::PointF& pos, std::optional<bool> preserveMeasureAlignment = std::nullopt) = 0;
     virtual bool dropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) = 0;
     virtual bool dropRange(const QByteArray& data, const muse::PointF& pos, bool deleteSourceMaterial) = 0;
     virtual void setDropTarget(EngravingItem* item, bool notify = true) = 0;
@@ -167,11 +170,15 @@ public:
     virtual void endEditGrip() = 0;
 
     virtual bool isElementEditStarted() const = 0;
-    virtual void startEditElement(EngravingItem* element, bool editTextualProperties = true) = 0;
+    virtual void startEditElement(EngravingItem* element) = 0;
     virtual void changeEditElement(EngravingItem* newElement) = 0;
     virtual bool isEditAllowed(QKeyEvent* event) = 0;
     virtual void editElement(QKeyEvent* event) = 0;
     virtual void endEditElement() = 0;
+
+    // Anchors edit
+    virtual void updateTimeTickAnchors(QKeyEvent* event) = 0;
+    virtual void moveElementAnchors(QKeyEvent* event) = 0;
 
     virtual void splitSelectedMeasure() = 0;
     virtual void joinSelectedMeasures() = 0;
@@ -192,6 +199,7 @@ public:
     virtual void addTiedNoteToChord() = 0;
     virtual void addLaissezVibToSelection() = 0;
     virtual void addSlurToSelection() = 0;
+    virtual void addHammerOnPullOffToSelection() = 0;
     virtual void addOttavaToSelection(OttavaType type) = 0;
     virtual void addHairpinOnGripDrag(engraving::EditData& ed, bool isLeftGrip) = 0;
     virtual void addHairpinsToSelection(HairpinType type) = 0;
@@ -239,6 +247,9 @@ public:
 
     virtual muse::Ret canAddFiguredBass() const = 0;
     virtual void addFiguredBass() = 0;
+
+    virtual muse::Ret canAddFretboardDiagram() const = 0;
+    virtual void addFretboardDiagram() = 0;
 
     virtual void addStretch(qreal value) = 0;
 

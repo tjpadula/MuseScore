@@ -99,8 +99,8 @@ void GuitarBendLayout::layoutAngularBend(GuitarBendSegment* item, LayoutContext&
         return;
     }
 
-    if (bend->type() == GuitarBendType::PRE_BEND && !startNote->headHasParentheses()) {
-        startNote->setHeadHasParentheses(true, /* addToLinked= */ false, /* generated= */ true);
+    if (bend->type() == GuitarBendType::PRE_BEND && !startNote->bothParentheses()) {
+        startNote->setParenthesesMode(ParenthesesMode::BOTH, /* addToLinked= */ false, /* generated= */ true);
         startNote->mutldata()->reset();
         TLayout::layoutChord(startNote->chord(), ctx);
     }
@@ -465,7 +465,7 @@ void GuitarBendLayout::layoutTabStaff(GuitarBendSegment* item, LayoutContext& ct
         TLayout::layoutChord(endNote->chord(), ctx);
     }
 
-    if (bend->type() != GuitarBendType::SLIGHT_BEND && !bend->isFullRelease()) {
+    if (bend->type() != GuitarBendType::SLIGHT_BEND && (!style.styleB(Sid::showFretOnFullBendRelease) || !bend->isFullRelease())) {
         endNote->setVisible(false);
     }
 

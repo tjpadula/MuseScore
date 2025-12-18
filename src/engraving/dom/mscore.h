@@ -60,8 +60,6 @@ inline constexpr bool isDownVoice(voice_idx_t voiceIdx)
     return voiceIdx & 1;
 }
 
-static constexpr int MAX_TAGS = 32;
-
 static constexpr int MAX_HEADERS = 3;
 static constexpr int MAX_FOOTERS = 3;
 
@@ -72,7 +70,7 @@ static constexpr double DPI       = 72.0 * DPI_F;
 static constexpr double SPATIUM20 = 5.0 * (DPI / 72.0);
 static constexpr double DPMM      = DPI / INCH;
 
-// NOTE: the Smufl default is actually 20pt. We use 10 for historical reasons
+// NOTE: the SMuFL default is actually 20pt. We use 10 for historical reasons
 // and back-compatibility, but this will be multiplied x2 during layout.
 static constexpr double MUSICAL_SYMBOLS_DEFAULT_FONT_SIZE = 10.0;
 
@@ -112,31 +110,20 @@ enum class SelectType : char {
 };
 
 //---------------------------------------------------------
-//    KeySigNaturals (positions of naturals in key sig. changes)
-//---------------------------------------------------------
-
-enum class KeySigNatural : char {
-    NONE   = 0,               // no naturals, except for change to CMaj/Amin
-    BEFORE = 1,               // naturals before accidentals
-    AFTER  = 2                // naturals after accidentals (but always before if going sharps <=> flats)
-};
-
-//---------------------------------------------------------
-//    CourtesyBarlineMode (for key sig. and time sig. changes)
-//---------------------------------------------------------
-
-enum class CourtesyBarlineMode : char {
-    ALWAYS_SINGLE = 0,
-    ALWAYS_DOUBLE = 1,
-    DOUBLE_BEFORE_COURTESY = 2,
-};
-
-//---------------------------------------------------------
 //   UpDownMode
 //---------------------------------------------------------
 
 enum class UpDownMode : char {
     CHROMATIC, OCTAVE, DIATONIC
+};
+
+//---------------------------------------------------------
+//   OffsetType
+//---------------------------------------------------------
+
+enum class OffsetType : unsigned char {
+    ABS,         ///< offset in point units
+    SPATIUM      ///< offset in staff space units
 };
 
 //---------------------------------------------------------
@@ -216,7 +203,6 @@ public:
     static double nudgeStep;
     static double nudgeStep10;
     static double nudgeStep50;
-    static int defaultPlayDuration;
 
 // #ifndef NDEBUG
     static bool noHorizontalStretch;
@@ -226,12 +212,10 @@ public:
     static bool debugMode;
     static bool testMode;
     static bool testWriteStyleToScore;
-    static bool useRead302InTestMode;
 
     static bool saveTemplateMode;
     static bool noGui;
 
-    static bool noExcerpts;
     static bool noImages;
 
     static bool pdfPrinting;

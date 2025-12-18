@@ -24,9 +24,8 @@
 #include <variant>
 
 #include "modularity/imoduleinterface.h"
-#include "draw/types/geometry.h"
 
-#include "../types/fraction.h"
+#include "../types/types.h"
 
 namespace muse::draw {
 class Painter;
@@ -61,6 +60,8 @@ class Harmony;
 
 class Image;
 
+class IndicatorIcon;
+
 enum class KerningType : unsigned char;
 class KeySig;
 
@@ -80,9 +81,9 @@ class Spanner;
 class Slur;
 class SlurSegment;
 class SlurTie;
+class Spacer;
 class StaffText;
 class Stem;
-class SystemLockIndicator;
 
 class TextBase;
 class Text;
@@ -139,6 +140,7 @@ public:
                                    FretDiagram*,
                                    Harmony*,
                                    Image*,
+                                   IndicatorIcon*,
                                    KeySig*,
                                    LedgerLine*,
                                    SLine*,
@@ -151,9 +153,9 @@ public:
                                    Spanner*,
                                    Slur*,
                                    SlurTie*,
+                                   Spacer*,
                                    StaffText*,
                                    Stem*,
-                                   SystemLockIndicator*,
                                    TextBase*,
                                    Text*,
                                    TimeSig*

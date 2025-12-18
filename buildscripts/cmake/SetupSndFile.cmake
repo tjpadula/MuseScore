@@ -1,5 +1,7 @@
 include(GetPlatformInfo)
 
+message(STATUS "Running SetupSndFile.cmake.")
+
 if (OS_IS_WIN AND (NOT MINGW))
     find_path(SNDFILE_INCDIR sndfile.h PATHS ${DEPENDENCIES_INC};)
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
@@ -69,6 +71,8 @@ elseif (OS_IS_WASM)
     setup_module()
 
 elseif (IOS)
+
+    message(STATUS "SetupSndFile.cmake: IOS is true.")
 
     # IOS_CONFIG_BUG
     # For the moment, we are going to presume a pre-built libsndfile.a. It will be found at

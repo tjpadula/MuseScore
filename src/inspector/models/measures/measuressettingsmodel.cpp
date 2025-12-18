@@ -45,18 +45,9 @@ void MeasuresSettingsModel::loadProperties()
     updateSystemCount();
 }
 
-void MeasuresSettingsModel::onCurrentNotationChanged()
+bool MeasuresSettingsModel::shouldUpdateOnEmptyPropertyAndStyleIdSets() const
 {
-    INotationPtr notation = currentNotation();
-    if (!notation) {
-        return;
-    }
-
-    notation->undoStack()->changesChannel().onReceive(this, [this](const ChangesRange&) {
-        onNotationChanged({}, {});
-    });
-
-    AbstractInspectorModel::onCurrentNotationChanged();
+    return true;
 }
 
 void MeasuresSettingsModel::onNotationChanged(const engraving::PropertyIdSet&, const engraving::StyleIdSet&)
@@ -134,7 +125,6 @@ void MeasuresSettingsModel::toggleSystemLock()
     }
 
     currentNotation()->interaction()->toggleSystemLock();
-    updateAllSystemsAreLocked();
 }
 
 QString MeasuresSettingsModel::shortcutToggleSystemLock() const

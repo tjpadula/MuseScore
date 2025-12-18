@@ -30,7 +30,19 @@ QmlLauncher::QmlLauncher(QObject* parent, const modularity::ContextPtr& iocCtx)
 
 bool QmlLauncher::open(const QString& uri)
 {
-    return interactive()->open(UriQuery(uri.toStdString())).ret;
+    interactive()->open(UriQuery(uri.toStdString()));
+    return true;
+}
+
+bool QmlLauncher::openSync(const QString& uri)
+{
+    return interactive()->openSync(UriQuery(uri.toStdString())).ret;
+}
+
+bool QmlLauncher::openApp(const QString& uri)
+{
+    interactive()->openApp(UriQuery(uri.toStdString()));
+    return true;
 }
 
 bool QmlLauncher::openUrl(const QString& url)

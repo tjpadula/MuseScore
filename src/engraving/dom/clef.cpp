@@ -225,7 +225,6 @@ ClefType Clef::clefType() const
 void Clef::spatiumChanged(double oldValue, double newValue)
 {
     EngravingItem::spatiumChanged(oldValue, newValue);
-    renderer()->layoutItem(this);
 }
 
 //---------------------------------------------------------
@@ -462,7 +461,7 @@ void Clef::clear()
     ldata->clearBbox();
     ldata->symId = SymId::noSym;
     Clef* pairedClef = otherClef();
-    if (selected() && !m_isHeader && pairedClef) {
+    if (selected() && score()->selection().isList() && !m_isHeader && pairedClef) {
         score()->deselect(this);
         score()->select(pairedClef, SelectType::ADD, staffIdx());
     }

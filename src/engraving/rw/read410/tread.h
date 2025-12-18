@@ -21,12 +21,10 @@
  */
 #pragma once
 
-#include "global/types/string.h"
-
+#include "../compat/compattypes.h"
 #include "../xmlreader.h"
-#include "readcontext.h"
 
-#include "../../dom/property.h"
+#include "readcontext.h"
 
 namespace mu::engraving {
 class XmlReader;
@@ -52,7 +50,6 @@ class BagpipeEmbellishment;
 class BarLine;
 class Beam;
 class Bend;
-class StretchedBend;
 class Box;
 class HBox;
 class VBox;
@@ -166,6 +163,8 @@ class Trill;
 class Tuplet;
 class Vibrato;
 class Volta;
+
+enum class Pid;
 }
 
 namespace mu::engraving::compat {
@@ -173,6 +172,9 @@ struct TremoloCompat;
 }
 
 namespace mu::engraving::read410 {
+using rw::compat::StaffHideMode;
+using rw::compat::StaffHideModes;
+
 class TRead
 {
 public:
@@ -202,7 +204,6 @@ public:
     static void read(BarLine* l, XmlReader& xml, ReadContext& ctx);
     static void read(Beam* b, XmlReader& xml, ReadContext& ctx);
     static void read(Bend* b, XmlReader& xml, ReadContext& ctx);
-    static void read(StretchedBend* b, XmlReader& xml, ReadContext& ctx);
     static void read(Box* b, XmlReader& xml, ReadContext& ctx);
     static void read(HBox* b, XmlReader& xml, ReadContext& ctx);
     static void read(VBox* b, XmlReader& xml, ReadContext& ctx);
@@ -285,7 +286,7 @@ public:
     static void read(SlurTie* s, XmlReader& xml, ReadContext& ctx);
     static void read(SlurTieSegment* s, XmlReader& xml, ReadContext& ctx);
     static void read(Spacer* s, XmlReader& xml, ReadContext& ctx);
-    static void read(Staff* s, XmlReader& xml, ReadContext& ctx);
+    static void read(Staff* s, XmlReader& xml, ReadContext& ctx, StaffHideModes& staffHideModes);
     static void read(StaffName* item, XmlReader& xml);
     static void read(StaffState* s, XmlReader& xml, ReadContext& ctx);
     static void read(StaffText* t, XmlReader& xml, ReadContext& ctx);
@@ -358,14 +359,14 @@ public:
     static bool readProperties(Ornament* o, XmlReader& xml, ReadContext& ctx);
     static bool readProperties(Ottava* o, XmlReader& xml, ReadContext& ctx);
 
-    static bool readProperties(Part* p, XmlReader& xml, ReadContext& ctx);
+    static bool readProperties(Part* p, XmlReader& xml, ReadContext& ctx, StaffHideModes& staffHideModes);
 
     static int read(SigEvent* item, XmlReader& xml, int fileDivision);
     static bool readProperties(SLine* l, XmlReader& xml, ReadContext& ctx);
     static bool readProperties(Slur* s, XmlReader& xml, ReadContext& ctx);
     static bool readProperties(SlurTie* s, XmlReader& xml, ReadContext& ctx);
     static bool readProperties(Spanner* s, XmlReader& xml, ReadContext& ctx);
-    static bool readProperties(Staff* s, XmlReader& e, ReadContext& ctx);
+    static bool readProperties(Staff* s, XmlReader& e, ReadContext& ctx, StaffHideModes& staffHideModes);
     static bool readProperties(Stem* s, XmlReader& e, ReadContext& ctx);
 
     static bool readProperties(TextLineBase* b, XmlReader& e, ReadContext& ctx);

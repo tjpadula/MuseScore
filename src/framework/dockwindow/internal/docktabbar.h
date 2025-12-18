@@ -36,12 +36,15 @@ public:
     explicit DockTabBar(KDDockWidgets::TabWidget* parent = nullptr);
 
     Q_INVOKABLE void setDraggableMouseArea(QQuickItem* mouseArea);
+    Q_INVOKABLE void doubleClicked(const QPoint& pos) const;
 
 private:
     bool event(QEvent* event) override;
+    void onMousePressRelease(const QMouseEvent* mouseEvent);
     bool isPositionDraggable(QPoint localPos) const override;
 
     QQuickItem* m_draggableMouseArea = nullptr;
+    int m_indexOfPressedTab = -1;
 };
 }
 

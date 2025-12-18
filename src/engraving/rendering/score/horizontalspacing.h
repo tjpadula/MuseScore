@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include "types/fraction.h"
+#include "types/types.h"
 
 namespace mu::engraving {
 class Chord;
@@ -71,6 +71,7 @@ private:
         Measure* startMeas = nullptr;
         double stretchReduction = 1.0;
         double squeezeFactor = 1.0;
+        double spacingDensity = 1.0;
         bool overrideMinMeasureWidth = false;
     };
 
@@ -111,7 +112,7 @@ private:
                                              HorizontalSpacingContext& ctx);
     static bool stopCheckingPreviousSegments(const SegmentPosition& prev, const SegmentPosition& curSegPos);
     static void checkLyricsAgainstLeftMargin(Segment* segment, double& x, HorizontalSpacingContext& ctx);
-    static void checkLyricsAgainstRightMargin(std::vector<SegmentPosition>& segPositions);
+    static void checkLyricsAgainstRightMargin(std::vector<SegmentPosition>& segPositions, const HorizontalSpacingContext& ctx);
     static double spaceLyricsAgainstBarlines(Segment* firstSeg, Segment* secondSeg, const HorizontalSpacingContext& ctx);
     static void checkLargeTimeSigAgainstRightMargin(std::vector<SegmentPosition>& segPositions);
     static void moveRightAlignedSegments(std::vector<SegmentPosition>& placedSegments, const HorizontalSpacingContext& ctx);
@@ -127,6 +128,7 @@ private:
 
     static void applyCrossBeamSpacingCorrection(Segment* thisSeg, Segment* nextSeg, double& width);
     static CrossBeamSpacing computeCrossBeamSpacing(Segment* thisSeg, Segment* nextSeg);
+    static double minStemDistOnNonAdjacentCross(const Segment* thisSeg, const Segment* nextSeg);
 
     static void enforceMinimumMeasureWidths(const std::vector<Measure*> measureGroup);
     static double computeMinMeasureWidth(Measure* m);
@@ -151,8 +153,9 @@ private:
     static KerningType computeNoteKerningType(const Note* note, const EngravingItem* item2);
     static KerningType computeStemSlashKerningType(const StemSlash* stemSlash, const EngravingItem* item2);
     static KerningType computeLyricsKerningType(const Lyrics* lyrics1, const EngravingItem* item2);
+    static KerningType computeArticulationAndFermataKerning(const EngravingItem* item1, const EngravingItem* item2);
 
     static void computeHangingLineWidth(const Segment* firstSeg, const Segment* nextSeg, double& width, bool systemHeaderGap,
                                         bool systemEnd);
 };
-} // namespace mu::engraving::layout
+}

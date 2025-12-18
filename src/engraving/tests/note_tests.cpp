@@ -230,7 +230,7 @@ TEST_F(Engraving_NoteTests, note)
 
     // headGroup
     for (int i = 0; i < int(NoteHeadGroup::HEAD_GROUPS); ++i) {
-        note->setProperty(Pid::HEAD_GROUP, i);
+        note->setProperty(Pid::HEAD_GROUP, static_cast<NoteHeadGroup>(i));
         n = toNote(ScoreRW::writeReadElement(note));
         EXPECT_EQ(int(n->headGroup()), i);
         delete n;
@@ -336,6 +336,28 @@ TEST_F(Engraving_NoteTests, grace)
 //      delete c;
 
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"grace-test.mscx", NOTE_DATA_DIR + u"grace-ref.mscx"));
+}
+
+//---------------------------------------------------------
+///   graceSlashSave
+///   read/write test of grace notes
+//---------------------------------------------------------
+
+TEST_F(Engraving_NoteTests, graceAfterSlashSave)
+{
+    MasterScore* score = ScoreRW::readScore(NOTE_DATA_DIR + u"grace.mscx");
+    score->doLayout();
+    Chord* chord = score->firstMeasure()->findChord(Fraction(0, 1), 0);
+    Note* note = chord->upNote();
+
+    // create
+    score->setGraceNote(chord, note->pitch(), NoteType::GRACE8_AFTER, Constants::DIVISION / 2);
+    Chord* gc = chord->graceNotes().front();
+    gc->undoChangeProperty(Pid::SHOW_STEM_SLASH, true);
+
+    EXPECT_TRUE(gc->showStemSlash());
+
+    EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"graceAfterSlashSave-test.mscx", NOTE_DATA_DIR + u"graceAfterSlashSave-ref.mscx"));
 }
 
 //---------------------------------------------------------

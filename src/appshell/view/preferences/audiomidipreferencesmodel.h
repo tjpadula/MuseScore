@@ -26,7 +26,7 @@
 
 #include "modularity/ioc.h"
 #include "async/asyncable.h"
-#include "audio/iaudioconfiguration.h"
+#include "audio/main/iaudioconfiguration.h"
 #include "midi/imidiconfiguration.h"
 #include "midi/imidioutport.h"
 #include "midi/imidiinport.h"
@@ -49,6 +49,13 @@ class AudioMidiPreferencesModel : public QObject, public muse::Injectable, publi
     Q_PROPERTY(bool useMIDI20Output READ useMIDI20Output WRITE setUseMIDI20Output NOTIFY useMIDI20OutputChanged)
 
     Q_PROPERTY(bool muteHiddenInstruments READ muteHiddenInstruments WRITE setMuteHiddenInstruments NOTIFY muteHiddenInstrumentsChanged)
+
+    Q_PROPERTY(
+        bool shouldShowOnlineSoundsProcessingError READ shouldShowOnlineSoundsProcessingError WRITE setShouldShowOnlineSoundsProcessingError NOTIFY shouldShowOnlineSoundsProcessingErrorChanged)
+    Q_PROPERTY(
+        bool autoProcessOnlineSoundsInBackground READ autoProcessOnlineSoundsInBackground WRITE setAutoProcessOnlineSoundsInBackground NOTIFY autoProcessOnlineSoundsInBackgroundChanged)
+    Q_PROPERTY(
+        int onlineSoundsShowProgressBarMode READ onlineSoundsShowProgressBarMode WRITE setOnlineSoundsShowProgressBarMode NOTIFY onlineSoundsShowProgressBarModeChanged)
 
     muse::Inject<muse::audio::IAudioConfiguration> audioConfiguration = { this };
     muse::Inject<muse::midi::IMidiConfiguration> midiConfiguration = { this };
@@ -73,6 +80,8 @@ public:
 
     Q_INVOKABLE void restartAudioAndMidiDevices();
 
+    Q_INVOKABLE bool onlineSoundsSectionVisible() const;
+
     QVariantList midiInputDevices() const;
     QVariantList midiOutputDevices() const;
 
@@ -81,12 +90,20 @@ public:
 
     bool muteHiddenInstruments() const;
 
+    bool shouldShowOnlineSoundsProcessingError() const;
+    bool autoProcessOnlineSoundsInBackground() const;
+    int onlineSoundsShowProgressBarMode() const;
+
 public slots:
     void setCurrentAudioApiIndex(int index);
 
     void setUseMIDI20Output(bool use);
 
     void setMuteHiddenInstruments(bool mute);
+
+    void setShouldShowOnlineSoundsProcessingError(bool value);
+    void setAutoProcessOnlineSoundsInBackground(bool value);
+    void setOnlineSoundsShowProgressBarMode(int mode);
 
 signals:
     void currentAudioApiIndexChanged(int index);
@@ -99,6 +116,10 @@ signals:
     void useMIDI20OutputChanged();
 
     void muteHiddenInstrumentsChanged(bool mute);
+
+    void shouldShowOnlineSoundsProcessingErrorChanged();
+    void autoProcessOnlineSoundsInBackgroundChanged();
+    void onlineSoundsShowProgressBarModeChanged();
 
 private:
     muse::midi::MidiDeviceID midiInputDeviceId(int index) const;

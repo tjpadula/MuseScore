@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_MSCREADER_H
-#define MU_ENGRAVING_MSCREADER_H
+#pragma once
 
 #include "types/ret.h"
 #include "types/string.h"
@@ -55,6 +54,7 @@ public:
     muse::Ret open();
     void close();
     bool isOpened() const;
+    bool isContainer() const;
 
     muse::ByteArray readStyleFile() const;
     muse::ByteArray readScoreFile() const;
@@ -143,5 +143,3 @@ private:
     mutable IReader* m_reader = nullptr;
 };
 }
-
-#endif // MU_ENGRAVING_MSCREADER_H

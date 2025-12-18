@@ -69,6 +69,16 @@ set(RENDERING_SCORE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/dynamicslayout.h
     ${CMAKE_CURRENT_LIST_DIR}/stemlayout.cpp
     ${CMAKE_CURRENT_LIST_DIR}/stemlayout.h
+    ${CMAKE_CURRENT_LIST_DIR}/tappinglayout.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/tappinglayout.h
+    ${CMAKE_CURRENT_LIST_DIR}/markerlayout.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/markerlayout.h
+    ${CMAKE_CURRENT_LIST_DIR}/measurenumberlayout.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/measurenumberlayout.h
+    ${CMAKE_CURRENT_LIST_DIR}/parenthesislayout.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/parenthesislayout.h
+    ${CMAKE_CURRENT_LIST_DIR}/restlayout.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/restlayout.h
 
     ${CMAKE_CURRENT_LIST_DIR}/passbase.cpp
     ${CMAKE_CURRENT_LIST_DIR}/passbase.h

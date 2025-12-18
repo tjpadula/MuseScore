@@ -60,6 +60,13 @@ Rectangle {
 
             popupController.visualControl = visualControl
             popupController.popup = newOpenedPopup
+
+            popupController.popup.closed.connect(function() {
+                if (sectionList.contentY + sectionList.height > sectionList.contentHeight) {
+                    var invisibleContentHeight = sectionList.contentY + sectionList.height - sectionList.contentHeight
+                    Qt.callLater(sectionList.ensureContentVisible, -invisibleContentHeight)
+                }
+            })
         }
     }
 
@@ -67,18 +74,18 @@ Rectangle {
         id: popupController
     }
 
+    Component.onCompleted: {
+        popupController.load()
+    }
+
     StyledListView {
         id: sectionList
         anchors.fill: parent
 
         topMargin: 12
-        leftMargin: 12
-        rightMargin: 12
         bottomMargin: 12
 
         spacing: 12
-
-        cacheBuffer: Math.max(0, contentHeight)
 
         function ensureContentVisible(invisibleContentHeight) {
             if (sectionList.contentY + invisibleContentHeight > 0) {
@@ -98,23 +105,29 @@ Rectangle {
 
         onContentHeightChanged: {
             returnToBounds()
+
+            if (contentHeight > cacheBuffer) {
+                cacheBuffer = contentHeight
+            }
         }
 
         delegate: Column {
-            width: ListView.view.width - ListView.view.leftMargin - ListView.view.rightMargin
-
+            width: ListView.view.width
             spacing: sectionList.spacing
 
             property var navigationPanel: _item.navigationPanel
 
             SeparatorLine {
-                anchors.margins: -12
-
                 visible: model.index !== 0
             }
 
             InspectorSectionDelegate {
                 id: _item
+
+                anchors.left: parent.left
+                anchors.leftMargin: 12
+                anchors.right: parent.right
+                anchors.rightMargin: 12
 
                 sectionModel: model.inspectorSectionModel
                 anchorItem: root

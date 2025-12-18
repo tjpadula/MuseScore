@@ -39,6 +39,10 @@ namespace mu::engraving::read410 {
 class MeasureRead;
 }
 
+namespace mu::engraving::read460 {
+class MeasureRead;
+}
+
 namespace mu::engraving::write {
 class MeasureWrite;
 }
@@ -83,8 +87,8 @@ public:
     void setScore(Score*);
     void setTrack(track_idx_t);
 
-    MeasureNumber* noText() const { return m_noText; }
-    void setNoText(MeasureNumber* t) { m_noText = t; }
+    MeasureNumber* measureNumber() const { return m_measureNumber; }
+    void setMeasureNumber(MeasureNumber* t) { m_measureNumber = t; }
 
     MMRestRange* mmRangeText() const { return m_mmRangeText; }
     void setMMRangeText(MMRestRange* r) { m_mmRangeText = r; }
@@ -106,6 +110,9 @@ public:
     bool stemless() const { return m_stemless; }
     void setStemless(bool val) { m_stemless = val; }
 
+    AutoOnOff hideIfEmpty() const { return m_hideIfEmpty; }
+    void setHideIfEmpty(AutoOnOff val) { m_hideIfEmpty = val; }
+
     bool corrupted() const { return m_corrupted; }
     void setCorrupted(bool val) { m_corrupted = val; }
 
@@ -113,15 +120,19 @@ public:
     void setMeasureRepeatCount(int n) { m_measureRepeatCount = n; }
 
 private:
-    MeasureNumber* m_noText = nullptr;      // Measure number text object
+    MeasureNumber* m_measureNumber = nullptr;      // Measure number text object
     MMRestRange* m_mmRangeText = nullptr;   // Multi measure rest range text object
     StaffLines* m_lines = nullptr;
     Spacer* m_vspacerUp = nullptr;
     Spacer* m_vspacerDown = nullptr;
     bool m_hasVoices = false;               // indicates that MStaff contains more than one voice,
                                             // this changes some layout rules
+
     bool m_visible = true;
     bool m_stemless = false;
+    AutoOnOff m_hideIfEmpty = AutoOnOff::AUTO; // whether this MStaff wants its staff to be hidden on its system
+                                               // when the staff is empty on that system
+
     bool m_corrupted = false;
     int m_measureRepeatCount = 0;
 };
@@ -171,10 +182,12 @@ public:
     Spacer* vspacerUp(staff_idx_t staffIdx) const;
     void setStaffVisible(staff_idx_t staffIdx, bool visible);
     void setStaffStemless(staff_idx_t staffIdx, bool stemless);
+    AutoOnOff hideStaffIfEmpty(staff_idx_t staffIdx) const;
+    void setHideStaffIfEmpty(staff_idx_t staffIdx, AutoOnOff hideIfEmpty);
     bool corrupted(staff_idx_t staffIdx) const { return m_mstaves[staffIdx]->corrupted(); }
     void setCorrupted(staff_idx_t staffIdx, bool val) { m_mstaves[staffIdx]->setCorrupted(val); }
-    MeasureNumber* noText(staff_idx_t staffIdx) const { return m_mstaves[staffIdx]->noText(); }
-    void setNoText(staff_idx_t staffIdx, MeasureNumber* t) { m_mstaves[staffIdx]->setNoText(t); }
+    MeasureNumber* measureNumber(staff_idx_t staffIdx) const { return m_mstaves[staffIdx]->measureNumber(); }
+    void setMeasureNumber(staff_idx_t staffIdx, MeasureNumber* t) { m_mstaves[staffIdx]->setMeasureNumber(t); }
 
     const std::vector<MStaff*>& mstaves() const { return m_mstaves; }
     std::vector<MStaff*>& mstaves() { return m_mstaves; }
@@ -300,7 +313,7 @@ public:
     void undoChangeProperty(Pid id, const PropertyValue& newValue);
     void undoChangeProperty(Pid id, const PropertyValue& newValue, PropertyFlags ps) override;
 
-    bool hasMMRest() const { return m_mmRest != 0; }
+    bool hasMMRest() const { return m_mmRest != nullptr; }
     bool isMMRest() const { return m_mmRestCount > 0; }
     Measure* mmRest() const { return m_mmRest; }
     Measure* coveringMMRestOrThis();
@@ -335,15 +348,19 @@ public:
 
     String accessibleInfo() const override;
 
+    void styleChanged() override;
+
 #ifndef ENGRAVING_NO_ACCESSIBILITY
     AccessibleItemPtr createAccessible() override;
 #endif
 
     const BarLine* endBarLine() const;
+    const BarLine* endBarLine(staff_idx_t staffIdx, bool first = false) const;
     BarLineType endBarLineType() const;
     bool endBarLineVisible() const;
     const BarLine* startBarLine() const;
     void triggerLayout() const override;
+    void triggerLayout(staff_idx_t staffIdx) const;
 
     void checkHeader();
     void checkTrailer();
@@ -359,6 +376,7 @@ private:
     friend class Factory;
     friend class read400::MeasureRead;
     friend class read410::MeasureRead;
+    friend class read460::MeasureRead;
     friend class write::MeasureWrite;
 
     Measure(System* parent = 0);

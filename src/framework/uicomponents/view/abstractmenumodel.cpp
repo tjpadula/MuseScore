@@ -112,13 +112,7 @@ QVariantMap AbstractMenuModel::get(int index)
 
 void AbstractMenuModel::load()
 {
-    uiActionsRegister()->actionStateChanged().onReceive(this, [this](const ActionCodeList& codes) {
-        onActionsStateChanges(codes);
-    });
-
-    shortcutsRegister()->shortcutsChanged().onNotify(this, [this]() {
-        updateShortcutsAll();
-    });
+    subscribeOnChanges();
 }
 
 QVariantList AbstractMenuModel::itemsProperty() const
@@ -182,7 +176,22 @@ MenuItem& AbstractMenuModel::findItem(const QString& itemId)
 
 MenuItem& AbstractMenuModel::findItem(const ActionCode& actionCode)
 {
-    return item(m_items, actionCode);
+    MenuItemList list = items(m_items, actionCode);
+    if (list.empty()) {
+        static MenuItem dummy;
+        return dummy;
+    }
+
+    if (list.size() > 1) {
+        LOGD() << "There is more than one item for " << actionCode << ", will return the first one found";
+    }
+
+    return *list.front();
+}
+
+MenuItemList AbstractMenuModel::findItems(const ActionCode& actionCode)
+{
+    return items(m_items, actionCode);
 }
 
 MenuItem& AbstractMenuModel::findMenu(const QString& menuId)
@@ -242,18 +251,27 @@ MenuItem* AbstractMenuModel::makeSeparator()
     return item;
 }
 
+void AbstractMenuModel::subscribeOnChanges()
+{
+    uiActionsRegister()->actionStateChanged().onReceive(this, [this](const ActionCodeList& codes) {
+        onActionsStateChanges(codes);
+    });
+
+    shortcutsRegister()->shortcutsChanged().onNotify(this, [this]() {
+        updateShortcutsAll();
+    });
+}
+
 void AbstractMenuModel::onActionsStateChanges(const muse::actions::ActionCodeList& codes)
 {
+    TRACEFUNC;
+
     if (codes.empty()) {
         return;
     }
 
-    for (const ActionCode& code : codes) {
-        MenuItem& actionItem = findItem(code);
-        if (actionItem.isValid()) {
-            actionItem.setState(uiActionsRegister()->actionState(code));
-        }
-    }
+    std::map<actions::ActionCode, ui::UiActionState> states;
+    updateState(m_items, codes, states);
 }
 
 void AbstractMenuModel::setItem(int index, MenuItem* item)
@@ -291,28 +309,29 @@ MenuItem& AbstractMenuModel::item(MenuItemList& items, const QString& itemId)
     return dummy;
 }
 
-MenuItem& AbstractMenuModel::item(MenuItemList& items, const ActionCode& actionCode)
+MenuItemList AbstractMenuModel::items(MenuItemList& items, const ActionCode& actionCode)
 {
+    MenuItemList result;
+
     for (MenuItem* menuItem : items) {
         if (!menuItem) {
             continue;
         }
 
         if (menuItem->action().code == actionCode) {
-            return *menuItem;
+            result.append(menuItem);
         }
 
         auto subitems = menuItem->subitems();
         if (!subitems.empty()) {
-            MenuItem& subitem = item(subitems, actionCode);
-            if (subitem.action().code == actionCode) {
-                return subitem;
+            MenuItemList list = this->items(subitems, actionCode);
+            if (!list.empty()) {
+                result.append(list);
             }
         }
     }
 
-    static MenuItem dummy;
-    return dummy;
+    return result;
 }
 
 MenuItem& AbstractMenuModel::menu(MenuItemList& items, const QString& menuId)
@@ -335,6 +354,29 @@ MenuItem& AbstractMenuModel::menu(MenuItemList& items, const QString& menuId)
 
     static MenuItem dummy;
     return dummy;
+}
+
+void AbstractMenuModel::updateState(MenuItemList& items, const actions::ActionCodeList& codes,
+                                    std::map<actions::ActionCode, ui::UiActionState>& states)
+{
+    for (MenuItem* menuItem : items) {
+        if (!menuItem) {
+            continue;
+        }
+
+        ActionCode code = menuItem->action().code;
+        if (muse::contains(codes, code)) {
+            if (!muse::contains(states, code)) {
+                states.insert({ code, uiActionsRegister()->actionState(code) });
+            }
+            menuItem->setState(states.at(code));
+        }
+
+        MenuItemList subitems = menuItem->subitems();
+        if (!subitems.empty()) {
+            updateState(subitems, codes, states);
+        }
+    }
 }
 
 void AbstractMenuModel::updateShortcutsAll()

@@ -52,9 +52,9 @@ public:
 
 class PercussionPanelModel : public QObject, public muse::Injectable, public muse::async::Asyncable
 {
-    muse::Inject<context::IGlobalContext> globalContext = { this };
+    muse::Inject<mu::context::IGlobalContext> globalContext = { this };
     muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
-    muse::Inject<playback::IPlaybackController> playbackController = { this };
+    muse::Inject<mu::playback::IPlaybackController> playbackController = { this };
     muse::Inject<muse::musesampler::IMuseSamplerInfo> museSampler;
     muse::Inject<IInstrumentsRepository> instrumentsRepository = { this };
     muse::Inject<INotationConfiguration> configuration = { this };
@@ -120,6 +120,8 @@ private:
     void updateSoundTitle(const InstrumentTrackId& trackId);
     void setSoundTitle(const QString& soundTitle);
 
+    QVariantMap createColumnSubItem(int numColumns) const;
+
     bool eventFilter(QObject* watched, QEvent* event) override;
 
     void onPadTriggered(int pitch, const PercussionPanelPadModel::PadAction& action);
@@ -133,6 +135,8 @@ private:
     void resetLayout();
     Drumset standardDefaultDrumset() const;
     Drumset museSamplerDefaultDrumset() const;
+
+    void setColumns(int numColumns);
 
     mu::engraving::InstrumentTrackId currentTrackId() const;
 

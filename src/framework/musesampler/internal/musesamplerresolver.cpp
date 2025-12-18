@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,11 +22,11 @@
 
 #include "musesamplerresolver.h"
 
-#include "types/version.h"
-
 #include "musesamplerwrapper.h"
 
-#include "serialization/json.h"
+#include "global/io/fileinfo.h"
+#include "global/types/version.h"
+#include "global/serialization/json.h"
 
 #include "log.h"
 
@@ -67,16 +67,11 @@ InstrumentInfo findInstrument(MuseSamplerLibHandlerPtr libHandler, const AudioRe
     auto instrumentList = libHandler->getInstrumentList();
 
     while (auto instrument = libHandler->getNextInstrument(instrumentList)) {
-        int instrumentId = libHandler->getInstrumentId(instrument);
-        String internalName = String::fromUtf8(libHandler->getInstrumentName(instrument));
-        String internalCategory = String::fromUtf8(libHandler->getInstrumentCategory(instrument));
-        String instrumentSoundId = String::fromUtf8(libHandler->getMpeSoundId(instrument));
+        const int instrumentId = libHandler->getInstrumentId(instrument);
 
-        if (resourceMeta.attributeVal(u"playbackSetupData") == instrumentSoundId
-            && resourceMeta.attributeVal(u"museCategory") == internalCategory
-            && resourceMeta.attributeVal(u"museName") == internalName
-            && resourceMeta.attributeVal(u"museUID") == String::fromStdString(std::to_string(instrumentId))) {
-            return { instrumentId, instrument };
+        if (resourceMeta.attributeVal(u"museUID") == String::number(instrumentId)) {
+            const bool isOnline = libHandler->isOnlineInstrument(instrument);
+            return { instrumentId, instrument, isOnline };
         }
     }
 
@@ -85,17 +80,59 @@ InstrumentInfo findInstrument(MuseSamplerLibHandlerPtr libHandler, const AudioRe
 
 void MuseSamplerResolver::init()
 {
-    LOGD() << "Instrument library path: " << configuration()->userLibraryPath();
-    LOGD() << "Instrument library fallback path: " << configuration()->fallbackLibraryPath();
+    LOGD() << "Instrument library path: " << configuration()->libraryPath();
 
-    if (doInit(configuration()->userLibraryPath())) {
+    const io::path_t libraryPath = configuration()->libraryPath();
+    if (io::isAbsolute(libraryPath) && !io::FileInfo::exists(libraryPath)) {
+        LOGI() << "MuseSampler library not found: " << libraryPath;
         return;
     }
 
-    doInit(configuration()->fallbackLibraryPath());
+    m_libHandler = std::make_shared<MuseSamplerLibHandler>();
+    if (!m_libHandler->loadLib(libraryPath)) {
+        LOGE() << "Unable to load MuseSampler library: " << libraryPath;
+        m_libHandler.reset();
+        return;
+    }
+
+    if (!m_libHandler->loadApi(configuration()->minSupportedVersion(), configuration()->useLegacyAudition())) {
+        m_samplerVersion = m_libHandler->version();
+        m_samplerBuildNumber = m_libHandler->buildNumber();
+        m_libHandler.reset();
+        LOGE() << "Incompatible MuseSampler library: " << libraryPath << ", version: " << m_samplerVersion.toString();
+        return;
+    }
+
+    m_samplerVersion = m_libHandler->version();
+    m_samplerBuildNumber = m_libHandler->buildNumber();
+
+    if (!m_libHandler->init()) {
+        LOGE() << "Could not init MuseSampler: " << libraryPath << ", version: " << m_samplerVersion.toString();
+        m_libHandler.reset();
+        return;
+    }
+
+    m_libHandler->setLoggingCallback([](ms_ErrorLevel level, const char* msg) {
+        switch (level) {
+            case ms_ErrorLevel_Debug:
+                LOGD() << msg;
+                break;
+            case ms_ErrorLevel_Info:
+                LOGI() << msg;
+                break;
+            case ms_ErrorLevel_Warning:
+                LOGW() << msg;
+                break;
+            case ms_ErrorLevel_Error:
+                LOGE() << msg;
+                break;
+        }
+    });
+
+    LOGI() << "MuseSampler successfully inited: " << libraryPath << ", version: " << m_samplerVersion.toString();
 }
 
-bool MuseSamplerResolver::reloadMuseSampler()
+bool MuseSamplerResolver::reloadAllInstruments()
 {
     if (!m_libHandler) {
         return false;
@@ -104,28 +141,15 @@ bool MuseSamplerResolver::reloadMuseSampler()
     return m_libHandler->reloadAllInstruments() == ms_Result_OK;
 }
 
-bool MuseSamplerResolver::doInit(const io::path_t& libPath)
+int MuseSamplerResolver::buildNumber() const
 {
-    m_libHandler = std::make_shared<MuseSamplerLibHandler>(libPath, configuration()->useLegacyAudition());
-
-    bool ok = m_libHandler->isValid();
-    if (ok) {
-        ok = m_libHandler->init();
-    }
-
-    if (!ok) {
-        LOGE() << "Incompatible MuseSampler library; ignoring";
-        m_libHandler.reset();
-    } else {
-        LOGI() << "MuseSampler successfully inited: " << libPath;
-    }
-
-    return ok;
+    return m_samplerBuildNumber;
 }
 
-ISynthesizerPtr MuseSamplerResolver::resolveSynth(const TrackId /*trackId*/, const AudioInputParams& params) const
+ISynthesizerPtr MuseSamplerResolver::resolveSynth(const TrackId /*trackId*/, const AudioInputParams& params,
+                                                  const audio::OutputSpec&) const
 {
-    InstrumentInfo instrument = findInstrument(m_libHandler, params.resourceMeta);
+    const InstrumentInfo instrument = findInstrument(m_libHandler, params.resourceMeta);
     if (instrument.isValid()) {
         return std::make_shared<MuseSamplerWrapper>(m_libHandler, instrument, params, iocContext());
     }
@@ -153,25 +177,25 @@ AudioResourceMetaList MuseSamplerResolver::resolveResources() const
     }
 
     auto instrumentList = m_libHandler->getInstrumentList();
-    while (auto instrument = m_libHandler->getNextInstrument(instrumentList))
-    {
-        int instrumentId = m_libHandler->getInstrumentId(instrument);
-        String internalName = String::fromUtf8(m_libHandler->getInstrumentName(instrument));
-        String internalCategory = String::fromUtf8(m_libHandler->getInstrumentCategory(instrument));
-        String instrumentPackName = String::fromUtf8(m_libHandler->getInstrumentPackName(instrument));
-        String instrumentSoundId = String::fromUtf8(m_libHandler->getMpeSoundId(instrument));
-        String vendorName = String::fromUtf8(m_libHandler->getInstrumentVendorName(instrument));
+    while (auto instrument = m_libHandler->getNextInstrument(instrumentList)) {
+        const int instrumentId = m_libHandler->getInstrumentId(instrument);
+        const String internalName = String::fromUtf8(m_libHandler->getInstrumentName(instrument));
+        const String internalCategory = String::fromUtf8(m_libHandler->getInstrumentCategory(instrument));
+        const String instrumentSoundId = String::fromUtf8(m_libHandler->getMpeSoundId(instrument));
+        const String vendorName = String::fromUtf8(m_libHandler->getInstrumentVendorName(instrument));
+        const bool isOnline = m_libHandler->isOnlineInstrument(instrument);
 
         if (instrumentSoundId.empty()) {
             LOGE() << "MISSING INSTRUMENT ID for: " << internalName;
         }
 
+        String instrumentPackName = String::fromUtf8(m_libHandler->getInstrumentPackName(instrument));
         if (instrumentPackName.empty()) {
             instrumentPackName = internalCategory;
         }
 
         AudioResourceMeta meta;
-        meta.id = buildMuseInstrumentId(internalCategory, internalName, instrumentId).toStdString();
+        meta.id = std::to_string(instrumentId);
         meta.type = AudioResourceType::MuseSamplerSoundPack;
         meta.vendor = "MuseSounds";
         meta.attributes = {
@@ -184,6 +208,10 @@ AudioResourceMetaList MuseSamplerResolver::resolveResources() const
         };
         
         LOGD() << "Found instrument: " << internalName;
+
+        if (isOnline) {
+            meta.attributes.insert(std::make_pair(u"isOnline", String::number(1)));
+        }
 
         result.push_back(std::move(meta));
     }
@@ -235,22 +263,12 @@ void MuseSamplerResolver::clearSources()
 {
 }
 
-std::string MuseSamplerResolver::version() const
+const Version& MuseSamplerResolver::version() const
 {
-    if (!m_libHandler) {
-        return std::string();
-    }
-
-    String ver = String::fromUtf8(m_libHandler->getVersionString());
-
-    if (configuration()->shouldShowBuildNumber()) {
-        ver += u"." + String::number(m_libHandler->getBuildNumber());
-    }
-
-    return ver.toStdString();
+    return m_samplerVersion;
 }
 
-bool MuseSamplerResolver::isInstalled() const
+bool MuseSamplerResolver::isLoaded() const
 {
     if (m_libHandler) {
         return true;
@@ -261,7 +279,7 @@ bool MuseSamplerResolver::isInstalled() const
 
 float MuseSamplerResolver::defaultReverbLevel(const String& instrumentSoundId) const
 {
-    if (!m_libHandler || !m_libHandler->getReverbLevel || instrumentSoundId.empty()) {
+    if (!m_libHandler || instrumentSoundId.empty()) {
         return 0.f;
     }
 
@@ -318,7 +336,7 @@ std::vector<Instrument> MuseSamplerResolver::instruments() const
         JsonObject obj = doc.rootObject();
 
         Instrument instrument;
-        instrument.id = buildMuseInstrumentId(instrument.category, instrument.name, id);
+        instrument.id = String::number(id);
         instrument.soundId = String::fromUtf8(m_libHandler->getMpeSoundId(msInstrument));
         instrument.musicXmlId = String::fromUtf8(m_libHandler->getMusicXmlSoundId(msInstrument));
         instrument.name = obj.value("FriendlyName").toString();
@@ -346,14 +364,4 @@ void MuseSamplerResolver::loadSoundPresetAttributes(SoundPresetAttributes& attri
             attributes.emplace(PLAYING_TECHNIQUES_ATTRIBUTE, std::move(articulation));
         }
     }
-}
-
-String MuseSamplerResolver::buildMuseInstrumentId(const String& category, const String& name, int uniqueId) const
-{
-    StringList list;
-    list.append(category);
-    list.append(name);
-    list.append(String::fromStdString(std::to_string(uniqueId)));
-
-    return list.join(u"\\");
 }

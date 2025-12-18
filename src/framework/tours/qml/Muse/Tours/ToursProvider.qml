@@ -62,11 +62,6 @@ Item {
             }
         }
 
-        onLoaded: {
-            var tourStepPopup = tourStepLoader.item
-            tourStepPopup.calculateSize()
-        }
-
         function loadTourStepPopup() {
             tourStepLoader.active = true
         }
@@ -77,10 +72,10 @@ Item {
             tourStepLoader.active = false
         }
 
-        function open(parent, title, description, videoExplanationUrl, index, total) {
+        function open(parent, title, description, previewImageOrGifUrl, videoExplanationUrl, index, total) {
             loadTourStepPopup()
 
-            update(parent, title, description, videoExplanationUrl, index, total)
+            update(parent, title, description, previewImageOrGifUrl, videoExplanationUrl, index, total)
 
             var tourStepPopup = tourStepLoader.item
             tourStepPopup.open()
@@ -95,7 +90,7 @@ Item {
             tourStepPopup.close()
         }
 
-        function update(parent, title, description, videoExplanationUrl, index, total) {
+        function update(parent, title, description, previewImageOrGifUrl, videoExplanationUrl, index, total) {
             var tourStepPopup = tourStepLoader.item
             if (!Boolean(tourStepPopup)) {
                 return
@@ -104,19 +99,18 @@ Item {
             root.parent = parent
             tourStepPopup.title = title
             tourStepPopup.description = description
+            tourStepPopup.previewImageOrGifUrl = previewImageOrGifUrl
             tourStepPopup.videoExplanationUrl = videoExplanationUrl
             tourStepPopup.index = index
             tourStepPopup.total = total
-
-            tourStepPopup.calculateSize()
         }
     }
 
     Connections {
         target: root.provider
 
-        function onOpenTourStep(parent, title, description, videoExplanationUrl, index, total) {
-            tourStepLoader.open(parent, title, description, videoExplanationUrl, index, total)
+        function onOpenTourStep(parent, title, description, previewImageOrGifUrl, videoExplanationUrl, index, total) {
+            tourStepLoader.open(parent, title, description, previewImageOrGifUrl, videoExplanationUrl, index, total)
         }
 
         function onCloseCurrentTourStep() {

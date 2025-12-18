@@ -47,13 +47,12 @@ public:
     bool isStarted() const { return m_isStarted; }
 
     // progress
-    void progress(int64_t current, int64_t total, const std::string& msg) { m_progressChanged.send(current, total, msg); }
+    void progress(int64_t current, int64_t total, const std::string& msg = {}) { m_progressChanged.send(current, total, msg); }
     async::Channel<int64_t /*current*/, int64_t /*total*/, std::string /*title*/>& progressChanged()
     {
         return m_progressChanged;
     }
 
-    // finish or cancel
     void finish(const ProgressResult& res)
     {
         m_isStarted = false;

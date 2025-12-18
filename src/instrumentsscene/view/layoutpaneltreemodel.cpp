@@ -157,6 +157,13 @@ bool LayoutPanelTreeModel::removeRows(int row, int count, const QModelIndex& par
     return true;
 }
 
+bool LayoutPanelTreeModel::shouldShowSystemObjectLayers() const
+{
+    // Only show system object staves in master score
+    // TODO: extend system object staves logic to parts
+    return m_notation && m_notation->isMaster();
+}
+
 void LayoutPanelTreeModel::initPartOrders()
 {
     m_sortedPartIdList.clear();
@@ -229,7 +236,7 @@ void LayoutPanelTreeModel::setupPartsConnections()
     m_notation->parts()->systemObjectStavesChanged().onNotify(this, [this]() {
         m_shouldUpdateSystemObjectLayers = true;
         if (!m_isLoadingBlocked) {
-            updateSystemObjectLayers();
+            load();
         }
     });
 }
@@ -303,9 +310,13 @@ void LayoutPanelTreeModel::setupNotationConnections()
         updateSelectedRows();
     });
 
-    m_notation->undoStack()->changesChannel().onReceive(this, [this](const mu::engraving::ScoreChangesRange& changes) {
+    m_notation->undoStack()->changesChannel().onReceive(this, [this](const mu::engraving::ScoreChanges& changes) {
+        if (changes.isTextEditing) {
+            return;
+        }
+
         if (!m_layoutPanelVisible) {
-            m_shouldUpdateSystemObjectLayers = true;
+            m_scoreChanged = true;
             return;
         }
 
@@ -344,7 +355,7 @@ void LayoutPanelTreeModel::updateSelectedRows()
     }
 }
 
-void LayoutPanelTreeModel::onScoreChanged(const mu::engraving::ScoreChangesRange& changes)
+void LayoutPanelTreeModel::onScoreChanged(const mu::engraving::ScoreChanges& changes)
 {
     if (!m_rootItem) {
         return;
@@ -353,6 +364,8 @@ void LayoutPanelTreeModel::onScoreChanged(const mu::engraving::ScoreChangesRange
     for (AbstractLayoutPanelTreeItem* item : m_rootItem->childItems()) {
         item->onScoreChanged(changes);
     }
+
+    m_scoreChanged = false;
 }
 
 void LayoutPanelTreeModel::clear()
@@ -390,21 +403,32 @@ void LayoutPanelTreeModel::load()
     async::NotifyList<const Part*> masterParts = m_masterNotation->parts()->partList();
     sortParts(masterParts);
 
+    const bool showSystemObjectLayers = shouldShowSystemObjectLayers();
     const std::vector<Staff*>& systemObjectStaves = m_masterNotation->notation()->parts()->systemObjectStaves();
-    SystemObjectGroupsByStaff systemObjects = collectSystemObjectGroups(systemObjectStaves);
+
+    SystemObjectGroupsByStaff systemObjects;
+    if (showSystemObjectLayers) {
+        systemObjects = collectSystemObjectGroups(systemObjectStaves);
+    }
 
     for (const Part* part : masterParts) {
-        if (m_notation->isMaster()) {
-            // Only show system object staves in master score
-            // TODO: extend system object staves logic to parts
+        if (showSystemObjectLayers) {
             for (Staff* staff : part->staves()) {
-                if (muse::contains(systemObjectStaves, staff)) {
+                if (!staff->hasSystemObjectsBelowBottomStaff() && muse::contains(systemObjectStaves, staff)) {
                     m_rootItem->appendChild(buildSystemObjectsLayerItem(staff, systemObjects[staff]));
                 }
             }
         }
 
         m_rootItem->appendChild(buildMasterPartItem(part));
+
+        if (showSystemObjectLayers) {
+            for (Staff* staff : part->staves()) {
+                if (staff->hasSystemObjectsBelowBottomStaff()) {
+                    m_rootItem->appendChild(buildSystemObjectsLayerItem(staff, systemObjects[staff]));
+                }
+            }
+        }
     }
 
     endResetModel();
@@ -454,7 +478,12 @@ void LayoutPanelTreeModel::setLayoutPanelVisible(bool visible)
 
     if (visible) {
         updateSelectedRows();
-        updateSystemObjectLayers();
+
+        if (m_scoreChanged) {
+            onScoreChanged();
+            m_shouldUpdateSystemObjectLayers = true;
+            updateSystemObjectLayers();
+        }
     }
 }
 
@@ -562,8 +591,32 @@ bool LayoutPanelTreeModel::moveRows(const QModelIndex& sourceParent, int sourceR
 
     int sourceFirstRow = sourceRow;
     int sourceLastRow = sourceRow + count - 1;
-    int destinationRow = (sourceLastRow > destinationChild || sourceParentItem != destinationParentItem)
-                         ? destinationChild : destinationChild + 1;
+
+    if (sourceRow < 0 || count <= 0 || destinationChild < 0) {
+        return false;
+    }
+
+    if (sourceRow == destinationChild) {
+        return false;
+    }
+
+    int destinationRow = (sourceLastRow > destinationChild) ? destinationChild : destinationChild + 1;
+
+    if (sourceParentItem && destinationParentItem) {
+        int maxRow = sourceParentItem->childCount() - 1;
+
+        if (sourceLastRow > maxRow || destinationRow > maxRow + 1) {
+            return false;
+        }
+    }
+
+    if (!sourceParentItem || !destinationParentItem) {
+        return false;
+    }
+
+    if (sourceFirstRow >= sourceParentItem->childCount()) {
+        return false;
+    }
 
     if (m_dragInProgress) {
         MoveParams params = sourceParentItem->buildMoveParams(sourceRow, count, destinationParentItem, destinationRow);
@@ -605,6 +658,9 @@ void LayoutPanelTreeModel::endActiveDrag()
     setLoadingBlocked(false);
 
     updateSystemObjectLayers();
+    initPartOrders();
+
+    emit layoutChanged();
 }
 
 void LayoutPanelTreeModel::changeVisibilityOfSelectedRows(bool visible)
@@ -856,13 +912,13 @@ void LayoutPanelTreeModel::updateMovingDownAvailability(bool isSelectionMovable,
     const AbstractLayoutPanelTreeItem* curItem = modelIndexToItem(lastSelectedRowIndex);
     bool lastSelectedIsSystemObjectLayer = curItem && curItem->type() == LayoutPanelItemType::ItemType::SYSTEM_OBJECTS_LAYER;
 
-    IF_ASSERT_FAILED(lastSelectedRowIndex.row() != 0 || !lastSelectedIsSystemObjectLayer) {
+    if (lastSelectedRowIndex.row() == 0 && lastSelectedIsSystemObjectLayer) {
         // Selecting/moving the top system object layer not allowed
         setIsMovingDownAvailable(false);
         return;
     }
 
-    int lastItemRowIndex = parentItem->childCount() - 1 - (hasControlItem ? 1 : 0) - (lastSelectedIsSystemObjectLayer ? 1 : 0);
+    int lastItemRowIndex = parentItem->childCount() - 1 - (hasControlItem ? 1 : 0);
 
     bool isRowInBoundaries = lastSelectedRowIndex.isValid() && lastSelectedRowIndex.row() < lastItemRowIndex;
 
@@ -983,7 +1039,7 @@ bool LayoutPanelTreeModel::warnAboutRemovingInstrumentsIfNecessary(int count)
         return true;
     }
 
-    return interactive()->warning(
+    return interactive()->warningSync(
         muse::trc("layoutpanel", "Are you sure you want to delete the selected instrument(s)?", nullptr, count),
         muse::trc("layoutpanel", "This will remove the instrument(s) from the full score and all part scores.", nullptr, count),
         { IInteractive::Button::No, IInteractive::Button::Yes }
@@ -1047,6 +1103,10 @@ void LayoutPanelTreeModel::updateSystemObjectLayers()
         return;
     }
 
+    if (!shouldShowSystemObjectLayers()) {
+        return;
+    }
+
     TRACEFUNC;
 
     m_shouldUpdateSystemObjectLayers = false;
@@ -1091,8 +1151,9 @@ void LayoutPanelTreeModel::updateSystemObjectLayers()
 
         const int partRow = partItem->row();
         const int layerRow = layerItem->row();
+        const int correctLayerRow = layerItem->staff()->hasSystemObjectsBelowBottomStaff() ? partRow + 1 : partRow - 1;
 
-        if (layerRow != partRow - 1) {
+        if (layerRow != correctLayerRow) {
             beginMoveRows(QModelIndex(), layerRow, layerRow, QModelIndex(), partRow);
             m_rootItem->moveChildren(layerRow, 1, m_rootItem, partRow, false /*updateNotation*/);
             endMoveRows();
@@ -1109,7 +1170,7 @@ void LayoutPanelTreeModel::updateSystemObjectLayers()
             }
 
             AbstractLayoutPanelTreeItem* newItem = buildSystemObjectsLayerItem(staff, systemObjects[staff]);
-            int row = partItem->row();
+            int row = staff->hasSystemObjectsBelowBottomStaff() ? partItem->row() + 1 : partItem->row();
 
             beginInsertRows(QModelIndex(), row, row);
             m_rootItem->insertChild(newItem, row);

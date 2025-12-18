@@ -50,7 +50,9 @@ public:
         TYPE_CAPO,
         TYPE_STRING_TUNINGS,
         TYPE_SOUND_FLAG,
+        TYPE_STAFF_VISIBILITY,
         TYPE_DYNAMIC,
+        TYPE_TEXT,
         TYPE_PARTIAL_TIE,
         TYPE_SHADOW_NOTE
     };
@@ -61,8 +63,9 @@ public:
     PopupModelType modelType() const;
     QRect itemRect() const;
 
-    static bool supportsPopup(const mu::engraving::EngravingItem* element);
-    static PopupModelType modelTypeFromElement(const mu::engraving::ElementType& elementType);
+    static bool hasElementEditPopup(const engraving::EngravingItem* element);
+    static bool hasTextStylePopup(const engraving::EngravingItem* element);
+    static PopupModelType modelTypeFromElement(const engraving::ElementType& elementType);
 
     virtual void init();
 
@@ -72,6 +75,7 @@ signals:
 
 protected:
     virtual void updateItemRect();
+    virtual bool ignoreTextEditingChanges() const { return true; }
 
     muse::PointF fromLogical(muse::PointF point) const;
     muse::RectF fromLogical(muse::RectF rect) const;
@@ -85,8 +89,8 @@ protected:
     notation::INotationPtr currentNotation() const;
     INotationInteractionPtr interaction() const;
 
-    void changeItemProperty(mu::engraving::Pid id, const PropertyValue& value);
-    void changeItemProperty(mu::engraving::Pid id, const PropertyValue& value, engraving::PropertyFlags flags);
+    void changeItemProperty(engraving::Pid id, const PropertyValue& value);
+    void changeItemProperty(engraving::Pid id, const PropertyValue& value, engraving::PropertyFlags flags);
 
     EngravingItem* m_item = nullptr;
     QRect m_itemRect;

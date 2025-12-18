@@ -43,7 +43,8 @@ public:
     SelectionState state() const override;
 
     muse::Ret canCopy() const override;
-    QMimeData* mimeData() const override;
+    muse::ByteArray mimeData() const override;
+    QMimeData* qMimeData() const override;
 
     EngravingItem* element() const override;
     const std::vector<EngravingItem*>& elements() const override;
@@ -61,6 +62,8 @@ public:
     mu::engraving::MeasureBase* startMeasureBase() const override;
     mu::engraving::MeasureBase* endMeasureBase() const override;
     std::vector<mu::engraving::System*> selectedSystems() const override;
+
+    bool elementsSelected(const mu::engraving::ElementTypeSet& types) const override;
 
 private:
     mu::engraving::Score* score() const;

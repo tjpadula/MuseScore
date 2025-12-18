@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_ANCHORS_H
-#define MU_ENGRAVING_ANCHORS_H
+#pragma once
 
 #include "engravingitem.h"
 #include "score.h"
@@ -32,10 +31,33 @@ class Factory;
 class EditTimeTickAnchors
 {
 public:
-    static void updateAnchors(const EngravingItem* item, track_idx_t track);
-    static void updateAnchors(Measure* measure, staff_idx_t staffIdx);
+    static void updateAnchors(const EngravingItem* item);
+    static void updateAnchors(Measure* measure, staff_idx_t staffIdx, const std::set<Fraction>& additionalAnchorRelTicks = {});
     static TimeTickAnchor* createTimeTickAnchor(Measure* measure, Fraction relTick, staff_idx_t staffIdx);
     static void updateLayout(Measure* measure);
+};
+
+class MoveElementAnchors
+{
+public:
+    static void moveElementAnchors(EngravingItem* element, KeyboardKey key, KeyboardModifier mod);
+    static void moveSegment(EngravingItem* element, Segment* newSeg, Fraction tickDiff);
+    static void checkMeasureBoundariesAndMoveIfNeed(EngravingItem* element);
+
+    static void moveElementAnchorsOnDrag(EngravingItem* element, EditData& ed);
+
+private:
+    static bool canAnchorToEndOfPrevious(const EngravingItem* element);
+    static void moveSegment(EngravingItem* element, bool forward);
+    static Segment* getNewSegment(EngravingItem* element, Segment* curSeg, bool forward);
+
+    static void doMoveSegment(EngravingItem* element, Segment* newSeg, Fraction tickDiff);
+    static void doMoveSegment(FiguredBass* element, Segment* newSeg, Fraction tickDiff);
+    static void doMoveSegment(Harmony* element, Segment* newSeg, Fraction tickDiff);
+    static void doMoveSegment(FretDiagram* element, Segment* newSeg, Fraction tickDiff);
+
+    static void moveSnappedItems(EngravingItem* element, Segment* newSeg, Fraction tickDiff);
+    static void rebaseOffsetOnMoveSegment(EngravingItem* element, const PointF& curOffset, Segment* newSeg, Segment* oldSeg);
 };
 
 class TimeTickAnchor : public EngravingItem
@@ -67,5 +89,4 @@ public:
     };
     DECLARE_LAYOUTDATA_METHODS(TimeTickAnchor)
 };
-} // namespace mu::engraving
-#endif // MU_ENGRAVING_ANCHORS_H
+}

@@ -164,7 +164,7 @@ void BeamTremoloLayout::offsetBeamToRemoveCollisions(const BeamBase* item, const
 
         // avoid division by zero for zero-length beams (can exist as a pre-layout state used
         // for horizontal spacing computations)
-        if (endX != startX) {
+        if (!muse::RealIsEqual(endX, startX)) {
             const double proportionAlongX = (anchor.x() - startX) / (endX - startX);
             while (true) {
                 const int slope = std::abs(dictator - pointer);
@@ -959,11 +959,11 @@ bool BeamTremoloLayout::calculateAnchorsCross(const BeamBase* item, BeamBase::La
             // we can't rely on comparing topFirst and bottomFirst ->tick() because beamed
             // graces have the same tick
             if (ldata->elements[0] == topFirst) {
-                yFirst = topFirst->stemPos().y();
-                yLast = bottomFirst->stemPos().y();
+                yFirst = StemLayout::stemPos(topFirst).y();
+                yLast = StemLayout::stemPos(bottomFirst).y();
             } else {
-                yFirst = bottomFirst->stemPos().y();
-                yLast = topFirst->stemPos().y();
+                yFirst = StemLayout::stemPos(bottomFirst).y();
+                yLast = StemLayout::stemPos(topFirst).y();
             }
             int desiredSlant = round((yFirst - yLast) / spatium);
             int slant = std::min(std::abs(desiredSlant), getMaxSlope(ldata));
@@ -974,6 +974,8 @@ bool BeamTremoloLayout::calculateAnchorsCross(const BeamBase* item, BeamBase::La
             // Get the direction of groups of notes on top and bottom staves and the direction of switches between sides of the beam and switches between staves
             // Directions are up, down or neutral
             bool forceHoriz = false;
+            bool singleNoteTop = false;
+            bool singleNoteBottom = false;
 
             int topSlant = topFirstLine - topLastLine;
             if (constrainTopToQuarter && topSlant != 0) {
@@ -982,6 +984,7 @@ bool BeamTremoloLayout::calculateAnchorsCross(const BeamBase* item, BeamBase::La
             if (!topLast) {
                 // If there's only one note, set direction to neutral
                 topSlant = 0;
+                singleNoteTop = true;
             }
             int bottomSlant = bottomFirstLine - bottomLastLine;
             if (constrainBottomToQuarter && bottomSlant != 0) {
@@ -990,6 +993,7 @@ bool BeamTremoloLayout::calculateAnchorsCross(const BeamBase* item, BeamBase::La
             if (!bottomLast) {
                 // If there's only one note, set direction to neutral
                 bottomSlant = 0;
+                singleNoteBottom = true;
             }
             if ((maxMiddleTopLine >= std::max(topFirstLine, topLastLine)
                  || (minMiddleBottomLine <= std::min(bottomFirstLine, bottomLastLine)))) {
@@ -1008,17 +1012,17 @@ bool BeamTremoloLayout::calculateAnchorsCross(const BeamBase* item, BeamBase::La
                     break;
                 }
             }
-            const bool overallSlantFlat = overallDirection == 0;
-            const bool topSlantMatchesDirection = (topSlantDir != 0 && topSlantDir != overallDirection);
-            const bool bottomSlantMatchesDirection = (bottomSlantDir != 0 && bottomSlantDir != overallDirection);
-            const bool beamSideSwitchMatchesDirection = (beamSideSwitchDirection != 0 && beamSideSwitchDirection != overallDirection);
-            const bool staffSwitchMatchesDirection = (staffSwitchDirection != 0 && staffSwitchDirection != overallDirection);
 
-            forceHoriz = forceHoriz || overallSlantFlat
-                         || (topSlantMatchesDirection
-                             || bottomSlantMatchesDirection
-                             || beamSideSwitchMatchesDirection
-                             || staffSwitchMatchesDirection);
+            const bool overallSlantFlat = overallDirection == 0;
+            const bool topSlantOverallDiff = (topSlantDir != 0 && topSlantDir != overallDirection);
+            const bool bottomSlantOverallDiff = (bottomSlantDir != 0 && bottomSlantDir != overallDirection);
+            const bool beamSideSwitchOverallDiff = (beamSideSwitchDirection != 0 && beamSideSwitchDirection != overallDirection);
+            const bool staffSwitchOverallDiff = (staffSwitchDirection != 0 && staffSwitchDirection != overallDirection);
+            const bool flattenNeutralBeamSideSwitch = beamSideSwitchDirection == 0 && (topSlantDir != bottomSlantDir)
+                                                      && !(singleNoteTop || singleNoteBottom);
+
+            forceHoriz = forceHoriz || overallSlantFlat || flattenNeutralBeamSideSwitch
+                         || (topSlantOverallDiff || bottomSlantOverallDiff || beamSideSwitchOverallDiff || staffSwitchOverallDiff);
 
             if (!forceHoriz) {
                 int slant = 0;
@@ -1281,13 +1285,13 @@ int BeamTremoloLayout::getBeamCount(const BeamBase::LayoutData* ldata, const std
 double BeamTremoloLayout::chordBeamAnchorX(const BeamBase::LayoutData* ldata, const ChordRest* cr, ChordBeamAnchorType anchorType)
 {
     double pagePosX = ldata->trem ? ldata->trem->pagePos().x() : ldata->beam ? ldata->beam->pagePos().x() : 0.0;
-    double stemPosX = cr->stemPosX() + cr->pagePos().x() - pagePosX;
+    double stemPosX = StemLayout::stemPosX(cr) + cr->pagePos().x() - pagePosX;
 
     if (!cr->isChord() || !toChord(cr)->stem()) {
         if (!ldata->up) {
             // rests always return the right side of the glyph as their stemPosX
             // so we need to adjust back to the left side if stems are down
-            stemPosX -= cr->stemPosX();
+            stemPosX -= StemLayout::stemPosX(cr);
         }
         return stemPosX;
     }
@@ -1343,8 +1347,8 @@ double BeamTremoloLayout::chordBeamAnchorY(const BeamBase::LayoutData* ldata, co
     double beamOffset = ldata->beamWidth / 2 * upValue;
 
     if (ldata->isBesideTabStaff) {
-        double stemLength = ldata->tab->chordStemLength(chord) * (ldata->up ? -1 : 1);
-        double y = ldata->tab->chordRestStemPosY(chord) + stemLength;
+        double stemLength = StemLayout::tabStemLength(chord, ldata->tab) * (ldata->up ? -1 : 1);
+        double y = StemLayout::tabRestStemPosY(chord, ldata->tab) + stemLength;
         y *= ldata->spatium;
         y -= beamOffset;
         return y + chord->pagePos().y();

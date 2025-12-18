@@ -28,6 +28,8 @@
 
 #include "compat/pageformat.h"
 
+#include "engravingerrors.h"
+
 #include "infrastructure/htmlparser.h"
 
 #include "rw/compat/compatutils.h"
@@ -102,6 +104,8 @@ using namespace mu::engraving::read400;
 using namespace mu::engraving::read114;
 using namespace mu::engraving::read206;
 using namespace mu::engraving::compat;
+
+using mu::engraving::compat::TremoloCompat;
 
 static int g_guitarStrings[] = { 40, 45, 50, 55, 59, 64 };
 static int g_bassStrings[]   = { 28, 33, 38, 43 };
@@ -297,6 +301,12 @@ static bool readTextProperties(XmlReader& e, ReadContext& ctx, TextBase* t, Engr
     }
     t->setOffset(PointF());       // ignore user offsets
     t->setAutoplace(true);
+
+    t->setPosition(t->align().horizontal);
+    if (t->position() != t->propertyDefault(Pid::POSITION).value<AlignH>()) {
+        t->setPropertyFlags(Pid::POSITION, PropertyFlags::UNSTYLED);
+    }
+
     return true;
 }
 
@@ -524,15 +534,15 @@ static void readFingering114(XmlReader& e, Fingering* fing)
 
 static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
 {
-    ctx.hasAccidental = false;                       // used for userAccidental backward compatibility
+    bool hasAccidental = false; // used for userAccidental backward compatibility
 
     note->setTpc1(Tpc::TPC_INVALID);
     note->setTpc2(Tpc::TPC_INVALID);
 
-    if (e.hasAttribute("pitch")) {                   // obsolete
+    if (e.hasAttribute("pitch")) { // obsolete
         note->setPitch(e.intAttribute("pitch"));
     }
-    if (e.hasAttribute("tpc")) {                     // obsolete
+    if (e.hasAttribute("tpc")) { // obsolete
         note->setTpc1(e.intAttribute("tpc"));
     }
 
@@ -542,8 +552,8 @@ static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
             // on older scores, a note could have both a <userAccidental> tag and an <Accidental> tag
             // if a userAccidental has some other property set (like for instance offset)
             Accidental* a;
-            if (ctx.hasAccidental) {                // if the other tag has already been read,
-                a = note->accidental();                // re-use the accidental it constructed
+            if (hasAccidental) { // if the other tag has already been read,
+                a = note->accidental(); // re-use the accidental it constructed
             } else {
                 a = Factory::createAccidental(note);
             }
@@ -551,10 +561,10 @@ static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
             // track it belongs to (??)
             a->setTrack(note->track());
             readAccidental(a, e, ctx);
-            if (!ctx.hasAccidental) {              // only the new accidental, if it has been added previously
+            if (!hasAccidental) { // only the new accidental, if it has been added previously
                 note->add(a);
             }
-            ctx.hasAccidental = true;         // we now have an accidental
+            hasAccidental = true; // we now have an accidental
         } else if (tag == "Text") {
             Fingering* f = Factory::createFingering(note);
             readFingering114(e, f);
@@ -592,7 +602,7 @@ static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
                 // if a userAccidental has some other property set (like for instance offset)
                 // only construct a new accidental, if the other tag has not been read yet
                 // (<userAccidental> tag is only used in older scores: no need to check the score mscVersion)
-                if (!ctx.hasAccidental) {
+                if (!hasAccidental) {
                     Accidental* a = Factory::createAccidental(note);
                     note->add(a);
                 }
@@ -622,10 +632,10 @@ static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
                     break;
                 case 9: at = AccidentalType::MIRRORED_FLAT;
                     break;
-                case 10: at = AccidentalType::NONE;
-                    break;                                               // AccidentalType::MIRRORED_FLAT_SLASH
-                case 11: at = AccidentalType::NONE;
-                    break;                                               // AccidentalType::FLAT_FLAT_SLASH
+                case 10: at = AccidentalType::NONE; // AccidentalType::MIRRORED_FLAT_SLASH
+                    break;
+                case 11: at = AccidentalType::NONE; // AccidentalType::FLAT_FLAT_SLASH
+                    break;
 
                 case 12: at = AccidentalType::SHARP_SLASH;
                     break;
@@ -640,20 +650,20 @@ static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
                     break;
                 case 17: at = AccidentalType::SHARP_ARROW_DOWN;
                     break;
-                case 18: at = AccidentalType::NONE;
-                    break;                                               // AccidentalType::SHARP_ARROW_BOTH
+                case 18: at = AccidentalType::NONE; // AccidentalType::SHARP_ARROW_BOTH
+                    break;
                 case 19: at = AccidentalType::FLAT_ARROW_UP;
                     break;
                 case 20: at = AccidentalType::FLAT_ARROW_DOWN;
                     break;
-                case 21: at = AccidentalType::NONE;
-                    break;                                               // AccidentalType::FLAT_ARROW_BOTH
+                case 21: at = AccidentalType::NONE; // AccidentalType::FLAT_ARROW_BOTH
+                    break;
                 case 22: at = AccidentalType::NATURAL_ARROW_UP;
                     break;
                 case 23: at = AccidentalType::NATURAL_ARROW_DOWN;
                     break;
-                case 24: at = AccidentalType::NONE;
-                    break;                                               // AccidentalType::NATURAL_ARROW_BOTH
+                case 24: at = AccidentalType::NONE; // AccidentalType::NATURAL_ARROW_BOTH
+                    break;
                 case 25: at = AccidentalType::SORI;
                     break;
                 case 26: at = AccidentalType::KORON;
@@ -664,10 +674,10 @@ static void readNote(Note* note, XmlReader& e, ReadContext& ctx)
                 note->accidental()->setBracket(AccidentalBracket(bracket));
 
                 note->accidental()->setRole(AccidentalRole::USER);
-                ctx.hasAccidental = true;           // we now have an accidental
+                hasAccidental = true; // we now have an accidental
             }
         } else if (tag == "offset") {
-            e.skipCurrentElement();       // ignore manual layout in older scores
+            e.skipCurrentElement(); // ignore manual layout in older scores
         } else if (tag == "move") {
             note->chord()->setStaffMove(e.readInt());
         } else if (tag == "head") {
@@ -882,15 +892,15 @@ static void readTuplet(Tuplet* tuplet, XmlReader& e, ReadContext& ctx)
 //   readTremolo
 //---------------------------------------------------------
 
-static void readTremolo(compat::TremoloCompat* t, XmlReader& e, ReadContext& ctx)
+static void readTremolo(TremoloCompat* t, XmlReader& e, ReadContext& ctx)
 {
-    auto createDefaultTremolo = [](compat::TremoloCompat* t) {
+    auto createDefaultTremolo = [](TremoloCompat* t) {
         t->single = Factory::createTremoloSingleChord(t->parent);
         t->single->setTrack(t->parent->track());
         t->single->setTremoloType(TremoloType::R8);
     };
 
-    auto item = [createDefaultTremolo](compat::TremoloCompat* t) -> EngravingItem* {
+    auto item = [createDefaultTremolo](TremoloCompat* t) -> EngravingItem* {
         if (t->two) {
             return t->two;
         }
@@ -984,7 +994,7 @@ static void readChord(Measure* m, Chord* chord, XmlReader& e, ReadContext& ctx)
                 chord->add(el);
             }
         } else if (tag == "Tremolo") {
-            compat::TremoloCompat tcompat;
+            TremoloCompat tcompat;
             tcompat.parent = chord;
             readTremolo(&tcompat, e, ctx);
             if (tcompat.two) {
@@ -1144,7 +1154,7 @@ static void readVolta114(XmlReader& e, ReadContext& ctx, Volta* volta)
                 volta->endings().push_back(i);
             }
         } else if (tag == "subtype") {
-            e.readInt();
+            volta->setVoltaType(e.readInt() == 1 ? Volta::Type::CLOSED : Volta::Type::OPEN);
         } else if (tag == "lineWidth") {
             volta->setLineWidth(Spatium(e.readDouble()));
             volta->setPropertyFlags(Pid::LINE_WIDTH, PropertyFlags::UNSTYLED);
@@ -1386,25 +1396,27 @@ static void readHarmony114(XmlReader& e, ReadContext& ctx, Harmony* h)
         14, 9, 16, 11, 18, 13, 8, 15, 10, 17, 12, 19
     };
 
+    HarmonyInfo* info = new HarmonyInfo(ctx.score());
+
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
         if (tag == "base") {
             if (ctx.mscVersion() >= 106) {
-                h->setBaseTpc(e.readInt());
+                info->setBassTpc(e.readInt());
             } else {
-                h->setBaseTpc(table[e.readInt() - 1]);
+                info->setBassTpc(table[e.readInt() - 1]);
             }
         } else if (tag == "baseCase") {
-            h->setBaseCase(static_cast<NoteCaseType>(e.readInt()));
+            h->setBassCase(static_cast<NoteCaseType>(e.readInt()));
         } else if (tag == "extension") {
-            h->setId(e.readInt());
+            info->setId(e.readInt());
         } else if (tag == "name") {
-            h->setTextName(e.readText());
+            info->setTextName(e.readText());
         } else if (tag == "root") {
             if (ctx.mscVersion() >= 106) {
-                h->setRootTpc(e.readInt());
+                info->setRootTpc(e.readInt());
             } else {
-                h->setRootTpc(table[e.readInt() - 1]);
+                info->setRootTpc(table[e.readInt() - 1]);
             }
         } else if (tag == "rootCase") {
             h->setRootCase(static_cast<NoteCaseType>(e.readInt()));
@@ -1439,50 +1451,19 @@ static void readHarmony114(XmlReader& e, ReadContext& ctx, Harmony* h)
                 }
             }
         } else if (tag == "leftParen") {
-            h->setLeftParen(true);
+            h->setParenthesesMode(ParenthesesMode::LEFT, true, true);
             e.readNext();
         } else if (tag == "rightParen") {
-            h->setRightParen(true);
+            h->setParenthesesMode(ParenthesesMode::RIGHT, true, true);
             e.readNext();
         } else if (!readTextProperties(e, ctx, h, h)) {
             e.unknown();
         }
     }
 
-    // TODO: now that we can render arbitrary chords,
-    // we could try to construct a full representation from a degree list.
-    // These will typically only exist for chords imported from MusicXML prior to MuseScore 2.0
-    // or constructed in the Chord Symbol Properties dialog.
+    h->addChord(info);
 
-    if (h->rootTpc() != Tpc::TPC_INVALID) {
-        if (h->id() > 0) {
-            // positive id will happen only for scores that were created with explicit chord lists
-            // lookup id in chord list and generate new description if necessary
-            h->getDescription();
-        } else {
-            // default case: look up by name
-            // description will be found for any chord already read in this score
-            // and we will generate a new one if necessary
-            h->getDescription(h->hTextName());
-        }
-    } else if (h->hTextName() == "") {
-        // unrecognized chords prior to 2.0 were stored as text with markup
-        // we need to strip away the markup
-        // this removes any user-applied formatting,
-        // but we no longer support user-applied formatting for chord symbols anyhow
-        // with any luck, the resulting text will be parseable now, so give it a shot
-//            h->createLayout();
-        String s = h->plainText();
-        if (!s.isEmpty()) {
-            h->setHarmony(s);
-            return;
-        }
-        // empty text could also indicate a root-less slash chord ("/E")
-        // we'll fall through and render it normally
-    }
-
-    // render chord from description (or _textName)
-    h->render();
+    h->afterRead();
 }
 
 //---------------------------------------------------------
@@ -1492,7 +1473,6 @@ static void readHarmony114(XmlReader& e, ReadContext& ctx, Harmony* h)
 static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx)
 {
     Segment* segment = 0;
-    double _spatium = m->spatium();
 
     std::vector<Chord*> graceNotes;
 
@@ -2000,14 +1980,34 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
                     j->setPlayUntil(e.readText());
                 } else if (t == "continueAt") {
                     j->setContinueAt(e.readText());
-                } else if (t == "playRepeats") {
-                    j->setPlayRepeats(e.readBool());
                 } else if (t == "subtype") {
-                    e.readInt();
+                    e.skipCurrentElement(); // obsolete, always "Repeat"
                 } else if (!TRead::readTextProperties(j, e, ctx)) {
                     e.unknown();
                 }
             }
+
+            // infer jump type
+            String jumpTo = j->jumpTo();
+            String playUntil = j->playUntil();
+            if (jumpTo == "start") {
+                if (playUntil == "end") {
+                    j->setJumpType(JumpType::DC);
+                } else if (playUntil == "fine") {
+                    j->setJumpType(JumpType::DC_AL_FINE);
+                } else {
+                    j->setJumpType(JumpType::DC_AL_CODA);
+                }
+            } else {
+                if (playUntil == "end") {
+                    j->setJumpType(JumpType::DS);
+                } else if (playUntil == "fine") {
+                    j->setJumpType(JumpType::DS_AL_FINE);
+                } else {
+                    j->setJumpType(JumpType::DS_AL_CODA);
+                }
+            }
+
             m->add(j);
         } else if (tag == "Marker") {
             Marker* a = Factory::createMarker(m);
@@ -2016,7 +2016,7 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
             MarkerType mt = MarkerType::SEGNO;
             while (e.readNextStartElement()) {
                 const AsciiStringView t(e.name());
-                if (t == "subtype") {
+                if (t == "subtype" || t == "label") {
                     AsciiStringView s(e.readAsciiText());
                     a->setLabel(String::fromAscii(s.ascii()));
                     mt = TConv::fromXml(s, MarkerType::USER);
@@ -2031,6 +2031,7 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
                 // force the marker type for correct display
                 a->setXmlText(u"");
                 a->setMarkerType(a->markerType());
+                a->setTextStyleType(TextStyleType::REPEAT_LEFT);
             }
             m->add(a);
         } else if (tag == "Image") {
@@ -2051,7 +2052,8 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
         } else if (tag == "measureNumberMode") {
             m->setMeasureNumberMode(MeasureNumberMode(e.readInt()));
         } else if (tag == "irregular") {
-            m->setIrregular(e.readBool());
+            m->setIrregular(true);
+            e.skipCurrentElement();
         } else if (tag == "breakMultiMeasureRest") {
             m->setBreakMultiMeasureRest(e.readBool());
         } else if (tag == "sysInitBarLineType") {
@@ -2080,7 +2082,7 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
                 spacer->setTrack(staffIdx * VOICES);
                 m->add(spacer);
             }
-            m->vspacerDown(staffIdx)->setGap(Millimetre(e.readDouble() * _spatium));
+            m->vspacerDown(staffIdx)->setGap(Spatium(e.readDouble()));
         } else if (tag == "vspacer" || tag == "vspacerUp") {
             if (!m->vspacerUp(staffIdx)) {
                 Spacer* spacer = Factory::createSpacer(m);
@@ -2088,7 +2090,7 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
                 spacer->setTrack(staffIdx * VOICES);
                 m->add(spacer);
             }
-            m->vspacerUp(staffIdx)->setGap(Millimetre(e.readDouble() * _spatium));
+            m->vspacerUp(staffIdx)->setGap(Spatium(e.readDouble()));
         } else if (tag == "visible") {
             m->setStaffVisible(staffIdx, e.readInt());
         } else if (tag == "slashStyle") {
@@ -2117,7 +2119,7 @@ static void readMeasure(Measure* m, int staffIdx, XmlReader& e, ReadContext& ctx
             readText114(e, ctx, noText, m);
             noText->setTrack(ctx.track());
             noText->setParent(m);
-            m->setNoText(noText->staffIdx(), noText);
+            m->setMeasureNumber(noText->staffIdx(), noText);
         } else if (tag == "multiMeasureRest") {
             m->setMMRestCount(e.readInt());
             // set tick to previous measure
@@ -2303,7 +2305,7 @@ static void readStaffContent(Score* score, XmlReader& e, ReadContext& ctx)
                 measure->checkMeasure(staff);
 
                 if (!measure->isMMRest()) {
-                    score->measures()->add(measure);
+                    score->measures()->append(measure);
                     ctx.setLastMeasure(measure);
                     ctx.setTick(measure->tick() + measure->ticks());
                 } else {
@@ -2321,7 +2323,7 @@ static void readStaffContent(Score* score, XmlReader& e, ReadContext& ctx)
                     LOGD("Score::readStaff(): missing measure!");
                     measure = Factory::createMeasure(score->dummy()->system());
                     measure->setTick(ctx.tick());
-                    score->measures()->add(measure);
+                    score->measures()->append(measure);
                 }
                 ctx.setTick(measure->tick());
 
@@ -2343,7 +2345,7 @@ static void readStaffContent(Score* score, XmlReader& e, ReadContext& ctx)
             Box* mb = toBox(Factory::createItemByName(tag, score->dummy()));
             readBox(e, ctx, mb);
             mb->setTick(ctx.tick());
-            score->measures()->add(mb);
+            score->measures()->append(mb);
         } else if (tag == "tick") {
             ctx.setTick(Fraction::fromTicks(score->fileDivision(e.readInt())));
         } else {
@@ -2418,7 +2420,7 @@ static void readDrumset(Drumset* ds, XmlReader& e)
         const AsciiStringView tag(e.name());
         if (tag == "head") {
             ds->drum(pitch).notehead = Read206::convertHeadGroup(e.readInt());
-        } else if (ds->readProperties(e, pitch)) {
+        } else if (ds->readDrumProperties(e, pitch)) {
         } else {
             e.unknown();
         }
@@ -2728,7 +2730,7 @@ static void readStyle(MStyle* style, XmlReader& e, ReadChordListHook& readChordL
 //    import old version <= 1.3 files
 //---------------------------------------------------------
 
-muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
+muse::Ret Read114::readScoreFile(Score* score, XmlReader& e, ReadInOutData* out)
 {
     IF_ASSERT_FAILED(score->isMaster()) {
         return make_ret(Err::FileUnknownError);
@@ -2822,12 +2824,6 @@ muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
             double sp = masterScore->style().spatium();
             compat::ReadChordListHook clhook(masterScore);
             readStyle(&masterScore->style(), e, clhook);
-            //style()->load(e);
-            // adjust this now so chords render properly on read
-            // other style adjustments can wait until reading is finished
-            if (masterScore->style().styleB(Sid::useGermanNoteNames)) {
-                masterScore->style().set(Sid::useStandardNoteNames, false);
-            }
             if (ctx.overrideSpatium()) {
                 masterScore->style().setSpatium(sp);
             }
@@ -2909,13 +2905,9 @@ muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
                 masterScore->addSpanner(s);
             }
         } else if (tag == "Excerpt") {
-            if (MScore::noExcerpts) {
-                e.skipCurrentElement();
-            } else {
-                Excerpt* ex = new Excerpt(masterScore);
-                read400::TRead::read(ex, e, ctx);
-                masterScore->m_excerpts.push_back(ex);
-            }
+            Excerpt* ex = new Excerpt(masterScore);
+            read400::TRead::read(ex, e, ctx);
+            masterScore->m_excerpts.push_back(ex);
         } else if (tag == "Beam") {
             Beam* beam = Factory::createBeam(masterScore->dummy()->system());
             read400::TRead::read(beam, e, ctx);
@@ -2928,7 +2920,7 @@ muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
     }
 
     if (e.error() != muse::XmlStreamReader::NoError) {
-        LOGD() << e.lineNumber() << " " << e.columnNumber() << ": " << e.errorString();
+        LOGD() << "XML read error at byte offset " << e.byteOffset() << ": " << e.errorString();
         return make_ret(Err::FileBadFormat, e.errorString());
     }
 
@@ -3136,14 +3128,14 @@ muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
     }
 
     // create excerpts
-
-    std::vector<Excerpt*> readExcerpts;
-    readExcerpts.swap(masterScore->m_excerpts);
-    for (Excerpt* excerpt : readExcerpts) {
-        if (excerpt->parts().empty()) {             // ignore empty parts
-            continue;
-        }
-        if (!excerpt->parts().empty()) {
+    {
+        std::vector<Excerpt*> readExcerpts;
+        readExcerpts.swap(masterScore->m_excerpts);
+        for (Excerpt* excerpt : readExcerpts) {
+            if (excerpt->parts().empty()) {         // ignore empty parts
+                delete excerpt;
+                continue;
+            }
             masterScore->m_excerpts.push_back(excerpt);
             Score* nscore = masterScore->createScore();
             ReadStyleHook::setupDefaultStyle(nscore);
@@ -3152,7 +3144,6 @@ muse::Ret Read114::readScore(Score* score, XmlReader& e, ReadInOutData* out)
             Excerpt::createExcerpt(excerpt);
         }
     }
-
     // volta offsets in older scores are hardcoded to be relative to a voltaY of -2.0sp
     // we'll force this and live with it for the score
     // but we wait until now to do it so parts don't have this issue
@@ -3200,7 +3191,7 @@ void Read114::pasteSymbols(XmlReader&, ChordRest*)
     UNREACHABLE;
 }
 
-void Read114::readTremoloCompat(compat::TremoloCompat*, XmlReader&)
+void Read114::readTremoloCompat(TremoloCompat*, XmlReader&)
 {
     UNREACHABLE;
 }

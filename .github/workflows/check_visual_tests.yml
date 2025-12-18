@@ -2,6 +2,15 @@ name: 'Check: Visual Tests (vtest)'
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      use_qt69:
+        description: 'Use Qt 6.9'
+        default: 'on'
+        required: false 
+
+env:
+  USE_QT69: ${{ inputs.use_qt69 != '' && inputs.use_qt69 || 'on' }}  
 
 jobs:
   setup:
@@ -17,7 +26,7 @@ jobs:
       with:
         access_token: ${{ github.token }}
     - name: Clone repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: "Configure workflow"
@@ -41,9 +50,9 @@ jobs:
       if: github.event_name == 'push'
       run: |
         REFERENCE_SHA=${{ github.event.before }}
-        if [[ -z "$REFERENCE_SHA" || "$REFERENCE_SHA" == 0000000000000000000000000000000000000000 ]]; then 
-          DO_RUN='false' 
-        else 
+        if [[ -z "$REFERENCE_SHA" || "$REFERENCE_SHA" == 0000000000000000000000000000000000000000 ]]; then
+          DO_RUN='false'
+        else
           DO_RUN='true'
         fi
         echo "REFERENCE_SHA=$REFERENCE_SHA" >> $GITHUB_ENV
@@ -64,7 +73,7 @@ jobs:
     if: needs.setup.outputs.do_run == 'true'
     steps:
     - name: Clone repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Get ccache timestamp
       run: echo "CCACHE_TIMESTAMP=$(date -u +"%F-%T")" | tee -a $GITHUB_ENV
@@ -72,21 +81,30 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.ccache
-        key: ${{github.workflow}}-ccache-${{ env.CCACHE_TIMESTAMP }}
-        restore-keys: ${{github.workflow}}-ccache-
+        key: ${{runner.os}}-${{runner.arch}}-tests-ccache-${{ env.CCACHE_TIMESTAMP }}
+        restore-keys: ${{runner.os}}-${{runner.arch}}-tests-ccache-
     - name: Setup ccache
       run: |
         sudo apt-get update && sudo apt-get install -y ccache
         bash ./buildscripts/ci/tools/setup_ccache_config.sh
 
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.USE_QT69 == 'on' && '6.9.2' || '6.2.4' }}
+        host: 'linux'
+        target: 'desktop'
+        arch: ${{ env.USE_QT69 == 'on' && 'linux_gcc_64' || 'gcc_64' }}
+        modules: 'qt5compat qtnetworkauth qtscxml qtshadertools qtwebsockets'
     - name: Setup environment
       run: |
         bash ./buildscripts/ci/linux/setup.sh
+
     - name: Build and Pack
       run: |
         bash ./buildscripts/ci/vtests/build_and_pack.sh
         echo "============== ccache ==============="
-        ccache -s
+        ccache -sv
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
@@ -100,7 +118,7 @@ jobs:
     if: needs.setup.outputs.do_run == 'true'
     steps:
     - name: Clone repository and checkout reference commit
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ needs.setup.outputs.reference_sha }}
 
@@ -110,21 +128,30 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.ccache
-        key: ${{github.workflow}}-ccache-${{ env.CCACHE_TIMESTAMP }}
-        restore-keys: ${{github.workflow}}-ccache-
+        key: ${{runner.os}}-${{runner.arch}}-tests-ccache-${{ env.CCACHE_TIMESTAMP }}
+        restore-keys: ${{runner.os}}-${{runner.arch}}-tests-ccache-
     - name: Setup ccache
       run: |
         sudo apt-get update && sudo apt-get install -y ccache
         bash ./buildscripts/ci/tools/setup_ccache_config.sh
 
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.USE_QT69 == 'on' && '6.9.2' || '6.2.4' }}
+        host: 'linux'
+        target: 'desktop'
+        arch: ${{ env.USE_QT69 == 'on' && 'linux_gcc_64' || 'gcc_64' }}
+        modules: 'qt5compat qtnetworkauth qtscxml qtshadertools qtwebsockets'
     - name: Setup environment
       run: |
         bash ./buildscripts/ci/linux/setup.sh
+
     - name: Build and Pack
       run: |
         bash ./buildscripts/ci/vtests/build_and_pack.sh
         echo "============== ccache ==============="
-        ccache -s
+        ccache -sv
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
@@ -138,14 +165,14 @@ jobs:
     if: needs.setup.outputs.do_run == 'true'
     steps:
     - name: Clone repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Download current
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: current_build
         path: ./musescore_current
     - name: Download reference
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: reference_build
         path: ./musescore_reference
@@ -158,6 +185,12 @@ jobs:
       run: |
         echo "VTEST_DIFF_FOUND=false" >> $GITHUB_ENV
         ./vtest/vtest-compare-pngs.sh --ci 1
+    - name: Compare PNGs small
+      run: |
+        ./vtest/vtest-compare-pngs.sh --ci 1 -c ./current_pngs_small -r ./reference_pngs_small -o ./comparison/small
+    - name: Compare PNGs gp
+      run: |
+        ./vtest/vtest-compare-pngs.sh --ci 1 -c ./current_pngs_gp_small -r ./reference_pngs_gp_small -o ./comparison/gp
     - name: Upload comparison
       if: env.VTEST_DIFF_FOUND == 'true'
       uses: actions/upload-artifact@v4

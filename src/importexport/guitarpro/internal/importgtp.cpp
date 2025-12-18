@@ -105,11 +105,6 @@ GuitarPro::GuitarPro(MasterScore* s, int v, const modularity::ContextPtr& iocCtx
     tempo = -1;
 }
 
-GuitarPro::~GuitarPro()
-{
-    delete[] slurs;
-}
-
 //---------------------------------------------------------
 //   skip
 //---------------------------------------------------------
@@ -322,6 +317,16 @@ void GuitarPro::addTrill(ChordRest* cr, bool hasTrill)
 }
 
 //---------------------------------------------------------
+//   addHammerOnPullOff
+//---------------------------------------------------------
+
+void GuitarPro::addHammerOnPullOff(ChordRest* cr, bool hasHammerOnPullOff)
+{
+    m_continiousElementsBuilder->buildContiniousElement(cr, ElementType::HAMMER_ON_PULL_OFF,
+                                                        ContiniousElementsBuilder::ImportType::HAMMER_ON_PULL_OFF, hasHammerOnPullOff);
+}
+
+//---------------------------------------------------------
 //   addRasgueado
 //---------------------------------------------------------
 
@@ -381,9 +386,12 @@ void GuitarPro::addHarmonicMarks(ChordRest* cr, bool hasHarmonicArtificial, bool
 //   addTap
 //---------------------------------------------------------
 
-void GuitarPro::addTap(Note* note)
+void GuitarPro::addTap(Chord* chord)
 {
-    addTextArticulation(note, ArticulationTextType::TAP);
+    Tapping* tapping = Factory::createTapping(chord);
+    tapping->setTrack(chord->track());
+    tapping->setHand(TappingHand::RIGHT);
+    chord->add(tapping);
 }
 
 //---------------------------------------------------------
@@ -631,14 +639,7 @@ void GuitarPro::createBend(Note* note, std::vector<PitchValue>& bendData)
         return;
     }
 
-    if (engravingConfiguration()->experimentalGuitarBendImport()) {
-        m_guitarBendImporter->collectBend(note, bendData);
-    } else {
-        Bend* bend = Factory::createBend(note);
-        bend->setPoints(bendData);
-        bend->setTrack(note->track());
-        note->add(bend);
-    }
+    m_guitarBendImporter->collectBend(note, bendData);
 }
 
 //---------------------------------------------------------
@@ -935,7 +936,7 @@ void GuitarPro::createMeasures()
             }
         }
 
-        score->measures()->add(m);
+        score->measures()->append(m);
         tick += nts;
         ts = nts;
     }
@@ -947,9 +948,9 @@ void GuitarPro::createMeasures()
 
 void GuitarPro::applyBeatEffects(Chord* chord, int beatEffect, bool& hasVibratoLeftHand, bool& hasVibratoWTremBar)
 {
-    /* tap/slap/pop implemented as text until SMuFL has
+    /* slap/pop implemented as text until SMuFL has
      * specifications and we can add them to fonts. Note that
-     * tap/slap/pop are just added to the top note in the chord,
+     * slap/pop are just added to the top note in the chord,
      * technically these can be applied to individual notes on the
      * UI, but Guitar Pro has no way to express that on the
      * score. To get the same result, we should just add the marking
@@ -957,7 +958,7 @@ void GuitarPro::applyBeatEffects(Chord* chord, int beatEffect, bool& hasVibratoL
      */
     if (beatEffect == 1) {
         if (version > 300) {
-            addTap(chord->upNote());
+            addTap(chord);
         } else {
             hasVibratoLeftHand = true;
         }
@@ -999,6 +1000,8 @@ void GuitarPro::applyBeatEffects(Chord* chord, int beatEffect, bool& hasVibratoL
 bool GuitarPro1::read(IODevice* io)
 {
     m_continiousElementsBuilder = std::make_unique<ContiniousElementsBuilder>(score);
+    m_guitarBendImporter = std::make_unique<GuitarBendImporter>(score);
+
     f      = io;
     curPos = 30;
 
@@ -1015,14 +1018,7 @@ bool GuitarPro1::read(IODevice* io)
         key = readInt();        // key
     }
     staves  = version > 102 ? 8 : 1;
-
-    slurs = new Slur*[staves];
-    for (size_t i = 0; i < staves; ++i) {
-        slurs[i] = nullptr;
-    }
-
-    //int tnumerator   = 4;
-    //int tdenominator = 4;
+    slurs.resize(staves, nullptr);
 
     //
     // create a part for every staff
@@ -1047,7 +1043,6 @@ bool GuitarPro1::read(IODevice* io)
             tuning[j] = readInt();
         }
         std::vector<int> tuning2(strings);
-        //int tuning2[strings];
         for (int k = 0; k < strings; ++k) {
             tuning2[strings - k - 1] = tuning[k];
         }
@@ -1082,7 +1077,7 @@ bool GuitarPro1::read(IODevice* io)
             }
         }
 
-        score->measures()->add(m);
+        score->measures()->append(m);
         tick += nts;
         ts = nts;
     }
@@ -1101,7 +1096,6 @@ bool GuitarPro1::read(IODevice* io)
             segment->add(s);
         }
         std::vector<Tuplet*> tuplets(staves);
-        //Tuplet* tuplets[staves];
         for (size_t staffIdx = 0; staffIdx < staves; ++staffIdx) {
             tuplets[staffIdx] = 0;
         }
@@ -1361,6 +1355,8 @@ void GuitarPro::createSlur(bool hasSlur, staff_idx_t staffIdx, ChordRest* cr)
 bool GuitarPro2::read(IODevice* io)
 {
     m_continiousElementsBuilder = std::make_unique<ContiniousElementsBuilder>(score);
+    m_guitarBendImporter = std::make_unique<GuitarBendImporter>(score);
+
     f      = io;
     curPos = 30;
 
@@ -1475,7 +1471,7 @@ bool GuitarPro2::read(IODevice* io)
             }
         }
 
-        score->measures()->add(m);
+        score->measures()->append(m);
         tick += nts;
         ts = nts;
     }
@@ -2073,6 +2069,8 @@ int GuitarPro1::readBeatEffects(int, Segment*)
 bool GuitarPro3::read(IODevice* io)
 {
     m_continiousElementsBuilder = std::make_unique<ContiniousElementsBuilder>(score);
+    m_guitarBendImporter = std::make_unique<GuitarBendImporter>(score);
+
     f      = io;
     curPos = 30;
 
@@ -2115,10 +2113,7 @@ bool GuitarPro3::read(IODevice* io)
     staves = readInt();
     initDynamics(staves);
 
-    slurs = new Slur*[staves];
-    for (size_t i = 0; i < staves; ++i) {
-        slurs[i] = nullptr;
-    }
+    slurs.resize(staves, nullptr);
 
     int tnumerator   = 4;
     int tdenominator = 4;
@@ -2224,7 +2219,7 @@ bool GuitarPro3::read(IODevice* io)
             }
         }
 
-        score->measures()->add(m);
+        score->measures()->append(m);
         tick += nts;
         ts = nts;
     }
@@ -2648,9 +2643,7 @@ bool GuitarPro3::read(IODevice* io)
     }
 
     m_continiousElementsBuilder->addElementsToScore();
-    if (engravingConfiguration()->experimentalGuitarBendImport()) {
-        m_guitarBendImporter->applyBendsToChords();
-    }
+    m_guitarBendImporter->applyBendsToChords();
 
     return true;
 }
@@ -2746,7 +2739,7 @@ static void addMetaInfo(MasterScore* score, GuitarPro* gp, bool experimental)
     MeasureBase* m = nullptr;
     if (!score->measures()->first()) {
         m = Factory::createTitleVBox(score->dummy()->system());
-        score->addMeasure(m, 0);
+        score->measures()->append(m);
     } else {
         m = score->measures()->first();
         if (!m->isVBox()) {
@@ -2787,127 +2780,24 @@ static void addMetaInfo(MasterScore* score, GuitarPro* gp, bool experimental)
         m->add(s);
     }
 
-    //TODO: Temporary for experimental import, will be deleted later
-    if (experimental) {
+    if (!gp->poet.isEmpty() || experimental) {
         Text* s = Factory::createText(score->dummy(), TextStyleType::LYRICIST);
+        if (!gp->poet.isEmpty()) {
+            s->setPlainText(muse::mtrc("iex_guitarpro", "Words by %1").arg(gp->poet));
+        }
+
         m->add(s);
     }
 }
 
 //---------------------------------------------------------
-//   createLinkedTabs
+//   importGTP
 //---------------------------------------------------------
 
-static void createLinkedTabs(MasterScore* score)
-{
-    // store map of all initial spanners
-    std::unordered_map<staff_idx_t, std::vector<Spanner*> > spanners;
-    // for moving initial spanner to new index
-    std::unordered_map<staff_idx_t, staff_idx_t> indexMapping;
-    std::set<staff_idx_t> staffIndexesToCopy;
-    constexpr size_t stavesInPart = 2;
-
-    for (auto it = score->spanner().cbegin(); it != score->spanner().cend(); ++it) {
-        Spanner* s = it->second;
-        spanners[s->staffIdx()].push_back(s);
-    }
-
-    size_t curStaffIdx = 0;
-    size_t stavesOperated = 0;
-
-    // creating linked staves and recalculating spanners indexes
-    for (size_t partNum = 0; partNum < score->parts().size(); partNum++) {
-        Part* part = score->parts()[partNum];
-        Fraction fr = Fraction(0, 1);
-        size_t lines = part->instrument()->stringData()->strings();
-        size_t stavesNum = part->nstaves();
-
-        if (stavesNum != 1) {
-            for (size_t i = 0; i < stavesNum; i++) {
-                indexMapping[curStaffIdx] = stavesOperated + i;
-                curStaffIdx++;
-            }
-
-            stavesOperated += stavesNum;
-            continue;
-        }
-
-        bool needsTabStaff = !part->staff(0)->isDrumStaff(fr);
-
-        if (needsTabStaff) {
-            part->setStaves(static_cast<int>(stavesInPart));
-
-            Staff* srcStaff = part->staff(0);
-            Staff* dstStaff = part->staff(1);
-            Excerpt::cloneStaff(srcStaff, dstStaff, false);
-
-            static const std::vector<StaffTypes> types {
-                StaffTypes::TAB_4SIMPLE,
-                StaffTypes::TAB_5SIMPLE,
-                StaffTypes::TAB_6SIMPLE,
-                StaffTypes::TAB_7SIMPLE,
-                StaffTypes::TAB_8SIMPLE,
-                StaffTypes::TAB_9SIMPLE,
-                StaffTypes::TAB_10SIMPLE,
-            };
-
-            size_t index = (lines >= 4 && lines <= 10) ? lines - 4 : 2;
-
-            dstStaff->setStaffType(fr, *StaffType::preset(types.at(index)));
-            dstStaff->setLines(fr, static_cast<int>(lines));
-
-            staffIndexesToCopy.insert(curStaffIdx);
-        }
-
-        // each spanner moves down to the staff with index,
-        // equal to number of spanners operated before it
-        indexMapping[curStaffIdx] = stavesOperated;
-        curStaffIdx++;
-
-        stavesOperated += needsTabStaff ? stavesInPart : 1;
-    }
-
-    // moving and copying spanner segments
-    for (auto& spannerMapElem : spanners) {
-        auto& spannerList = spannerMapElem.second;
-        staff_idx_t idx = spannerMapElem.first;
-        bool needsCopy = staffIndexesToCopy.find(idx) != staffIndexesToCopy.end();
-        for (Spanner* s : spannerList) {
-            /// moving
-            staff_idx_t newIdx = indexMapping[idx];
-            track_idx_t newTrackIdx = staff2track(newIdx);
-            s->setTrack(newTrackIdx);
-            s->setTrack2(newTrackIdx);
-            for (SpannerSegment* ss : s->spannerSegments()) {
-                ss->setTrack(newTrackIdx);
-            }
-
-            /// copying
-            if (needsCopy) {
-                staff_idx_t dstStaffIdx = newIdx + 1;
-
-                track_idx_t dstTrack = dstStaffIdx * VOICES + s->voice();
-                track_idx_t dstTrack2 = dstStaffIdx * VOICES + (s->track2() % VOICES);
-
-                Excerpt::cloneSpanner(s, score, dstTrack, dstTrack2);
-            }
-        }
-    }
-}
-
-//---------------------------------------------------------
-//   importScore
-//---------------------------------------------------------
-
-static Err importScore(MasterScore* score, muse::io::IODevice* io, const muse::modularity::ContextPtr& iocCtx, bool experimental = false)
+Err importGTP(MasterScore* score, muse::io::IODevice* io, const muse::modularity::ContextPtr& iocCtx, bool experimental)
 {
     if (!io->open(IODevice::ReadOnly)) {
         return Err::FileOpenError;
-    }
-
-    score->loadStyle(u":/engraving/styles/gp-style.mss");
-    if (experimental) {
-        score->loadStyle(u":/engraving/styles/gp-style-experimental.mss");
     }
 
     score->checkChordList();
@@ -2923,11 +2813,13 @@ static Err importScore(MasterScore* score, muse::io::IODevice* io, const muse::m
 
     GuitarPro* gp;
     bool readResult = false;
+    bool isVersionAbove6 = false;
     // check to see if we are dealing with a GP file via the extension
     if (strcmp(header, "PK\x3\x4") == 0) {
         gp = new GuitarPro7(score, iocCtx);
         readResult = gp->read(io);
         gp->setTempo(0, 0);
+        isVersionAbove6 = true;
     }
     // check to see if we are dealing with a GPX file via the extension
     else if (strcmp(header, "BCFZ") == 0) {
@@ -2935,6 +2827,7 @@ static Err importScore(MasterScore* score, muse::io::IODevice* io, const muse::m
         drumset::initGuitarProDrumset();
         readResult = gp->read(io);
         gp->setTempo(0, 0);
+        isVersionAbove6 = true;
     }
     // otherwise it's an older version - check the header
     else if (strcmp(&header[1], "FIC") == 0) {
@@ -2980,7 +2873,9 @@ static Err importScore(MasterScore* score, muse::io::IODevice* io, const muse::m
         return Err::NoError;
     }
 
-    addMetaInfo(score, gp, experimental);
+    if (!isVersionAbove6) {
+        addMetaInfo(score, gp, experimental);
+    }
 
     int idx = 0;
 
@@ -3010,26 +2905,6 @@ static Err importScore(MasterScore* score, muse::io::IODevice* io, const muse::m
     }
 
     delete gp;
-
-    return Err::NoError;
-}
-
-//---------------------------------------------------------
-//   importGTP
-//---------------------------------------------------------
-
-Err importGTP(MasterScore* score, muse::io::IODevice* io, const muse::modularity::ContextPtr& iocCtx, bool createLinkedTabForce,
-              bool experimental)
-{
-    Err error = importScore(score, io, iocCtx, experimental);
-
-    if (error != Err::NoError) {
-        return error;
-    }
-
-    if (createLinkedTabForce) {
-        createLinkedTabs(score);
-    }
 
     return Err::NoError;
 }

@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MUSE_UI_UICONFIGURATIONMOCK_H
-#define MUSE_UI_UICONFIGURATIONMOCK_H
+#pragma once
 
 #include <gmock/gmock.h>
 
@@ -31,9 +30,9 @@ class UiConfigurationMock : public IUiConfiguration
 {
 public:
     MOCK_METHOD(ThemeList, themes, (), (const, override));
-
-    MOCK_METHOD(QStringList, possibleFontFamilies, (), (const, override));
     MOCK_METHOD(QStringList, possibleAccentColors, (), (const, override));
+    MOCK_METHOD(QStringList, possibleFontFamilies, (), (const, override));
+    MOCK_METHOD(void, setNonTextFonts, (const QStringList&), (override));
 
     MOCK_METHOD(bool, isDarkMode, (), (const, override));
     MOCK_METHOD(void, setIsDarkMode, (bool), (override));
@@ -67,6 +66,10 @@ public:
     MOCK_METHOD(int, musicalFontSize, (), (const, override));
     MOCK_METHOD(async::Notification, musicalFontChanged, (), (const, override));
 
+    MOCK_METHOD(std::string, musicalTextFontFamily, (), (const, override));
+    MOCK_METHOD(int, musicalTextFontSize, (), (const, override));
+    MOCK_METHOD(async::Notification, musicalTextFontChanged, (), (const, override));
+
     MOCK_METHOD(std::string, defaultFontFamily, (), (const, override));
     MOCK_METHOD(int, defaultFontSize, (), (const, override));
 
@@ -86,6 +89,7 @@ public:
     MOCK_METHOD(async::Notification, windowGeometryChanged, (), (const, override));
 
     MOCK_METHOD(bool, isGlobalMenuAvailable, (), (const, override));
+    MOCK_METHOD(bool, isSystemDragSupported, (), (const, override));
 
     MOCK_METHOD(void, applyPlatformStyle, (QWindow*), (override));
 
@@ -106,5 +110,3 @@ public:
     MOCK_METHOD(int, tooltipDelay, (), (const, override));
 };
 }
-
-#endif // MUSE_UI_UICONFIGURATIONMOCK_H

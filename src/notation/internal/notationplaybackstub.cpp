@@ -40,6 +40,11 @@ void NotationPlaybackStub::reload()
 {
 }
 
+muse::async::Channel<InstrumentTrackIdSet> NotationPlaybackStub::tracksDataChanged() const
+{
+    return {};
+}
+
 const engraving::InstrumentTrackId& NotationPlaybackStub::metronomeTrackId() const
 {
     static const engraving::InstrumentTrackId dummy;
@@ -48,8 +53,7 @@ const engraving::InstrumentTrackId& NotationPlaybackStub::metronomeTrackId() con
 
 engraving::InstrumentTrackId NotationPlaybackStub::chordSymbolsTrackId(const ID&) const
 {
-    static const engraving::InstrumentTrackId dummy;
-    return dummy;
+    return {};
 }
 
 bool NotationPlaybackStub::isChordSymbolsTrack(const engraving::InstrumentTrackId&) const
@@ -63,11 +67,19 @@ const muse::mpe::PlaybackData& NotationPlaybackStub::trackPlaybackData(const eng
     return dummy;
 }
 
-void NotationPlaybackStub::triggerEventsForItems(const std::vector<const EngravingItem*>&)
+void NotationPlaybackStub::triggerEventsForItems(const std::vector<const EngravingItem*>&, muse::mpe::duration_t, bool)
 {
 }
 
-void NotationPlaybackStub::triggerMetronome(int)
+void NotationPlaybackStub::triggerMetronome(muse::midi::tick_t)
+{
+}
+
+void NotationPlaybackStub::triggerCountIn(muse::midi::tick_t, muse::secs_t&)
+{
+}
+
+void NotationPlaybackStub::triggerControllers(const muse::mpe::ControllerChangeEventList&, notation::staff_idx_t, int)
 {
 }
 
@@ -140,7 +152,7 @@ Notification NotationPlaybackStub::loopBoundariesChanged() const
     return Notification();
 }
 
-const Tempo& NotationPlaybackStub::tempo(tick_t) const
+const Tempo& NotationPlaybackStub::multipliedTempo(tick_t) const
 {
     static const Tempo dummy;
     return dummy;

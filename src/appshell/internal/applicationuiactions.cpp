@@ -142,7 +142,7 @@ const UiActionList ApplicationUiActions::m_actions = {
     UiAction("toggle-selection-filter",
              mu::context::UiCtxProjectOpened,
              mu::context::CTX_NOTATION_OPENED,
-             TranslatableString("action", "Se&lection filter"),
+             TranslatableString("action", "S&election filter"),
              TranslatableString("action", "Show/hide selection filter"),
              Checkable::Yes
              ),
@@ -313,7 +313,7 @@ bool ApplicationUiActions::actionChecked(const UiAction& act) const
     }
 
     const IDockWindow* window = dockWindowProvider()->window();
-    return window ? window->isDockOpenAndCurrentInFrame(dockName) : false;
+    return window ? window->isDockOpen(dockName) : false;
 }
 
 muse::async::Channel<ActionCodeList> ApplicationUiActions::actionEnabledChanged() const

@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_NOTATIONTYPES_H
-#define MU_NOTATION_NOTATIONTYPES_H
+#pragma once
 
 #include <QPixmap>
 #include <QDate>
@@ -35,6 +34,7 @@
 #include "engraving/dom/chord.h"
 #include "engraving/dom/durationtype.h"
 #include "engraving/dom/engravingitem.h"
+#include "engraving/dom/guitarbend.h"
 #include "engraving/dom/hairpin.h"
 #include "engraving/dom/harmony.h"
 #include "engraving/dom/hook.h"
@@ -57,6 +57,7 @@
 #include "engraving/dom/stem.h"
 #include "engraving/dom/system.h"
 #include "engraving/dom/timesig.h"
+#include "engraving/dom/tuplet.h"
 
 #include "engraving/rendering/layoutoptions.h"
 
@@ -90,7 +91,7 @@ using TransposeMode = mu::engraving::TransposeMode;
 using TransposeDirection = mu::engraving::TransposeDirection;
 using Fraction = mu::engraving::Fraction;
 using ElementPattern = mu::engraving::ElementPattern;
-using SelectionFilterType = mu::engraving::SelectionFilterType;
+using SelectionFilterTypesVariant = mu::engraving::SelectionFilterTypesVariant;
 using Chord = mu::engraving::Chord;
 using ChordRest = mu::engraving::ChordRest;
 using Harmony = mu::engraving::Harmony;
@@ -146,11 +147,12 @@ using InstrumentTrackIdSet = mu::engraving::InstrumentTrackIdSet;
 using voice_idx_t = mu::engraving::voice_idx_t;
 using track_idx_t = mu::engraving::track_idx_t;
 using staff_idx_t = mu::engraving::staff_idx_t;
-using ChangesRange = mu::engraving::ScoreChangesRange;
+using ScoreChanges = mu::engraving::ScoreChanges;
 using GuitarBendType = mu::engraving::GuitarBendType;
 using engraving::LoopBoundaryType;
 using Pid = mu::engraving::Pid;
 using VoiceAssignment = mu::engraving::VoiceAssignment;
+using MeasureBeat = mu::engraving::MeasureBeat;
 
 static const muse::String COMMON_GENRE_ID("common");
 
@@ -412,25 +414,21 @@ struct FilterNotesOptions : FilterElementsOptions
 struct StaffConfig
 {
     bool visible = false;
-    qreal userDistance = 0.0;
+    engraving::Spatium userDistance = engraving::Spatium(0.0);
     bool cutaway = false;
-    bool showIfEmpty = false;
     bool hideSystemBarline = false;
     engraving::AutoOnOff mergeMatchingRests = engraving::AutoOnOff::AUTO;
     bool reflectTranspositionInLinkedTab = false;
-    Staff::HideMode hideMode = Staff::HideMode::AUTO;
     ClefTypeList clefTypeList;
     engraving::StaffType staffType;
 
     bool operator==(const StaffConfig& conf) const
     {
         bool equal = visible == conf.visible;
-        equal &= muse::RealIsEqual(userDistance, conf.userDistance);
+        equal &= userDistance == conf.userDistance;
         equal &= cutaway == conf.cutaway;
-        equal &= showIfEmpty == conf.showIfEmpty;
         equal &= hideSystemBarline == conf.hideSystemBarline;
         equal &= mergeMatchingRests == conf.mergeMatchingRests;
-        equal &= hideMode == conf.hideMode;
         equal &= clefTypeList == conf.clefTypeList;
         equal &= staffType == conf.staffType;
         equal &= reflectTranspositionInLinkedTab == conf.reflectTranspositionInLinkedTab;
@@ -529,14 +527,6 @@ inline QString staffTypeToString(StaffTypeId type)
     return preset ? preset->name().toQString() : QString();
 }
 
-struct MeasureBeat
-{
-    int measureIndex = 0;
-    int maxMeasureIndex = 0;
-    int beatIndex = 0;
-    int maxBeatIndex = 0;
-};
-
 enum class BracketsType : unsigned char
 {
     Brackets,
@@ -549,16 +539,15 @@ struct ScoreCreateOptions
     bool withTempo = false;
     Tempo tempo;
 
-    int timesigNumerator = 0;
-    int timesigDenominator = 1;
+    Fraction globalTimesig;
     TimeSigType timesigType = TimeSigType::NORMAL;
 
     Key key = Key::C;
 
+    int totalMeasures = 0;
+
     bool withPickupMeasure = false;
-    int measures = 0;
-    int measureTimesigNumerator = 0;
-    int measureTimesigDenominator = 0;
+    Fraction pickupTimesig;
 
     PartInstrumentList parts;
     ScoreOrder order;
@@ -573,8 +562,8 @@ inline const ScoreOrder& customOrder()
     return order;
 }
 
-static constexpr int MIN_NOTES_INTERVAL = -9;
-static constexpr int MAX_NOTES_INTERVAL = 9;
+static constexpr int MIN_NOTES_INTERVAL = -10;
+static constexpr int MAX_NOTES_INTERVAL = 10;
 
 static constexpr int MAX_FRET = 14;
 
@@ -622,6 +611,9 @@ enum class PercussionPanelAutoShowMode {
     UNPITCHED_STAFF_NOTE_INPUT,
     NEVER,
 };
-}
 
-#endif // MU_NOTATION_NOTATIONTYPES_H
+static const mu::engraving::ElementTypeSet NOTE_REST_TYPES {
+    mu::engraving::ElementType::NOTE,
+    mu::engraving::ElementType::REST,
+};
+}

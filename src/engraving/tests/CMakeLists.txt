@@ -55,6 +55,7 @@ set(MODULE_TEST_SRC
     ${CMAKE_CURRENT_LIST_DIR}/expression_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/hairpin_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/harpdiagram_tests.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/hideemptystaves_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/implodeexplode_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/instrumentchange_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/join_tests.cpp
@@ -75,7 +76,7 @@ set(MODULE_TEST_SRC
     ${CMAKE_CURRENT_LIST_DIR}/rhythmicgrouping_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/scantree_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/selectionfilter_tests.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/selectionrangedelete_tests.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/selectionrange_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/spanners_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/split_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/splitstaff_tests.cpp
@@ -91,6 +92,9 @@ set(MODULE_TEST_SRC
     ${CMAKE_CURRENT_LIST_DIR}/unrollrepeats_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/changevisibility_tests.cpp
     ${CMAKE_CURRENT_LIST_DIR}/scoreutils_tests.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/voiceswitching_tests.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/fretbox_tests.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/fretdiagram_tests.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/mocks/engravingconfigurationmock.h
 )

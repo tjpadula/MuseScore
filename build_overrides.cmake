@@ -13,6 +13,21 @@ endfunction()
 
 host_uname_machine(UNAME_MACHINE)
 
+# Go through script args to find QT_HOST_PATH:
+set(i "1")
+list(LENGTH SCRIPT_ARGS nargs)
+while(i LESS "${nargs}")
+    list(GET SCRIPT_ARGS "${i}" ARG)
+    
+    if (ARG MATCHES "QT_HOST_PATH")
+        #message(STATUS "Arg for QT_HOST_PATH: ${ARG}")
+        string(REPLACE "-DQT_HOST_PATH=" "" GIVEN_QT_HOST_PATH "${ARG}")
+        message(STATUS "GIVEN_QT_HOST_PATH: ${GIVEN_QT_HOST_PATH}")
+        break()
+    endif()
+    math(EXPR i "${i} + 1") # next argument
+endwhile()
+
 
 # Go through the script args to find CMAKE_OSX_SYSROOT:
 set(i "1")
@@ -21,45 +36,27 @@ while(i LESS "${nargs}")
     list(GET SCRIPT_ARGS "${i}" ARG)
     
     if (ARG MATCHES "CMAKE_OSX_SYSROOT")
-        
-        if(ARG MATCHES "iphoneos")
-            set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qt6-build-ios-device-arm64/qtbase")
-        elseif(ARG MATCHES "iphonesimulator")
-            set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qt6-build-ios-simulator-${UNAME_MACHINE}/qtbase")
-        else()
-            message(FATAL_ERROR "Unknown CMAKE_OSX_SYSROOT: ${ARG}")
-        endif()
-
+        set(GIVEN_CMAKE_OSX_SYSROOT ${ARG})
         break()
     endif()
     math(EXPR i "${i} + 1") # next argument
 endwhile()
 
-if (NOT IOS)
-    set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qt6-build-mac-${UNAME_MACHINE}/qtbase")
+if (GIVEN_CMAKE_OSX_SYSROOT MATCHES "iphoneos")
+    set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-ios-device-arm64/qtbase")
+elseif(GIVEN_CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+    set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-ios-simulator-${UNAME_MACHINE}/qtbase")
+else()
+# fixme: Make sure we can use the mac dir for mac builds.
+    message(FATAL_ERROR "Unknown CMAKE_OSX_SYSROOT: ${ARG}")
+endif()
+
+if ( NOT DEFINED ENV{QTDIR} OR ENV{QTDIR} STREQUAL "" )
+    set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-mac-${UNAME_MACHINE}/qtbase")
 endif ()
 
-#set(ENV{QTDIR} "$ENV{HOME}/Code/qt6_complete/qt6-build-ios-simulator-x86_64/qtbase")
+#        message(STATUS "iOS ENV{QTDIR}: $ENV{QTDIR}")
 
 message(STATUS "ENV{QTDIR}: $ENV{QTDIR}")
 
-# Detecting CPU architecture seems to depend on this, but it's not actually
-# defined in the build output --? Or maybe it's a race condition? Deleting the
-# build folder doesn't help.
-#set(QTDIR "$ENV{HOME}/Code/qt6/ios/qtbase")
-#set(QTDIR "$ENV{HOME}/Code/qt6_complete/qt6-build-ios-simulator-arm/qtbase")
-#set(QTDIR "$ENV{HOME}/Code/qt6_complete/qt6-build-ios-simulator-x86_64/qtbase")
-set(QTDIR "$ENV{HOME}/Code/qt6_complete/qtbase")
-
-if(FALSE)
-
-set(QT_LOCATION "$ENV{HOME}/Code/qt6/ios")
-set(QT_VERSION "6.2.4")
-set(QT_COMPILER "ios")
-
-
-set(OS_IS_MAC 1)
-set(ARCH_IS_AARCH64 1)
-set(PLATFORM_DETECTED 1)
-
-endif()
+set(QTDIR "${GIVEN_QT_HOST_PATH}/../qtbase")

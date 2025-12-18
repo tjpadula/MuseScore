@@ -1124,6 +1124,7 @@ TEST_F(Engraving_PartsTests, partExclusion)
     Score* partScore = TestUtils::createPart(masterScore);
     EXPECT_TRUE(partScore);
 
+    ScoreRW::saveScore(masterScore, u"partExclusion.mscx");
     EXPECT_TRUE(ScoreComp::saveCompareScore(partScore, u"partExclusion-part-0.mscx", PARTS_DATA_DIR + u"partExclusion-part-0.mscx"));
 
     // Collect the relevant items
@@ -1169,7 +1170,8 @@ TEST_F(Engraving_PartsTests, partExclusion)
         item->undoChangeProperty(Pid::EXCLUDE_FROM_OTHER_PARTS, !exclude);
     }
 
-    EXPECT_TRUE(ScoreComp::saveCompareScore(partScore, u"partExclusion-part-0.mscx", PARTS_DATA_DIR + u"partExclusion-part-0.mscx"));
+    // Not applicable anymore because creating new elements creates new EIDs too
+    //EXPECT_TRUE(ScoreComp::saveCompareScore(partScore, u"partExclusion-part-0.mscx", PARTS_DATA_DIR + u"partExclusion-part-0.mscx"));
 }
 
 TEST_F(Engraving_PartsTests, partPropertyLinking)
@@ -1181,6 +1183,7 @@ TEST_F(Engraving_PartsTests, partPropertyLinking)
     Score* partScore = TestUtils::createPart(masterScore);
     EXPECT_TRUE(partScore);
 
+    ScoreRW::saveScore(masterScore, u"partPropertyLinking.mscx");
     EXPECT_TRUE(ScoreComp::saveCompareScore(partScore, u"partPropertyLinking-part-0.mscx",
                                             PARTS_DATA_DIR + u"partPropertyLinking-part-0.mscx"));
 
@@ -1213,12 +1216,7 @@ TEST_F(Engraving_PartsTests, partPropertyLinking)
 
 TEST_F(Engraving_PartsTests, partSpanners)
 {
-    bool useRead302 = MScore::useRead302InTestMode;
-    MScore::useRead302InTestMode = false;
-
     testPartCreation(u"part-spanners");
-
-    MScore::useRead302InTestMode = useRead302;
 }
 
 TEST_F(Engraving_PartsTests, partTies) {
@@ -1256,17 +1254,14 @@ TEST_F(Engraving_PartsTests, partVisibleTracks) {
     part->changeSelectedElementsVoice(1);
     part->endCmd();
 
-    EXPECT_TRUE(ScoreComp::saveCompareScore(part, u"part-visible-tracks-part.mscx",
-                                            PARTS_DATA_DIR + u"part-visible-tracks-part-ref.mscx"));
-    // score->undoRedo(true, 0);
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, u"part-visible-tracks-score.mscx",
                                             PARTS_DATA_DIR + u"part-visible-tracks-score-ref.mscx"));
+
+    EXPECT_TRUE(ScoreComp::saveCompareScore(part, u"part-visible-tracks-part.mscx",
+                                            PARTS_DATA_DIR + u"part-visible-tracks-part-ref.mscx"));
 }
 
 TEST_F(Engraving_PartsTests, inputFromParts) {
-    bool useRead302 = MScore::useRead302InTestMode;
-    MScore::useRead302InTestMode = false;
-
     // Enter notes *in parts* and check that they are correctly cloned to the score.
 
     Score* score = ScoreRW::readScore(PARTS_DATA_DIR + u"input-from-parts.mscz");
@@ -1330,8 +1325,6 @@ TEST_F(Engraving_PartsTests, inputFromParts) {
     EXPECT_TRUE(scoreSegment);
     chord = toChord(scoreSegment->elementAt(staff2track(bassoonStaff) + voice));
     EXPECT_TRUE(chord);
-
-    MScore::useRead302InTestMode = useRead302;
 }
 
 //---------------------------------------------------------

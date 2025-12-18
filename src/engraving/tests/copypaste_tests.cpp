@@ -126,7 +126,7 @@ TEST_F(Engraving_CopyPasteTests, copypaste06)
     copypaste("06");    // tie
 }
 
-TEST_F(Engraving_CopyPasteTests, DISABLED_copypaste07)
+TEST_F(Engraving_CopyPasteTests, copypaste07)
 {
     copypaste("07");    // start ottava
 }
@@ -361,7 +361,7 @@ TEST_F(Engraving_CopyPasteTests, copypasteOnlySecondVoice)
 
     score->select(m1, SelectType::RANGE, 0);
 
-    score->selectionFilter().setFiltered(SelectionFilterType::FIRST_VOICE, false);
+    score->selectionFilter().setFiltered(VoicesSelectionFilterTypes::FIRST_VOICE, false);
 
     EXPECT_TRUE(score->selection().canCopy());
     String mimeType = score->selection().mimeType();
@@ -371,7 +371,7 @@ TEST_F(Engraving_CopyPasteTests, copypasteOnlySecondVoice)
 
     //paste to second measure
     score->deselectAll();
-    score->selectionFilter().setFiltered(SelectionFilterType::FIRST_VOICE, true);
+    score->selectionFilter().setFiltered(VoicesSelectionFilterTypes::FIRST_VOICE, true);
     score->select(m2, SelectType::RANGE);
 
     score->startCmd(TranslatableString::untranslatable("Copy/paste tests"));
@@ -765,9 +765,6 @@ TEST_F(Engraving_CopyPasteTests, DISABLED_copypastetremolo)
 
 TEST_F(Engraving_CopyPasteTests, copypasteparts)
 {
-    bool useRead302 = MScore::useRead302InTestMode;
-    MScore::useRead302InTestMode = false;
-
     MasterScore* score = ScoreRW::readScore(COPYPASTE_DATA_DIR + String("copypaste_parts.mscx"));
     EXPECT_TRUE(score);
     // create part
@@ -806,6 +803,4 @@ TEST_F(Engraving_CopyPasteTests, copypasteparts)
 
     EXPECT_TRUE(ScoreComp::saveCompareScore(score, String("copypaste_parts.mscx"),
                                             COPYPASTE_DATA_DIR + String("copypaste_parts-ref.mscx")));
-
-    MScore::useRead302InTestMode = useRead302;
 }

@@ -106,12 +106,17 @@ void FoldersPreferencesModel::load()
             FolderType::Plugins, muse::qtrc("appshell/preferences", "Plugins"), extensionsConfiguration()->pluginsUserPath().toQString(),
             extensionsConfiguration()->pluginsUserPath().toQString()
         });
+        m_folders.append({
+            FolderType::SoundFonts, muse::qtrc("appshell/preferences", "SoundFonts"), pathsToString(
+                                                                                                    audioConfiguration()->userSoundFontDirectories()),
+            configuration()->userDataPath().toQString(), FolderValueType::MultiDirectories
+        });
+        m_folders.append({
+            FolderType::MusicFonts, muse::qtrc("appshell/preferences", "Musical symbol fonts"),
+            notationConfiguration()->userMusicFontsPath().toQString(),
+            notationConfiguration()->userMusicFontsPath().toQString()
+        });
     }
-    m_folders.append({
-        FolderType::SoundFonts, muse::qtrc("appshell/preferences", "SoundFonts"), pathsToString(
-            audioConfiguration()->userSoundFontDirectories()),
-        configuration()->userDataPath().toQString(), FolderValueType::MultiDirectories
-    });
 #ifdef MUSE_MODULE_VST
     m_folders.append({
         FolderType::VST3, muse::qtrc("appshell/preferences", "VST3"), pathsToString(vstConfiguration()->userVstDirectories()),
@@ -149,6 +154,10 @@ void FoldersPreferencesModel::setupConnections()
         setFolderPaths(FolderType::SoundFonts, pathsToString(userSoundFontsPaths));
     });
 
+    notationConfiguration()->userMusicFontsPathChanged().onReceive(this, [this](const muse::io::path_t& path) {
+        setFolderPaths(FolderType::MusicFonts, path.toQString());
+    });
+
     vstConfiguration()->userVstDirectoriesChanged().onReceive(this, [this](const io::paths_t& paths) {
         setFolderPaths(FolderType::VST3, pathsToString(paths));
     });
@@ -181,6 +190,10 @@ void FoldersPreferencesModel::saveFolderPaths(FoldersPreferencesModel::FolderTyp
     }
     case FolderType::SoundFonts: {
         audioConfiguration()->setUserSoundFontDirectories(pathsFromString(paths));
+        break;
+    }
+    case FolderType::MusicFonts: {
+        notationConfiguration()->setUserMusicFontsPath(paths.toStdString());
         break;
     }
     case FolderType::VST3: {

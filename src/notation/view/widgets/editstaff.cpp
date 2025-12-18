@@ -82,7 +82,6 @@ EditStaff::EditStaff(QWidget* parent)
     connect(showTimesig,      &QCheckBox::clicked, this, &EditStaff::showTimeSigChanged);
     connect(showBarlines,     &QCheckBox::clicked, this, &EditStaff::showBarlinesChanged);
     connect(invisible,        &QCheckBox::clicked, this, &EditStaff::invisibleChanged);
-    connect(isSmallCheckbox,  &QCheckBox::clicked, this, &EditStaff::isSmallChanged);
 
     connect(color, &Awl::ColorLabel::colorChanged, this, &EditStaff::colorChanged);
 
@@ -99,8 +98,6 @@ EditStaff::EditStaff(QWidget* parent)
     WidgetUtils::setWidgetIcon(maxPitchASelect, IconCode::Code::EDIT);
     WidgetUtils::setWidgetIcon(minPitchPSelect, IconCode::Code::EDIT);
     WidgetUtils::setWidgetIcon(maxPitchPSelect, IconCode::Code::EDIT);
-
-    WidgetStateStore::restoreGeometry(this);
 
     //! NOTE: It is necessary for the correct start of navigation in the dialog
     setFocus();
@@ -119,7 +116,6 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     }
 
     Part* part = m_orgStaff->part();
-    mu::engraving::Score* score = part->score();
 
     auto it = muse::findLessOrEqual(part->instruments(), tick.ticks());
     if (it == part->instruments().cend()) {
@@ -140,7 +136,7 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     m_staff->setPart(part);
     m_staff->setCutaway(m_orgStaff->cutaway());
     m_staff->setHideWhenEmpty(m_orgStaff->hideWhenEmpty());
-    m_staff->setShowIfEmpty(m_orgStaff->showIfEmpty());
+    m_staff->setShowIfEntireSystemEmpty(m_orgStaff->showIfEntireSystemEmpty());
     m_staff->setHideSystemBarLine(m_orgStaff->hideSystemBarLine());
     m_staff->setMergeMatchingRests(m_orgStaff->mergeMatchingRests());
     m_staff->setReflectTranspositionInLinkedTab(m_orgStaff->reflectTranspositionInLinkedTab());
@@ -160,15 +156,11 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     }
 
     // set dlg controls
-    spinExtraDistance->setValue(s->userDist() / score->style().spatium());
+    spinExtraDistance->setValue(s->userDist().val());
     invisible->setChecked(stt->invisible());
-    isSmallCheckbox->setChecked(stt->isSmall());
     color->setColor(stt->color().toQColor());
     mag->setValue(stt->userMag() * 100.0);
 
-    cutaway->setChecked(m_staff->cutaway());
-    hideMode->setCurrentIndex(int(m_staff->hideWhenEmpty()));
-    showIfEmpty->setChecked(m_staff->showIfEmpty());
     hideSystemBarLine->setChecked(m_staff->hideSystemBarLine());
     mergeMatchingRests->setCurrentIndex(static_cast<int>(m_staff->mergeMatchingRests()));
     noReflectTranspositionInLinkedTab->setChecked(!m_staff->reflectTranspositionInLinkedTab());
@@ -176,6 +168,12 @@ void EditStaff::setStaff(Staff* s, const Fraction& tick)
     updateStaffType(*stt);
     updateInstrument();
     updateNextPreviousButtons();
+}
+
+void EditStaff::showEvent(QShowEvent* event)
+{
+    WidgetStateStore::restoreGeometry(this);
+    QDialog::showEvent(event);
 }
 
 void EditStaff::hideEvent(QHideEvent* ev)
@@ -192,7 +190,6 @@ void EditStaff::updateStaffType(const mu::engraving::StaffType& staffType)
     showTimesig->setChecked(staffType.genTimesig());
     showBarlines->setChecked(staffType.showBarlines());
     invisible->setChecked(staffType.invisible());
-    isSmallCheckbox->setChecked(staffType.isSmall());
     staffGroupName->setText(staffType.translatedGroupName());
 }
 
@@ -395,11 +392,6 @@ void EditStaff::invisibleChanged()
     m_staff->staffType(Fraction(0, 1))->setInvisible(invisible->isChecked());
 }
 
-void EditStaff::isSmallChanged()
-{
-    m_staff->staffType(Fraction(0, 1))->setSmall(isSmallCheckbox->isChecked());
-}
-
 void EditStaff::colorChanged()
 {
     m_staff->staffType(Fraction(0, 1))->setColor(color->color());
@@ -502,12 +494,9 @@ void EditStaff::applyStaffProperties()
     StaffConfig config;
     config.visible = m_orgStaff->visible();
 
-    config.userDistance = spinExtraDistance->value() * m_orgStaff->style().spatium();
-    config.cutaway = cutaway->isChecked();
-    config.showIfEmpty = showIfEmpty->isChecked();
+    config.userDistance = Spatium(spinExtraDistance->value());
     config.hideSystemBarline = hideSystemBarLine->isChecked();
     config.mergeMatchingRests = static_cast<AutoOnOff>(mergeMatchingRests->currentIndex());
-    config.hideMode = Staff::HideMode(hideMode->currentIndex());
     config.clefTypeList = m_instrument.clefType(m_orgStaff->rstaff());
     config.staffType = *m_staff->staffType(mu::engraving::Fraction(0, 1));
     config.reflectTranspositionInLinkedTab = !noReflectTranspositionInLinkedTab->isChecked();
@@ -579,22 +568,19 @@ void EditStaff::applyPartProperties()
 
 void EditStaff::showReplaceInstrumentDialog()
 {
-    RetVal<InstrumentTemplate> templ = selectInstrumentsScenario()->selectInstrument(m_instrumentKey);
-    if (!templ.ret) {
-        LOGE() << templ.ret.toString();
-        return;
-    }
+    async::Promise<InstrumentTemplate> templ = selectInstrumentsScenario()->selectInstrument(m_instrumentKey);
+    templ.onResolve(this, [this](const InstrumentTemplate& val) {
+        const StaffType* staffType = val.staffTypePreset;
+        if (!staffType) {
+            staffType = StaffType::getDefaultPreset(StaffGroup::STANDARD);
+        }
 
-    const StaffType* staffType = templ.val.staffTypePreset;
-    if (!staffType) {
-        staffType = StaffType::getDefaultPreset(StaffGroup::STANDARD);
-    }
+        m_instrument = Instrument::fromTemplate(&val);
+        m_staff->setStaffType(Fraction(0, 1), *staffType);
 
-    m_instrument = Instrument::fromTemplate(&templ.val);
-    m_staff->setStaffType(Fraction(0, 1), *staffType);
-
-    updateInstrument();
-    updateStaffType(*staffType);
+        updateInstrument();
+        updateStaffType(*staffType);
+    });
 }
 
 void EditStaff::editStringDataClicked()

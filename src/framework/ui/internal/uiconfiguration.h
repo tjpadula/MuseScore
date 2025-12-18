@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MUSE_UI_UICONFIGURATION_H
-#define MUSE_UI_UICONFIGURATION_H
+#pragma once
 
 #include "iuiconfiguration.h"
 
@@ -30,6 +29,7 @@
 #include "modularity/ioc.h"
 #include "imainwindow.h"
 #include "internal/iplatformtheme.h"
+#include "io/filewatcher.h"
 
 #include "types/val.h"
 #include "uiarrangement.h"
@@ -52,8 +52,9 @@ public:
     void deinit();
 
     ThemeList themes() const override;
-    QStringList possibleFontFamilies() const override;
     QStringList possibleAccentColors() const override;
+    QStringList possibleFontFamilies() const override;
+    void setNonTextFonts(const QStringList& fontFamilies) override;
 
     bool isDarkMode() const override;
     void setIsDarkMode(bool dark) override;
@@ -87,6 +88,10 @@ public:
     int musicalFontSize() const override;
     async::Notification musicalFontChanged() const override;
 
+    std::string musicalTextFontFamily() const override;
+    int musicalTextFontSize() const override;
+    async::Notification musicalTextFontChanged() const override;
+
     std::string defaultFontFamily() const override;
     int defaultFontSize() const override;
 
@@ -106,6 +111,7 @@ public:
     async::Notification windowGeometryChanged() const override;
 
     bool isGlobalMenuAvailable() const override;
+    bool isSystemDragSupported() const override;
 
     void applyPlatformStyle(QWindow* window) override;
 
@@ -153,6 +159,7 @@ private:
     async::Notification m_currentThemeChanged;
     async::Notification m_fontChanged;
     async::Notification m_musicalFontChanged;
+    async::Notification m_musicalTextFontChanged;
     async::Notification m_iconsFontChanged;
     async::Notification m_windowGeometryChanged;
 
@@ -162,8 +169,10 @@ private:
     size_t m_currentThemeIndex = 0;
     std::optional<double> m_customDPI;
 
+    QStringList m_nonTextFonts;
+
     Config m_config;
+
+    mutable io::FileWatcher m_themeWatcher;
 };
 }
-
-#endif // MUSE_UI_UICONFIGURATION_H

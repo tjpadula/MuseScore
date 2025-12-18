@@ -41,6 +41,7 @@
 #include "view/notationpagemodel.h"
 #include "view/notationstatusbarmodel.h"
 #include "view/aboutmodel.h"
+#include "view/welcomedialogmodel.h"
 #include "view/firstlaunchsetup/firstlaunchsetupmodel.h"
 #include "view/firstlaunchsetup/themespagemodel.h"
 #include "view/firstlaunchsetup/tutorialspagemodel.h"
@@ -59,7 +60,6 @@
 #include "view/preferences/percussionpreferencesmodel.h"
 #include "view/preferences/commonaudioapiconfigurationmodel.h"
 #include "view/preferences/braillepreferencesmodel.h"
-#include "view/framelesswindow/framelesswindowmodel.h"
 #include "view/publish/publishtoolbarmodel.h"
 #include "view/internal/maintoolbarmodel.h"
 
@@ -69,7 +69,9 @@
 #include "view/navigableappmenumodel.h"
 #endif
 #include "view/internal/platform/macos/macosappmenumodelhook.h"
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
 #include "view/internal/platform/macos/macosscrollinghook.h"
+#endif
 #else
 #include "view/navigableappmenumodel.h"
 #endif
@@ -97,9 +99,9 @@ void AppShellModule::registerExports()
     m_appShellConfiguration = std::make_shared<AppShellConfiguration>(iocContext());
     m_sessionsManager = std::make_shared<SessionsManager>(iocContext());
 
-    #ifdef Q_OS_MAC
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0) && defined(Q_OS_MAC)
     m_scrollingHook = std::make_shared<MacOSScrollingHook>();
-    #endif
+#endif
 
     ioc()->registerExport<IAppShellConfiguration>(moduleName(), m_appShellConfiguration);
     ioc()->registerExport<IStartupScenario>(moduleName(), new StartupScenario(iocContext()));
@@ -128,6 +130,7 @@ void AppShellModule::resolveImports()
         ir->registerUri(Uri("musescore://devtools"), ContainerMeta(ContainerType::PrimaryPage));
         ir->registerUri(Uri("musescore://about/musescore"), ContainerMeta(ContainerType::QmlDialog, "AboutDialog.qml"));
         ir->registerUri(Uri("musescore://about/musicxml"), ContainerMeta(ContainerType::QmlDialog, "AboutMusicXMLDialog.qml"));
+        ir->registerUri(Uri("musescore://welcomedialog"), ContainerMeta(ContainerType::QmlDialog, "WelcomeDialog.qml"));
         ir->registerUri(Uri("musescore://firstLaunchSetup"),
                         ContainerMeta(ContainerType::QmlDialog, "FirstLaunchSetup/FirstLaunchSetupDialog.qml"));
         ir->registerUri(Uri("muse://preferences"), ContainerMeta(ContainerType::QmlDialog, "Preferences/PreferencesDialog.qml"));
@@ -174,10 +177,10 @@ void AppShellModule::registerUiTypes()
     qmlRegisterType<NotationPageModel>("MuseScore.AppShell", 1, 0, "NotationPageModel");
     qmlRegisterType<NotationStatusBarModel>("MuseScore.AppShell", 1, 0, "NotationStatusBarModel");
     qmlRegisterType<AboutModel>("MuseScore.AppShell", 1, 0, "AboutModel");
+    qmlRegisterType<WelcomeDialogModel>("MuseScore.AppShell", 1, 0, "WelcomeDialogModel");
     qmlRegisterType<FirstLaunchSetupModel>("MuseScore.AppShell", 1, 0, "FirstLaunchSetupModel");
     qmlRegisterType<ThemesPageModel>("MuseScore.AppShell", 1, 0, "ThemesPageModel");
     qmlRegisterType<TutorialsPageModel>("MuseScore.AppShell", 1, 0, "TutorialsPageModel");
-    qmlRegisterType<FramelessWindowModel>("MuseScore.AppShell", 1, 0, "FramelessWindowModel");
     qmlRegisterType<PublishToolBarModel>("MuseScore.AppShell", 1, 0, "PublishToolBarModel");
     qmlRegisterType<MainToolBarModel>("MuseScore.AppShell", 1, 0, "MainToolBarModel");
 }
@@ -202,7 +205,7 @@ void AppShellModule::onInit(const IApplication::RunMode& mode)
     m_applicationUiActions->init();
     m_sessionsManager->init();
 
-#ifdef Q_OS_MAC
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0) && defined(Q_OS_MAC)
     m_scrollingHook->init();
 #endif
 }

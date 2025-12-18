@@ -99,6 +99,18 @@ void AudioMidiPreferencesModel::init()
     playbackConfiguration()->muteHiddenInstrumentsChanged().onReceive(this, [this](bool mute) {
         emit muteHiddenInstrumentsChanged(mute);
     });
+
+    playbackConfiguration()->shouldShowOnlineSoundsProcessingErrorChanged().onNotify(this, [this]() {
+        emit shouldShowOnlineSoundsProcessingErrorChanged();
+    });
+
+    playbackConfiguration()->onlineSoundsShowProgressBarModeChanged().onNotify(this, [this]() {
+        emit onlineSoundsShowProgressBarModeChanged();
+    });
+
+    audioConfiguration()->autoProcessOnlineSoundsInBackgroundChanged().onReceive(this, [this](bool) {
+        emit autoProcessOnlineSoundsInBackgroundChanged();
+    });
 }
 
 QStringList AudioMidiPreferencesModel::audioApiList() const
@@ -115,6 +127,15 @@ QStringList AudioMidiPreferencesModel::audioApiList() const
 void AudioMidiPreferencesModel::restartAudioAndMidiDevices()
 {
     NOT_IMPLEMENTED;
+}
+
+bool AudioMidiPreferencesModel::onlineSoundsSectionVisible() const
+{
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    return true;
+#else
+    return false;
+#endif
 }
 
 QVariantList AudioMidiPreferencesModel::midiInputDevices() const
@@ -166,7 +187,6 @@ void AudioMidiPreferencesModel::setUseMIDI20Output(bool use)
     }
 
     midiConfiguration()->setUseMIDI20Output(use);
-    emit useMIDI20OutputChanged();
 }
 
 void AudioMidiPreferencesModel::showMidiError(const MidiDeviceID& deviceId, const std::string& text) const
@@ -187,4 +207,52 @@ void AudioMidiPreferencesModel::setMuteHiddenInstruments(bool mute)
     }
 
     playbackConfiguration()->setMuteHiddenInstruments(mute);
+}
+
+bool AudioMidiPreferencesModel::shouldShowOnlineSoundsProcessingError() const
+{
+    return playbackConfiguration()->shouldShowOnlineSoundsProcessingError();
+}
+
+void AudioMidiPreferencesModel::setShouldShowOnlineSoundsProcessingError(bool value)
+{
+    if (value == shouldShowOnlineSoundsProcessingError()) {
+        return;
+    }
+
+    playbackConfiguration()->setShouldShowOnlineSoundsProcessingError(value);
+}
+
+bool AudioMidiPreferencesModel::autoProcessOnlineSoundsInBackground() const
+{
+    return audioConfiguration()->autoProcessOnlineSoundsInBackground();
+}
+
+void AudioMidiPreferencesModel::setAutoProcessOnlineSoundsInBackground(bool value)
+{
+    if (value == autoProcessOnlineSoundsInBackground()) {
+        return;
+    }
+
+    audioConfiguration()->setAutoProcessOnlineSoundsInBackground(value);
+
+    if (!value) {
+        if (playbackConfiguration()->onlineSoundsShowProgressBarMode() == playback::OnlineSoundsShowProgressBarMode::DuringPlayback) {
+            playbackConfiguration()->setOnlineSoundsShowProgressBarMode(playback::OnlineSoundsShowProgressBarMode::Always);
+        }
+    }
+}
+
+int AudioMidiPreferencesModel::onlineSoundsShowProgressBarMode() const
+{
+    return static_cast<int>(playbackConfiguration()->onlineSoundsShowProgressBarMode());
+}
+
+void AudioMidiPreferencesModel::setOnlineSoundsShowProgressBarMode(int mode)
+{
+    if (mode == onlineSoundsShowProgressBarMode()) {
+        return;
+    }
+
+    playbackConfiguration()->setOnlineSoundsShowProgressBarMode(static_cast<playback::OnlineSoundsShowProgressBarMode>(mode));
 }

@@ -26,122 +26,114 @@
 #include "../../infrastructure/rtti.h"
 #include "../../infrastructure/htmlparser.h"
 
-#include "../../dom/score.h"
-#include "../../dom/masterscore.h"
-#include "../../dom/factory.h"
-#include "../../dom/linkedobjects.h"
-#include "../../dom/mscore.h"
-
-#include "../../dom/tempotext.h"
-#include "../../dom/stafftext.h"
-#include "../../dom/stafftextbase.h"
-#include "../../dom/soundflag.h"
-#include "../../dom/capo.h"
-
-#include "../../dom/drumset.h"
-#include "../../dom/dynamic.h"
-#include "../../dom/expression.h"
-#include "../../dom/harmony.h"
-#include "../../dom/harmonicmark.h"
-#include "../../dom/chordlist.h"
-
-#include "../../dom/excerpt.h"
-
-#include "../../dom/fret.h"
-#include "../../dom/tremolosinglechord.h"
-#include "../../dom/tremolotwochord.h"
-#include "../../dom/tremolobar.h"
-#include "../../dom/sticking.h"
-#include "../../dom/systemtext.h"
-#include "../../dom/playtechannotation.h"
-#include "../../dom/rehearsalmark.h"
-
-#include "../../dom/instrument.h"
-#include "../../dom/instrchange.h"
-
-#include "../../dom/staffstate.h"
-#include "../../dom/figuredbass.h"
-#include "../../dom/part.h"
-#include "../../dom/fermata.h"
-#include "../../dom/image.h"
-#include "../../dom/tuplet.h"
-#include "../../dom/text.h"
-#include "../../dom/beam.h"
-#include "../../dom/ambitus.h"
 #include "../../dom/accidental.h"
-#include "../../dom/marker.h"
-#include "../../dom/jump.h"
-#include "../../dom/measurenumber.h"
-#include "../../dom/mmrestrange.h"
-#include "../../dom/systemdivider.h"
 #include "../../dom/actionicon.h"
+#include "../../dom/ambitus.h"
 #include "../../dom/arpeggio.h"
 #include "../../dom/articulation.h"
-#include "../../dom/ornament.h"
 #include "../../dom/audio.h"
 #include "../../dom/bagpembell.h"
 #include "../../dom/barline.h"
-#include "../../dom/chord.h"
+#include "../../dom/beam.h"
 #include "../../dom/bend.h"
-#include "../../dom/stretchedbend.h"
 #include "../../dom/box.h"
-#include "../../dom/laissezvib.h"
-#include "../../dom/layoutbreak.h"
-#include "../../dom/stafftypechange.h"
 #include "../../dom/bracket.h"
 #include "../../dom/breath.h"
-#include "../../dom/note.h"
-#include "../../dom/noteline.h"
-#include "../../dom/spanner.h"
-#include "../../dom/fingering.h"
-#include "../../dom/notedot.h"
+#include "../../dom/capo.h"
+#include "../../dom/chord.h"
 #include "../../dom/chordline.h"
-#include "../../dom/timesig.h"
-#include "../../dom/lyrics.h"
-#include "../../dom/stem.h"
-#include "../../dom/stemslash.h"
-#include "../../dom/hook.h"
-#include "../../dom/page.h"
+#include "../../dom/chordlist.h"
 #include "../../dom/clef.h"
+#include "../../dom/drumset.h"
+#include "../../dom/dynamic.h"
+#include "../../dom/excerpt.h"
+#include "../../dom/expression.h"
+#include "../../dom/factory.h"
+#include "../../dom/fermata.h"
+#include "../../dom/figuredbass.h"
+#include "../../dom/fingering.h"
+#include "../../dom/fret.h"
 #include "../../dom/glissando.h"
 #include "../../dom/gradualtempochange.h"
-#include "../../dom/guitarbend.h"
-#include "../../dom/line.h"
-#include "../../dom/textlinebase.h"
 #include "../../dom/groups.h"
-#include "../../dom/harppedaldiagram.h"
+#include "../../dom/guitarbend.h"
 #include "../../dom/hairpin.h"
+#include "../../dom/harmonicmark.h"
+#include "../../dom/harmony.h"
+#include "../../dom/harppedaldiagram.h"
+#include "../../dom/hook.h"
+#include "../../dom/image.h"
+#include "../../dom/instrchange.h"
+#include "../../dom/instrument.h"
+#include "../../dom/jump.h"
 #include "../../dom/keysig.h"
+#include "../../dom/laissezvib.h"
 #include "../../dom/layoutbreak.h"
 #include "../../dom/ledgerline.h"
 #include "../../dom/letring.h"
+#include "../../dom/line.h"
+#include "../../dom/linkedobjects.h"
+#include "../../dom/lyrics.h"
+#include "../../dom/marker.h"
+#include "../../dom/masterscore.h"
+#include "../../dom/measurenumber.h"
 #include "../../dom/measurerepeat.h"
 #include "../../dom/mmrest.h"
-#include "../../dom/rest.h"
-#include "../../dom/rasgueado.h"
-#include "../../dom/slur.h"
-#include "../../dom/slurtie.h"
-#include "../../dom/spacer.h"
-#include "../../dom/stafftype.h"
-#include "../../dom/stafftypechange.h"
-#include "../../dom/stringtunings.h"
-#include "../../dom/system.h"
-#include "../../dom/textline.h"
-#include "../../dom/trill.h"
-#include "../../dom/vibrato.h"
-#include "../../dom/volta.h"
-#include "../../dom/tie.h"
+#include "../../dom/mmrestrange.h"
+#include "../../dom/mscore.h"
+#include "../../dom/note.h"
+#include "../../dom/notedot.h"
+#include "../../dom/noteline.h"
+#include "../../dom/ornament.h"
 #include "../../dom/ottava.h"
-#include "../../dom/pedal.h"
+#include "../../dom/page.h"
 #include "../../dom/palmmute.h"
-#include "../../dom/segment.h"
 #include "../../dom/parenthesis.h"
 #include "../../dom/part.h"
 #include "../../dom/partialtie.h"
+#include "../../dom/pedal.h"
+#include "../../dom/playtechannotation.h"
+#include "../../dom/rasgueado.h"
+#include "../../dom/rehearsalmark.h"
+#include "../../dom/rest.h"
+#include "../../dom/score.h"
+#include "../../dom/segment.h"
+#include "../../dom/sig.h"
+#include "../../dom/slur.h"
+#include "../../dom/slurtie.h"
+#include "../../dom/soundflag.h"
+#include "../../dom/spacer.h"
+#include "../../dom/spanner.h"
+#include "../../dom/staffstate.h"
+#include "../../dom/stafftext.h"
+#include "../../dom/stafftextbase.h"
+#include "../../dom/stafftype.h"
+#include "../../dom/stafftypechange.h"
+#include "../../dom/stem.h"
+#include "../../dom/stemslash.h"
+#include "../../dom/sticking.h"
+#include "../../dom/stringtunings.h"
+#include "../../dom/system.h"
+#include "../../dom/systemdivider.h"
+#include "../../dom/systemtext.h"
+#include "../../dom/tempotext.h"
+#include "../../dom/text.h"
+#include "../../dom/textline.h"
+#include "../../dom/textlinebase.h"
+#include "../../dom/tie.h"
+#include "../../dom/timesig.h"
+#include "../../dom/tremolobar.h"
+#include "../../dom/tremolosinglechord.h"
+#include "../../dom/tremolotwochord.h"
+#include "../../dom/trill.h"
+#include "../../dom/tuplet.h"
+#include "../../dom/vibrato.h"
+#include "../../dom/volta.h"
 #include "../../dom/whammybar.h"
 
 #include "../xmlreader.h"
 #include "../read206/read206.h"
+#include "../read400/tread.h"
 #include "../compat/compatutils.h"
 #include "../compat/tremolocompat.h"
 #include "readcontext.h"
@@ -173,8 +165,6 @@ void TRead::readItem(EngravingItem* item, XmlReader& xml, ReadContext& ctx)
     case ElementType::BEAM: read(item_cast<Beam*>(item), xml, ctx);
         break;
     case ElementType::BEND: read(item_cast<Bend*>(item), xml, ctx);
-        break;
-    case ElementType::STRETCHED_BEND: read(item_cast<StretchedBend*>(item), xml, ctx);
         break;
     case ElementType::HBOX: read(item_cast<HBox*>(item), xml, ctx);
         break;
@@ -456,6 +446,8 @@ PropertyValue TRead::readPropertyValue(Pid id, XmlReader& e, ReadContext& ctx)
         return PropertyValue(TConv::fromXml(e.readAsciiText(), AutoOnOff::AUTO));
     case P_TYPE::PARTIAL_SPANNER_DIRECTION:
         return PropertyValue(TConv::fromXml(e.readAsciiText(), PartialSpannerDirection::OUTGOING));
+    case P_TYPE::MARKER_TYPE:
+        return PropertyValue(TConv::fromXml(e.readAsciiText(), MarkerType::USER));
     default:
         ASSERT_X("unhandled PID type");
         break;
@@ -548,7 +540,7 @@ bool TRead::readItemProperties(EngravingItem* item, XmlReader& e, ReadContext& c
             }
         }
         if (tag == "linkedMain") {
-            item->setLinks(new LinkedObjects(item->score()));
+            item->setLinks(new LinkedObjects());
             item->links()->push_back(item);
 
             ctx.addLink(s, item->links(), ctx.location(true));
@@ -602,35 +594,6 @@ bool TRead::readItemProperties(EngravingItem* item, XmlReader& e, ReadContext& c
     } else if (TRead::readProperty(item, tag, e, ctx, Pid::POSITION_LINKED_TO_MASTER)) {
     } else if (TRead::readProperty(item, tag, e, ctx, Pid::APPEARANCE_LINKED_TO_MASTER)) {
     } else if (TRead::readProperty(item, tag, e, ctx, Pid::EXCLUDE_FROM_OTHER_PARTS)) {
-    } else if (tag == "lid") {
-        if (ctx.mscVersion() >= 301) {
-            e.skipCurrentElement();
-            return true;
-        }
-        int id = e.readInt();
-        item->setLinks(muse::value(ctx.linkIds(), id, nullptr));
-        if (!item->links()) {
-            if (!ctx.isMasterScore()) {       // DEBUG
-                LOGD() << "not found link, id: " << id << ", count: " << ctx.linkIds().size() << ", item: " << item->typeName();
-            }
-            item->setLinks(new LinkedObjects(item->score(), id));
-            ctx.linkIds().insert({ id, item->links() });
-        }
-#ifndef NDEBUG
-        else {
-            for (EngravingObject* eee : *item->links()) {
-                EngravingItem* ee = static_cast<EngravingItem*>(eee);
-                if (ee->type() != item->type()) {
-                    ASSERT_X(String(u"link %1(%2) type mismatch %3 linked to %4")
-                             .arg(String::fromAscii(ee->typeName()))
-                             .arg(id)
-                             .arg(String::fromAscii(ee->typeName()), String::fromAscii(item->typeName())));
-                }
-            }
-        }
-#endif
-        DO_ASSERT(!item->links()->contains(item));
-        item->links()->push_back(item);
     } else if (tag == "tick") {
         int val = e.readInt();
         if (val >= 0) {
@@ -796,7 +759,7 @@ void TRead::read(Dynamic* d, XmlReader& e, ReadContext& ctx)
             d->setVelocity(e.readInt());
         } else if (tag == "dynType") { // obsolete
             if (mscVersion < 440) {
-                d->setDynRange(TConv::fromXml(e.readAsciiText(), DynamicRange::PART));
+                d->setVoiceAssignment(read206::Read206::readDynamicRange(e.readInt()));
             } else {
                 e.skipCurrentElement();
             }
@@ -1073,8 +1036,7 @@ bool TRead::readProperties(Instrument* item, XmlReader& e, ReadContext& ctx, Par
             item->setDrumset(new Drumset(*smDrumset));
         }
     } else if (tag == "Drum") {
-        // if we see on of this tags, a custom drumset will
-        // be created
+        // if we see one of these tags, a custom drumset will be created
         if (!item->drumset()) {
             item->setDrumset(new Drumset(*smDrumset));
         }
@@ -1082,7 +1044,17 @@ bool TRead::readProperties(Instrument* item, XmlReader& e, ReadContext& ctx, Par
             const_cast<Drumset*>(item->drumset())->clear();
             *customDrumset = true;
         }
-        const_cast<Drumset*>(item->drumset())->load(e);
+        const_cast<Drumset*>(item->drumset())->loadDrum(e);
+    } else if (tag == "percussionPanelColumns") {
+        // if we see one of these tags, a custom drumset will be created
+        if (!item->drumset()) {
+            item->setDrumset(new Drumset(*smDrumset));
+        }
+        if (!(*customDrumset)) {
+            const_cast<Drumset*>(item->drumset())->clear();
+            *customDrumset = true;
+        }
+        item->drumset()->setPercussionPanelColumns(e.readInt());
     }
     // support tag "Tablature" for a while for compatibility with existent 2.0 scores
     else if (tag == "Tablature" || tag == "StringData") {
@@ -1277,85 +1249,7 @@ void TRead::read(InstrumentChange* c, XmlReader& e, ReadContext& ctx)
         }
     }
 
-    if (c->score()->mscVersion() < 206) {
-        // previous versions did not honor transposition of instrument change
-        // except in ways that it should not have
-        // notes entered before the instrument change was added would not be altered,
-        // so original transposition remained in effect
-        // notes added afterwards would be transposed by both intervals, resulting in tpc corruption
-        // here we set the instrument change to inherit the staff transposition to emulate previous versions
-        // in Note::read(), we attempt to fix the tpc corruption
-        // There is also code in read206 to try to deal with this, but it is out of date and therefore disabled
-        // What this means is, scores created in 2.1 or later should be fine, scores created in 2.0 maybe not so much
-
-        Interval v = c->staff() ? c->staff()->part()->instrument(c->tick())->transpose() : 0;
-        inst.setTranspose(v);
-    }
-
     c->setInstrument(inst);
-}
-
-//---------------------------------------------------------
-//    for import of 1.3 scores
-//---------------------------------------------------------
-
-static SymId convertFromOldId(int val)
-{
-    SymId symId = SymId::noSym;
-    switch (val) {
-    case 32: symId = SymId::accidentalSharp;
-        break;
-    case 33: symId = SymId::accidentalThreeQuarterTonesSharpArrowUp;
-        break;
-    case 34: symId = SymId::accidentalQuarterToneSharpArrowDown;
-        break;
-    // case 35: // "sharp arrow both" missing in SMuFL
-    case 36: symId = SymId::accidentalQuarterToneSharpStein;
-        break;
-    case 37: symId = SymId::accidentalBuyukMucennebSharp;
-        break;
-    case 38: symId = SymId::accidentalKomaSharp;
-        break;
-    case 39: symId = SymId::accidentalThreeQuarterTonesSharpStein;
-        break;
-    case 40: symId = SymId::accidentalNatural;
-        break;
-    case 41: symId = SymId::accidentalQuarterToneSharpNaturalArrowUp;
-        break;
-    case 42: symId = SymId::accidentalQuarterToneFlatNaturalArrowDown;
-        break;
-    // case 43: // "natural arrow both" missing in SMuFL
-    case 44: symId = SymId::accidentalFlat;
-        break;
-    case 45: symId = SymId::accidentalQuarterToneFlatArrowUp;
-        break;
-    case 46: symId = SymId::accidentalThreeQuarterTonesFlatArrowDown;
-        break;
-    // case 47: // "flat arrow both" missing in SMuFL
-    case 48: symId = SymId::accidentalBakiyeFlat;
-        break;
-    case 49: symId = SymId::accidentalBuyukMucennebFlat;
-        break;
-    case 50: symId = SymId::accidentalThreeQuarterTonesFlatZimmermann;
-        break;
-    case 51: symId = SymId::accidentalQuarterToneFlatStein;
-        break;
-    // case 52: // "mirrored flat slash" missing in SMuFL
-    case 53: symId = SymId::accidentalDoubleFlat;
-        break;
-    // case 54: // "flat flat slash" missing in SMuFL
-    case 55: symId = SymId::accidentalDoubleSharp;
-        break;
-    case 56: symId = SymId::accidentalSori;
-        break;
-    case 57: symId = SymId::accidentalKoron;
-        break;
-    default:
-        LOGD("MuseScore 1.3 symbol id corresponding to <%d> not found", val);
-        symId = SymId::noSym;
-        break;
-    }
-    return symId;
 }
 
 void TRead::read(KeyList* item, XmlReader& e, ReadContext& ctx)
@@ -1397,14 +1291,6 @@ void TRead::read(KeySig* s, XmlReader& e, ReadContext& ctx)
                     SymId id = SymId(val.toInt(&valid));
                     if (!valid) {
                         id = SymNames::symIdByName(val);
-                    }
-                    if (s->score()->mscVersion() <= 114) {
-                        if (valid) {
-                            id = convertFromOldId(val.toInt(&valid));
-                        }
-                        if (!valid) {
-                            id = SymNames::symIdByOldName(val);
-                        }
                     }
                     cd.sym = id;
                 } else if (t == "def") {
@@ -1639,12 +1525,6 @@ bool TRead::readProperties(Fermata* f, XmlReader& xml, ReadContext& ctx)
         f->setPlay(xml.readBool());
     } else if (tag == "timeStretch") {
         f->setTimeStretch(xml.readDouble());
-    } else if (tag == "offset") {
-        if (f->score()->mscVersion() > 114) {
-            readItemProperties(f, xml, ctx);
-        } else {
-            xml.skipCurrentElement();       // ignore manual layout in older scores
-        }
     } else if (readItemProperties(f, xml, ctx)) {
     } else {
         return false;
@@ -1654,13 +1534,6 @@ bool TRead::readProperties(Fermata* f, XmlReader& xml, ReadContext& ctx)
 
 void TRead::read(Image* img, XmlReader& e, ReadContext& ctx)
 {
-    //! TODO Should be replaced with `ctx.mscVersion()`
-    //! But at the moment, `ctx` is not set everywhere
-    int mscVersion = img->score()->mscVersion();
-    if (mscVersion <= 114) {
-        img->setSizeIsSpatium(false);
-    }
-
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
         if (tag == "autoScale") {
@@ -1774,10 +1647,6 @@ void TRead::read(Tuplet* t, XmlReader& e, ReadContext& ctx)
 
 void TRead::read(Beam* b, XmlReader& e, ReadContext& ctx)
 {
-    if (b->score()->mscVersion() < 301) {
-        b->setId(e.intAttribute("id"));
-    }
-
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
         if (tag == "StemDirection") {
@@ -2124,43 +1993,20 @@ bool TRead::readProperties(Articulation* a, XmlReader& xml, ReadContext& ctx)
             if (id == SymId::noSym || s == "ornamentMordentInverted") {   // SMuFL < 1.30
                 id = SymId::ornamentMordent;
             }
-
-            //! TODO Should be replaced with `ctx.mscoreVersion()`
-            //! But at the moment, `ctx` is not set everywhere
-            String programVersion = a->score()->mscoreVersion();
-            if (!programVersion.isEmpty() && programVersion < u"3.6") {
-                if (id == SymId::noSym || s == "ornamentMordent") {   // SMuFL < 1.30 and MuseScore < 3.6
-                    id = SymId::ornamentShortTrill;
-                }
-            }
             a->setSymId(id);
         }
     } else if (tag == "channel") {
         a->setChannelName(xml.attribute("name"));
         xml.readNext();
     } else if (tag == "anchor") {
-        if (ctx.mscVersion() <= 400) {
-            int v = xml.readInt();
-            ArticulationAnchor aa = compat::CompatUtils::translateToNewArticulationAnchor(v);
-            a->setAnchor(aa);
-            if (a->isStyled(Pid::ARTICULATION_ANCHOR)) {
-                a->setPropertyFlags(Pid::ARTICULATION_ANCHOR, PropertyFlags::UNSTYLED);
-            }
-        } else {
-            TRead::readProperty(a, tag, xml, ctx, Pid::ARTICULATION_ANCHOR);
-        }
+        TRead::readProperty(a, tag, xml, ctx, Pid::ARTICULATION_ANCHOR);
     } else if (tag == "direction") {
         TRead::readProperty(a, xml, ctx, Pid::DIRECTION);
     } else if (tag == "ornamentStyle") {
         TRead::readProperty(a, xml, ctx, Pid::ORNAMENT_STYLE);
     } else if (tag == "play") {
         a->setPlayArticulation(xml.readBool());
-    } else if (tag == "offset") {
-        if (a->score()->mscVersion() >= 400) {
-            readItemProperties(a, xml, ctx);
-        } else {
-            xml.skipCurrentElement();       // ignore manual layout in older scores
-        }
+        readItemProperties(a, xml, ctx);
     } else if (readItemProperties(a, xml, ctx)) {
     } else {
         return false;
@@ -2252,14 +2098,6 @@ void TRead::read(Bend* b, XmlReader& e, ReadContext& ctx)
     }
 }
 
-void TRead::read(StretchedBend* b, XmlReader& xml, ReadContext& ctx)
-{
-    UNUSED(b);
-    UNUSED(xml);
-    UNUSED(ctx);
-    // not implemented
-}
-
 void TRead::read(Box* b, XmlReader& e, ReadContext& ctx)
 {
     while (e.readNextStartElement()) {
@@ -2268,9 +2106,6 @@ void TRead::read(Box* b, XmlReader& e, ReadContext& ctx)
         }
     }
 
-    if (b->score()->mscVersion() < 302) {
-        b->setAutoSizeEnabled(false);    // disable auto-size for older scores by default.
-    }
     if (b->score()->mscVersion() < 440) {
         b->setSizeIsSpatiumDependent(true);
     }
@@ -2282,9 +2117,6 @@ void TRead::read(HBox* b, XmlReader& e, ReadContext& ctx)
         if (!readProperties(b, e, ctx)) {
             e.unknown();
         }
-    }
-    if (b->score()->mscVersion() < 302) {
-        b->setAutoSizeEnabled(false);    // disable auto-size for older scores by default.
     }
     if (b->score()->mscVersion() < 440) {
         b->setSizeIsSpatiumDependent(true);
@@ -2355,16 +2187,10 @@ bool TRead::readProperties(Box* b, XmlReader& e, ReadContext& ctx)
     } else if (tag == "topGap") {
         double gap = e.readDouble();
         b->setTopGap(Spatium(gap));
-        if (b->score()->mscVersion() >= 206) {
-            b->setTopGap(Spatium(gap));
-        }
         b->setPropertyFlags(Pid::TOP_GAP, PropertyFlags::UNSTYLED);
     } else if (tag == "bottomGap") {
         double gap = e.readDouble();
         b->setBottomGap(Spatium(gap));
-        if (b->score()->mscVersion() >= 206) {
-            b->setBottomGap(Spatium(gap));
-        }
         b->setPropertyFlags(Pid::BOTTOM_GAP, PropertyFlags::UNSTYLED);
     } else if (tag == "leftMargin") {
         b->setLeftMargin(e.readDouble());
@@ -2662,15 +2488,6 @@ void TRead::read(Chord* ch, XmlReader& e, ReadContext& ctx)
             e.unknown();
         }
     }
-
-    //! TODO Should be replaced with `ctx.mscVersion()`
-    //! But at the moment, `ctx` is not set everywhere
-    int mscVersion = ch->score()->mscVersion();
-
-    // Reset horizontal offset of grace notes when migrating from before 4.0
-    if (ch->isGrace() && mscVersion < 400) {
-        ch->rxoffset() = 0;
-    }
 }
 
 bool TRead::readProperties(Chord* ch, XmlReader& e, ReadContext& ctx)
@@ -2785,34 +2602,10 @@ bool TRead::readProperties(ChordRest* ch, XmlReader& e, ReadContext& ctx)
 {
     const AsciiStringView tag(e.name());
 
-    //! TODO Should be replaced with `ctx.mscVersion()`
-    //! But at the moment, `ctx` is not set everywhere
-    int mscVersion = ch->score()->mscVersion();
-
     if (tag == "durationType") {
         ch->setDurationType(TConv::fromXml(e.readAsciiText(), DurationType::V_QUARTER));
         if (ch->actualDurationType().type() != DurationType::V_MEASURE) {
-            if (mscVersion < 112 && (ch->type() == ElementType::REST)
-                &&            // for backward compatibility, convert V_WHOLE rests to V_MEASURE
-                              // if long enough to fill a measure.
-                              // OTOH, freshly created (un-initialized) rests have numerator == 0 (< 4/4)
-                              // (see Fraction() constructor in fraction.h; this happens for instance
-                              // when pasting selection from clipboard): they should not be converted
-                ch->ticks().numerator() != 0
-                &&            // rest durations are initialized to full measure duration when
-                              // created upon reading the <Rest> tag (see Measure::read() )
-                              // so a V_WHOLE rest in a measure of 4/4 or less => V_MEASURE
-                (ch->actualDurationType() == DurationType::V_WHOLE && ch->ticks() <= Fraction(4, 4))) {
-                // old pre 2.0 scores: convert
-                ch->setDurationType(DurationType::V_MEASURE);
-            } else {    // not from old score: set duration fraction from duration type
-                ch->setTicks(ch->actualDurationType().fraction());
-            }
-        } else {
-            if (mscVersion <= 114) {
-                SigEvent event = ctx.compatTimeSigMap()->timesig(ctx.tick());
-                ch->setTicks(event.timesig());
-            }
+            ch->setTicks(ch->actualDurationType().fraction());
         }
     } else if (tag == "BeamMode") {
         ch->setBeamMode(TConv::fromXml(e.readAsciiText(), BeamMode::AUTO));
@@ -2833,20 +2626,6 @@ bool TRead::readProperties(ChordRest* ch, XmlReader& e, ReadContext& ctx)
         ch->setSmall(e.readInt());
     } else if (tag == "duration") {
         ch->setTicks(e.readFraction());
-    } else if (tag == "ticklen") {      // obsolete (version < 1.12)
-        int mticks = ctx.compatTimeSigMap()->timesig(ctx.tick()).timesig().ticks();
-        int i = e.readInt();
-        if (i == 0) {
-            i = mticks;
-        }
-        if ((ch->type() == ElementType::REST) && (mticks == i)) {
-            ch->setDurationType(DurationType::V_MEASURE);
-            ch->setTicks(Fraction::fromTicks(i));
-        } else {
-            Fraction f = Fraction::fromTicks(i);
-            ch->setTicks(f);
-            ch->setDurationType(TDuration(f));
-        }
     } else if (tag == "dots") {
         ch->setDots(e.readInt());
     } else if (tag == "staffMove") {
@@ -2934,8 +2713,6 @@ void TRead::read(ChordLine* l, XmlReader& e, ReadContext& ctx)
             l->setLengthY(e.readInt());
         } else if (tag == "play") {
             l->setPlayChordLine(e.readBool());
-        } else if (tag == "offset" && l->score()->mscVersion() < 400) { // default positions has changed in 4.0 so ignore previous offset
-            e.skipCurrentElement();
         } else if (!readItemProperties(l, e, ctx)) {
             e.unknown();
         }
@@ -3021,10 +2798,6 @@ void TRead::read(Fingering* f, XmlReader& e, ReadContext& ctx)
 void TRead::read(Glissando* g, XmlReader& e, ReadContext& ctx)
 {
     g->eraseSpannerSegments();
-
-    if (g->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), g);
-    }
 
     staff_idx_t staffIdx = track2staff(ctx.track());
     Staff* staff = ctx.score()->staff(staffIdx);
@@ -3177,7 +2950,7 @@ void TRead::read(Hairpin* h, XmlReader& e, ReadContext& ctx)
             h->setVeloChange(e.readInt());
         } else if (tag == "dynType") { // obsolete
             if (mscVersion < 440) {
-                h->setDynRange(TConv::fromXml(e.readAsciiText(), DynamicRange::PART));
+                h->setVoiceAssignment(read206::Read206::readDynamicRange(e.readInt()));
             } else {
                 e.skipCurrentElement();
             }
@@ -3185,8 +2958,8 @@ void TRead::read(Hairpin* h, XmlReader& e, ReadContext& ctx)
             e.readInt();
             if (h->hairpinType() == HairpinType::CRESC_HAIRPIN) {
                 h->setHairpinType(HairpinType::CRESC_LINE);
-            } else if (h->hairpinType() == HairpinType::DECRESC_HAIRPIN) {
-                h->setHairpinType(HairpinType::DECRESC_LINE);
+            } else if (h->hairpinType() == HairpinType::DIM_HAIRPIN) {
+                h->setHairpinType(HairpinType::DIM_LINE);
             }
         } else if (tag == "singleNoteDynamics") {
             h->setSingleNoteDynamics(e.readBool());
@@ -3207,22 +2980,23 @@ void TRead::read(Hairpin* h, XmlReader& e, ReadContext& ctx)
 
 void TRead::read(Harmony* h, XmlReader& e, ReadContext& ctx)
 {
+    HarmonyInfo* info = new HarmonyInfo(ctx.score());
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
         if (tag == "base") {
-            h->setBaseTpc(e.readInt());
+            info->setBassTpc(e.readInt());
         } else if (tag == "baseCase") {
-            h->setBaseCase(static_cast<NoteCaseType>(e.readInt()));
+            h->setBassCase(static_cast<NoteCaseType>(e.readInt()));
         } else if (tag == "extension") {
-            h->setId(e.readInt());
+            info->setId(e.readInt());
         } else if (tag == "name") {
-            h->setTextName(e.readText());
+            info->setTextName(e.readText());
         } else if (tag == "root") {
-            h->setRootTpc(e.readInt());
+            info->setRootTpc(e.readInt());
         } else if (tag == "rootCase") {
             h->setRootCase(static_cast<NoteCaseType>(e.readInt()));
         } else if (tag == "function") {
-            h->setFunction(e.readText());
+            compat::CompatUtils::setHarmonyRootTpcFromFunction(info, h, e.readText());
         } else if (tag == "degree") {
             int degreeValue = 0;
             int degreeAlter = 0;
@@ -3254,10 +3028,10 @@ void TRead::read(Harmony* h, XmlReader& e, ReadContext& ctx)
                 }
             }
         } else if (tag == "leftParen") {
-            h->setLeftParen(true);
+            h->setParenthesesMode(ParenthesesMode::LEFT, true, true);
             e.readNext();
         } else if (tag == "rightParen") {
-            h->setRightParen(true);
+            h->setParenthesesMode(ParenthesesMode::RIGHT, true, true);
             e.readNext();
         } else if (TRead::readProperty(h, tag, e, ctx, Pid::POS_ABOVE)) {
         } else if (TRead::readProperty(h, tag, e, ctx, Pid::HARMONY_TYPE)) {
@@ -3269,6 +3043,8 @@ void TRead::read(Harmony* h, XmlReader& e, ReadContext& ctx)
             e.unknown();
         }
     }
+
+    h->addChord(info);
 
     h->afterRead();
 }
@@ -3358,9 +3134,6 @@ bool TRead::readProperties(LedgerLine* l, XmlReader& e, ReadContext&)
 
 void TRead::read(LetRing* r, XmlReader& e, ReadContext& ctx)
 {
-    if (r->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), r);
-    }
     while (e.readNextStartElement()) {
         if (readProperty(r, e.name(), e, ctx, Pid::LINE_WIDTH)) {
             r->setPropertyFlags(Pid::LINE_WIDTH, PropertyFlags::UNSTYLED);
@@ -3400,15 +3173,6 @@ void TRead::read(Lyrics* l, XmlReader& e, ReadContext& ctx)
     while (e.readNextStartElement()) {
         if (!TRead::readProperties(l, e, ctx)) {
             e.unknown();
-        }
-    }
-    if (!l->isStyled(Pid::OFFSET) && !ctx.pasteMode()) {
-        // fix offset for pre-3.1 scores
-        // 3.0: y offset was meaningless if autoplace is set
-        String version = ctx.mscoreVersion();
-        if (l->autoplace() && !version.isEmpty() && version < u"3.1") {
-            PointF off = l->propertyDefault(Pid::OFFSET).value<PointF>();
-            l->ryoffset() = off.y();
         }
     }
 }
@@ -3595,7 +3359,15 @@ bool TRead::readProperties(Note* n, XmlReader& e, ReadContext& ctx)
         Symbol* s = new Symbol(n);
         s->setTrack(n->track());
         TRead::read(s, e, ctx);
-        n->add(s);
+        if (s->sym() == SymId::noteheadParenthesisLeft) {
+            n->setParenthesesMode(n->rightParen() ? ParenthesesMode::BOTH : ParenthesesMode::LEFT);
+            ctx.score()->deleteLater(s);
+        } else if (s->sym() == SymId::noteheadParenthesisRight) {
+            n->setParenthesesMode(n->leftParen() ? ParenthesesMode::BOTH : ParenthesesMode::RIGHT);
+            ctx.score()->deleteLater(s);
+        } else {
+            n->add(s);
+        }
     } else if (tag == "Image") {
         if (MScore::noImages) {
             e.skipCurrentElement();
@@ -3700,9 +3472,6 @@ void TRead::read(NoteLine* nl, XmlReader& xml, ReadContext& ctx)
 void TRead::read(Ottava* o, XmlReader& e, ReadContext& ctx)
 {
     o->eraseSpannerSegments();
-    if (o->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), o);
-    }
     while (e.readNextStartElement()) {
         readProperties(o, e, ctx);
     }
@@ -3726,14 +3495,6 @@ bool TRead::readProperties(Ottava* o, XmlReader& e, ReadContext& ctx)
                     break;
                 }
             }
-        } else if (o->score()->mscVersion() <= 114) {
-            //subtype are now in a different order...
-            if (idx == 1) {
-                idx = 2;
-            } else if (idx == 2) {
-                idx = 1;
-            }
-            o->setOttavaType(OttavaType(idx));
         } else {
             o->setOttavaType(OttavaType(idx));
         }
@@ -3761,9 +3522,6 @@ void TRead::read(Page* p, XmlReader& e, ReadContext& ctx)
 
 void TRead::read(PalmMute* p, XmlReader& e, ReadContext& ctx)
 {
-    if (p->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), p);
-    }
     while (e.readNextStartElement()) {
         if (readProperty(p, e.name(), e, ctx, Pid::LINE_WIDTH)) {
             p->setPropertyFlags(Pid::LINE_WIDTH, PropertyFlags::UNSTYLED);
@@ -3788,8 +3546,10 @@ void TRead::read(Part* p, XmlReader& e, ReadContext& ctx)
 {
     p->setId(e.intAttribute("id", 0));
 
+    StaffHideModes staffHideModes;
+
     while (e.readNextStartElement()) {
-        if (!readProperties(p, e, ctx)) {
+        if (!readProperties(p, e, ctx, staffHideModes)) {
             e.unknown();
         }
     }
@@ -3797,6 +3557,8 @@ void TRead::read(Part* p, XmlReader& e, ReadContext& ctx)
     if (p->partName().isEmpty()) {
         p->setPartName(p->instrument()->trackName());
     }
+
+    read400::TRead::read(p, staffHideModes, ctx.style().styleB(Sid::hideEmptyStaves));
 }
 
 void TRead::read(PartialLyricsLine* p, XmlReader& xml, ReadContext& ctx)
@@ -3824,7 +3586,7 @@ void TRead::read(PartialTie* p, XmlReader& xml, ReadContext& ctx)
     }
 }
 
-bool TRead::readProperties(Part* p, XmlReader& e, ReadContext& ctx)
+bool TRead::readProperties(Part* p, XmlReader& e, ReadContext& ctx, StaffHideModes& staffHideModes)
 {
     const AsciiStringView tag(e.name());
     if (tag == "id") {
@@ -3832,7 +3594,7 @@ bool TRead::readProperties(Part* p, XmlReader& e, ReadContext& ctx)
     } else if (tag == "Staff") {
         Staff* staff = Factory::createStaff(p);
         p->score()->appendStaff(staff);
-        TRead::read(staff, e, ctx);
+        TRead::read(staff, e, ctx, staffHideModes);
     } else if (tag == "Instrument") {
         Instrument* instr = new Instrument;
         read(instr, e, ctx, p);
@@ -3868,10 +3630,6 @@ bool TRead::readProperties(Part* p, XmlReader& e, ReadContext& ctx)
 
 void TRead::read(Pedal* p, XmlReader& e, ReadContext& ctx)
 {
-    if (p->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), p);
-    }
-
     bool beginTextTag = false;
     bool continueTextTag = false;
     bool endTextTag = false;
@@ -3978,10 +3736,6 @@ void TRead::read(SLine* l, XmlReader& e, ReadContext& ctx)
 {
     l->eraseSpannerSegments();
 
-    if (l->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), l);
-    }
-
     while (e.readNextStartElement()) {
         if (!readProperties(l, e, ctx)) {
             e.unknown();
@@ -4043,10 +3797,7 @@ void TRead::read(Slur* s, XmlReader& e, ReadContext& ctx)
 bool TRead::readProperties(Slur* s, XmlReader& e, ReadContext& ctx)
 {
     const AsciiStringView tag(e.name());
-    if (tag == "stemArr") {
-        s->setSourceStemArrangement(e.readInt());
-        return true;
-    } else if (TRead::readProperty(s, tag, e, ctx, Pid::PARTIAL_SPANNER_DIRECTION)) {
+    if (TRead::readProperty(s, tag, e, ctx, Pid::PARTIAL_SPANNER_DIRECTION)) {
         return true;
     }
 
@@ -4089,9 +3840,7 @@ void TRead::read(SlurTieSegment* s, XmlReader& e, ReadContext& ctx)
     double _spatium = s->style().spatium();
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
-        if (s->score()->mscVersion() < 400 && (tag == "o1" || tag == "o2" || tag == "o3" || tag == "o4")) {
-            e.skipCurrentElement(); // Ignore slur user offsets from pre-4.0
-        } else if (tag == "o1") {
+        if (tag == "o1") {
             s->ups(Grip::START).off = e.readPoint() * _spatium;
         } else if (tag == "o2") {
             s->ups(Grip::BEZIER1).off = e.readPoint() * _spatium;
@@ -4127,12 +3876,11 @@ void TRead::read(Spacer* s, XmlReader& e, ReadContext& ctx)
         if (tag == "subtype") {
             s->setSpacerType(SpacerType(e.readInt()));
         } else if (tag == "space") {
-            s->setGap(Millimetre(e.readDouble() * s->spatium()));
+            s->setGap(Spatium(e.readDouble()));
         } else if (!readItemProperties(s, e, ctx)) {
             e.unknown();
         }
     }
-    s->layout0();
 }
 
 void TRead::read(StaffType* t, XmlReader& e, ReadContext&)
@@ -4142,6 +3890,8 @@ void TRead::read(StaffType* t, XmlReader& e, ReadContext&)
     if (t->group() == StaffGroup::TAB) {
         t->setGenKeysig(false);
     }
+
+    t->setFretUseTextStyle(false);
 
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
@@ -4189,7 +3939,7 @@ void TRead::read(StaffType* t, XmlReader& e, ReadContext&)
         } else if (tag == "durationFontY") {
             t->setDurationFontUserY(e.readDouble());
         } else if (tag == "fretFontName") {
-            t->setFretFontName(e.readText());
+            t->setFretPreset(e.readText());
         } else if (tag == "fretFontSize") {
             t->setFretFontSize(e.readDouble());
         } else if (tag == "fretFontY") {
@@ -4237,16 +3987,16 @@ void TRead::read(StaffTypeChange* c, XmlReader& e, ReadContext& ctx)
     }
 }
 
-void TRead::read(Staff* s, XmlReader& e, ReadContext& ctx)
+void TRead::read(Staff* s, XmlReader& e, ReadContext& ctx, StaffHideModes& staffHideModes)
 {
     while (e.readNextStartElement()) {
-        if (!readProperties(s, e, ctx)) {
+        if (!readProperties(s, e, ctx, staffHideModes)) {
             e.unknown();
         }
     }
 }
 
-bool TRead::readProperties(Staff* s, XmlReader& e, ReadContext& ctx)
+bool TRead::readProperties(Staff* s, XmlReader& e, ReadContext& ctx, StaffHideModes& staffHideModes)
 {
     const AsciiStringView tag(e.name());
     if (tag == "StaffType") {
@@ -4265,11 +4015,11 @@ bool TRead::readProperties(Staff* s, XmlReader& e, ReadContext& ctx)
     } else if (tag == "invisible") {
         s->staffType(Fraction(0, 1))->setInvisible(e.readInt());              // same as: setInvisible(Fraction(0,1)), e.readInt())
     } else if (tag == "hideWhenEmpty") {
-        s->setHideWhenEmpty(Staff::HideMode(e.readInt()));
+        staffHideModes[s] = static_cast<StaffHideMode>(e.readInt());
     } else if (tag == "cutaway") {
         s->setCutaway(e.readInt());
     } else if (tag == "showIfSystemEmpty") {
-        s->setShowIfEmpty(e.readInt());
+        s->setShowIfEntireSystemEmpty(e.readInt());
     } else if (tag == "hideSystemBarLine") {
         s->setHideSystemBarLine(e.readInt());
     } else if (tag == "mergeMatchingRests") {
@@ -4298,7 +4048,7 @@ bool TRead::readProperties(Staff* s, XmlReader& e, ReadContext& ctx)
     } else if (tag == "barLineSpanTo") {
         s->setBarLineTo(e.readInt());
     } else if (tag == "distOffset") {
-        s->setUserDist(Millimetre(e.readDouble() * s->style().spatium()));
+        s->setUserDist(Spatium(e.readDouble()));
     } else if (tag == "mag") {
         /*_userMag =*/
         e.readDouble(0.1, 10.0);
@@ -4467,10 +4217,6 @@ void TRead::read(TextLineBase* b, XmlReader& e, ReadContext& ctx)
 {
     b->eraseSpannerSegments();
 
-    if (b->score()->mscVersion() < 301) {
-        ctx.addSpanner(e.intAttribute("id", -1), b);
-    }
-
     while (e.readNextStartElement()) {
         if (!readProperties(b, e, ctx)) {
             e.unknown();
@@ -4519,18 +4265,7 @@ void TRead::read(TimeSig* s, XmlReader& e, ReadContext& ctx)
             old = true;
             z4 = e.readInt();
         } else if (tag == "subtype") {
-            int i = e.readInt();
-            if (s->score()->mscVersion() <= 114) {
-                if (i == 0x40000104) {
-                    timeSigType = TimeSigType::FOUR_FOUR;
-                } else if (i == 0x40002084) {
-                    timeSigType = TimeSigType::ALLA_BREVE;
-                } else {
-                    timeSigType = TimeSigType::NORMAL;
-                }
-            } else {
-                timeSigType = TimeSigType(i);
-            }
+            timeSigType = TimeSigType(e.readInt());
         } else if (tag == "showCourtesySig") {
             s->setShowCourtesySig(e.readInt());
         } else if (tag == "sigN") {
@@ -4560,19 +4295,6 @@ void TRead::read(TimeSig* s, XmlReader& e, ReadContext& ctx)
         sig.set(z1 + z2 + z3 + z4, n);
     }
     stretch.reduce();
-
-    // HACK: handle time signatures from scores before 3.5 differently on some special occasions.
-    // See https://musescore.org/node/308139.
-    String version = s->score()->mscoreVersion();
-    if (!version.isEmpty() && (version >= u"3.0") && (version < u"3.5")) {
-        if ((timeSigType == TimeSigType::NORMAL) && !numeratorString.isEmpty() && denominatorString.isEmpty()) {
-            if (numeratorString == String::number(sig.numerator())) {
-                numeratorString.clear();
-            } else {
-                denominatorString = String::number(sig.denominator());
-            }
-        }
-    }
 
     s->setSig(sig, timeSigType);
     s->setStretch(stretch);
@@ -4750,6 +4472,14 @@ bool TRead::readProperties(TextBase* t, XmlReader& e, ReadContext& ctx)
     const AsciiStringView tag(e.name());
     for (Pid i : TextBasePropertyId) {
         if (TRead::readProperty(t, tag, e, ctx, i)) {
+            if (tag != "align") {
+                return true;
+            }
+
+            t->setPosition(t->align().horizontal);
+            if (t->position() != t->propertyDefault(Pid::POSITION).value<AlignH>()) {
+                t->setPropertyFlags(Pid::POSITION, PropertyFlags::UNSTYLED);
+            }
             return true;
         }
     }

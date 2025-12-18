@@ -125,6 +125,11 @@ static std::vector<EngravingObject*> compoundObjects(EngravingObject* object)
         for (Note* compoundNote : note->compoundNotes()) {
             objects.push_back(compoundNote);
         }
+    } else if (object->isFretDiagram()) {
+        const FretDiagram* fret = toFretDiagram(object);
+        if (fret->harmony()) {
+            objects.push_back(fret->harmony());
+        }
     }
 
     objects.push_back(object);
@@ -525,7 +530,7 @@ void UndoStack::undo(EditData* ed)
 {
     LOG_UNDO() << "called";
     // Are we currently editing text?
-    if (ed && ed->editTextualProperties && ed->element && ed->element->isTextBase()) {
+    if (ed && ed->element && ed->element->isTextBase()) {
         TextEditData* ted = dynamic_cast<TextEditData*>(ed->getData(ed->element).get());
         if (ted && ted->startUndoIdx == m_currentIndex) {
             // No edits to undo, so do nothing
@@ -557,8 +562,13 @@ void UndoStack::redo(EditData* ed)
 
 bool UndoMacro::canRecordSelectedElement(const EngravingItem* e)
 {
-    return e->isNote() || (e->isChordRest() && !e->isChord()) || (e->isTextBase() && !e->isInstrumentName()) || e->isFretDiagram()
-           || e->isSoundFlag();
+    if (e->generated()) {
+        return false;
+    }
+
+    return e->isNote() || (e->isChordRest() && !e->isChord())
+           || (e->isTextBase() && !e->isInstrumentName() && !e->isHammerOnPullOffText())
+           || e->isFretDiagram() || e->isSoundFlag();
 }
 
 void UndoMacro::fillSelectionInfo(SelectionInfo& info, const Selection& sel)
@@ -657,6 +667,17 @@ const InputState& UndoMacro::redoInputState() const
     return m_redoInputState;
 }
 
+void UndoMacro::excludeElementFromSelectionInfo(EngravingItem* element)
+{
+    if (m_undoSelectionInfo.isValid()) {
+        muse::remove(m_undoSelectionInfo.elements, element);
+    }
+
+    if (m_redoSelectionInfo.isValid()) {
+        muse::remove(m_redoSelectionInfo.elements, element);
+    }
+}
+
 const UndoMacro::SelectionInfo& UndoMacro::undoSelectionInfo() const
 {
     return m_undoSelectionInfo;
@@ -682,6 +703,12 @@ UndoMacro::ChangesInfo UndoMacro::changesInfo(bool undo) const
             for (const auto& pair : changeStyle->values()) {
                 result.changedStyleIdSet.insert(pair.first);
             }
+        } else if (type == CommandType::ChangeStyle) {
+            auto changeStyle = static_cast<const ChangeStyle*>(command);
+            const StyleIdSet styleIds = changeStyle->changedIds();
+            result.changedStyleIdSet.insert(styleIds.cbegin(), styleIds.cend());
+        } else if (type == CommandType::TextEdit) {
+            result.isTextEditing |= static_cast<const TextEditUndoCommand*>(command)->cursor().editing();
         }
 
         if (undo) {
@@ -1205,6 +1232,11 @@ bool RemoveElement::isFiltered(UndoCommand::Filter f, const EngravingItem* targe
     return false;
 }
 
+std::vector<EngravingObject*> RemoveElement::objectItems() const
+{
+    return compoundObjects(element);
+}
+
 //---------------------------------------------------------
 //   InsertPart
 //---------------------------------------------------------
@@ -1363,7 +1395,7 @@ RemoveStaff::RemoveStaff(Staff* p)
 {
     staff = p;
     ridx  = staff->rstaff();
-    wasSystemObjectStaff = staff->score()->isSystemObjectStaff(staff);
+    wasSystemObjectStaff = staff->isSystemObjectStaff();
 }
 
 void RemoveStaff::undo(EditData*)
@@ -1748,24 +1780,59 @@ void ChangeMeasureLen::flip(EditData*)
 //   TransposeHarmony
 //---------------------------------------------------------
 
-TransposeHarmony::TransposeHarmony(Harmony* h, int rtpc, int btpc)
+TransposeHarmony::TransposeHarmony(Harmony* h, Interval interval, bool doubleSharpsFlats)
 {
-    harmony = h;
-    rootTpc = rtpc;
-    baseTpc = btpc;
+    m_harmony = h;
+    m_interval = interval;
+    m_useDoubleSharpsFlats = doubleSharpsFlats;
 }
 
 void TransposeHarmony::flip(EditData*)
 {
-    harmony->realizedHarmony().setDirty(true);   //harmony should be re-realized after transposition
-    int baseTpc1 = harmony->baseTpc();
-    int rootTpc1 = harmony->rootTpc();
-    harmony->setBaseTpc(baseTpc);
-    harmony->setRootTpc(rootTpc);
-    harmony->setXmlText(harmony->harmonyName());
-    harmony->render();
-    rootTpc = rootTpc1;
-    baseTpc = baseTpc1;
+    m_harmony->realizedHarmony().setDirty(true);   // harmony should be re-realized after transposition
+
+    for (HarmonyInfo* info : m_harmony->chords()) {
+        info->setRootTpc(transposeTpc(info->rootTpc(), m_interval, m_useDoubleSharpsFlats));
+        info->setBassTpc(transposeTpc(info->bassTpc(), m_interval, m_useDoubleSharpsFlats));
+    }
+
+    m_harmony->setXmlText(m_harmony->harmonyName());
+    m_harmony->triggerLayout();
+    m_interval.flip();
+}
+
+//---------------------------------------------------------
+//   TransposeHarmonyDiatonic
+//---------------------------------------------------------
+
+void TransposeHarmonyDiatonic::flip(EditData*)
+{
+    m_harmony->realizedHarmony().setDirty(true);   // harmony should be re-realized after transposition
+
+    Fraction tick = Fraction(0, 1);
+    Segment* seg = toSegment(m_harmony->findAncestor(ElementType::SEGMENT));
+    if (seg) {
+        tick = seg->tick();
+    }
+    Key key = !m_harmony->staff() ? Key::C : m_harmony->staff()->key(tick);
+
+    for (HarmonyInfo* info : m_harmony->chords()) {
+        info->setRootTpc(transposeTpcDiatonicByKey(info->rootTpc(), m_interval, key, m_transposeKeys, m_useDoubleSharpsFlats));
+        info->setBassTpc(transposeTpcDiatonicByKey(info->bassTpc(), m_interval, key, m_transposeKeys, m_useDoubleSharpsFlats));
+    }
+
+    m_harmony->setXmlText(m_harmony->harmonyName());
+    m_harmony->triggerLayout();
+
+    m_interval *= -1;
+}
+
+TransposeHarmonyDiatonic::TransposeHarmonyDiatonic(Harmony* h, int interval, bool useDoubleSharpsFlats, bool transposeKeys)
+{
+    m_harmony = h;
+    m_interval = interval;
+    m_useDoubleSharpsFlats = useDoubleSharpsFlats;
+    m_transposeKeys = transposeKeys;
 }
 
 //---------------------------------------------------------
@@ -1896,24 +1963,19 @@ ChangeStaff::ChangeStaff(Staff* _staff)
     visible = staff->visible();
     clefType = staff->defaultClefType();
     userDist = staff->userDist();
-    hideMode = staff->hideWhenEmpty();
-    showIfEmpty = staff->showIfEmpty();
     cutaway = staff->cutaway();
     hideSystemBarLine = staff->hideSystemBarLine();
     mergeMatchingRests = staff->mergeMatchingRests();
     reflectTranspositionInLinkedTab = staff->reflectTranspositionInLinkedTab();
 }
 
-ChangeStaff::ChangeStaff(Staff* _staff, bool _visible, ClefTypeList _clefType,
-                         double _userDist, Staff::HideMode _hideMode, bool _showIfEmpty, bool _cutaway,
-                         bool _hideSystemBarLine, AutoOnOff _mergeMatchingRests, bool _reflectTranspositionInLinkedTab)
+ChangeStaff::ChangeStaff(Staff* _staff, bool _visible, ClefTypeList _clefType, Spatium _userDist, bool _cutaway, bool _hideSystemBarLine,
+                         AutoOnOff _mergeMatchingRests, bool _reflectTranspositionInLinkedTab)
 {
     staff       = _staff;
     visible     = _visible;
     clefType    = _clefType;
     userDist    = _userDist;
-    hideMode    = _hideMode;
-    showIfEmpty = _showIfEmpty;
     cutaway     = _cutaway;
     hideSystemBarLine  = _hideSystemBarLine;
     mergeMatchingRests = _mergeMatchingRests;
@@ -1928,9 +1990,7 @@ void ChangeStaff::flip(EditData*)
 {
     bool oldVisible = staff->visible();
     ClefTypeList oldClefType = staff->defaultClefType();
-    double oldUserDist   = staff->userDist();
-    Staff::HideMode oldHideMode    = staff->hideWhenEmpty();
-    bool oldShowIfEmpty = staff->showIfEmpty();
+    Spatium oldUserDist   = staff->userDist();
     bool oldCutaway     = staff->cutaway();
     bool oldHideSystemBarLine  = staff->hideSystemBarLine();
     AutoOnOff oldMergeMatchingRests = staff->mergeMatchingRests();
@@ -1938,9 +1998,7 @@ void ChangeStaff::flip(EditData*)
 
     staff->setVisible(visible);
     staff->setDefaultClefType(clefType);
-    staff->setUserDist(Millimetre(userDist));
-    staff->setHideWhenEmpty(hideMode);
-    staff->setShowIfEmpty(showIfEmpty);
+    staff->setUserDist(userDist);
     staff->setCutaway(cutaway);
     staff->setHideSystemBarLine(hideSystemBarLine);
     staff->setMergeMatchingRests(mergeMatchingRests);
@@ -1949,8 +2007,6 @@ void ChangeStaff::flip(EditData*)
     visible     = oldVisible;
     clefType    = oldClefType;
     userDist    = oldUserDist;
-    hideMode    = oldHideMode;
-    showIfEmpty = oldShowIfEmpty;
     cutaway     = oldCutaway;
     hideSystemBarLine  = oldHideSystemBarLine;
     mergeMatchingRests = oldMergeMatchingRests;
@@ -2037,12 +2093,18 @@ static void changeChordStyle(Score* score)
     double eadjust = style.styleD(Sid::chordExtensionAdjust);
     double mmag = style.styleD(Sid::chordModifierMag);
     double madjust = style.styleD(Sid::chordModifierAdjust);
-    score->chordList()->configureAutoAdjust(emag, eadjust, mmag, madjust);
+    double stackedmmag = style.styleD(Sid::chordStackedModifierMag);
+    bool mstackModifiers = style.styleB(Sid::verticallyStackModifiers);
+    bool mexcludeModsHAlign = style.styleB(Sid::chordAlignmentExcludeModifiers);
+    String msymbolFont = style.styleSt(Sid::musicalTextFont);
+    ChordStylePreset preset = style.styleV(Sid::chordStyle).value<ChordStylePreset>();
+    score->chordList()->configureAutoAdjust(emag, eadjust, mmag, madjust, stackedmmag, mstackModifiers, mexcludeModsHAlign, msymbolFont,
+                                            preset);
     if (score->style().styleB(Sid::chordsXmlFile)) {
-        score->chordList()->read(score->configuration()->appDataPath(), u"chords.xml");
+        score->chordList()->read(u"chords.xml");
     }
-    score->chordList()->read(score->configuration()->appDataPath(), style.styleSt(Sid::chordDescriptionFile));
-    score->chordList()->setCustomChordList(style.styleSt(Sid::chordStyle) == "custom");
+    score->chordList()->read(style.styleSt(Sid::chordDescriptionFile));
+    score->chordList()->setCustomChordList(style.styleV(Sid::chordStyle).value<ChordStylePreset>() == ChordStylePreset::CUSTOM);
 }
 
 //---------------------------------------------------------
@@ -2052,6 +2114,18 @@ static void changeChordStyle(Score* score)
 ChangeStyle::ChangeStyle(Score* s, const MStyle& st, const bool overlapOnly)
     : score(s), style(st), overlap(overlapOnly)
 {
+}
+
+StyleIdSet ChangeStyle::changedIds() const
+{
+    StyleIdSet result;
+    for (int _sid = 0; _sid < static_cast<int>(Sid::STYLES); ++_sid) {
+        Sid sid = static_cast<Sid>(_sid);
+        if (score->style().styleV(sid) != style.value(sid)) {
+            result.insert(sid);
+        }
+    }
+    return result;
 }
 
 //---------------------------------------------------------
@@ -2092,7 +2166,10 @@ static void changeStyleValue(Score* score, Sid idx, const PropertyValue& oldValu
     case Sid::chordExtensionAdjust:
     case Sid::chordModifierMag:
     case Sid::chordModifierAdjust:
-    case Sid::chordDescriptionFile: {
+    case Sid::chordDescriptionFile:
+    case Sid::verticallyStackModifiers:
+    case Sid::chordAlignmentExcludeModifiers:
+    case Sid::musicalTextFont: {
         changeChordStyle(score);
     }
     break;
@@ -2205,7 +2282,7 @@ void ChangeVelocity::flip(EditData*)
 //   ChangeMStaffProperties
 //---------------------------------------------------------
 
-ChangeMStaffProperties::ChangeMStaffProperties(Measure* m, int i, bool v, bool s)
+ChangeMStaffProperties::ChangeMStaffProperties(Measure* m, staff_idx_t i, bool v, bool s)
     : measure(m), staffIdx(i), visible(v), stemless(s)
 {
 }
@@ -2220,8 +2297,29 @@ void ChangeMStaffProperties::flip(EditData*)
     bool s = measure->stemless(staffIdx);
     measure->setStaffVisible(staffIdx, visible);
     measure->setStaffStemless(staffIdx, stemless);
-    visible    = v;
+    visible = v;
     stemless = s;
+}
+
+//---------------------------------------------------------
+//   ChangeMStaffHideIfEmpty
+//---------------------------------------------------------
+
+ChangeMStaffHideIfEmpty::ChangeMStaffHideIfEmpty(Measure* m, staff_idx_t i, AutoOnOff h)
+    : measure(m), staffIdx(i), hideIfEmpty(h)
+{
+}
+
+//---------------------------------------------------------
+//   flip
+//---------------------------------------------------------
+
+void ChangeMStaffHideIfEmpty::flip(EditData*)
+{
+    AutoOnOff h = measure->hideStaffIfEmpty(staffIdx);
+    measure->setHideStaffIfEmpty(staffIdx, hideIfEmpty);
+    measure->triggerLayout(staffIdx);
+    hideIfEmpty = h;
 }
 
 //---------------------------------------------------------
@@ -2770,8 +2868,6 @@ void ChangeClefType::flip(EditData*)
 
     concertClef     = ocl;
     transposingClef = otc;
-    // layout the clef to align the currentClefType with the actual one immediately
-    clef->renderer()->layoutItem(clef);
 }
 
 //---------------------------------------------------------
@@ -2929,6 +3025,8 @@ void ChangeParent::flip(EditData*)
     parent->add(element);
     staffIdx = si;
     parent = p;
+
+    element->triggerLayout();
 }
 
 //---------------------------------------------------------
@@ -3044,11 +3142,7 @@ Link::Link(EngravingObject* e1, EngravingObject* e2)
     assert(e1->links() == nullptr);
     le = e2->links();
     if (!le) {
-        if (e1->isStaff()) {
-            le = new LinkedObjects(e1->score(), -1);
-        } else {
-            le = new LinkedObjects(e1->score());
-        }
+        le = new LinkedObjects();
         le->push_back(e2);
     }
     e = e1;
@@ -3461,4 +3555,66 @@ void ChangeTieJumpPointActive::flip(EditData*)
 
     jumpPoint->setActive(m_active);
     m_active = oldActive;
+}
+
+FretLinkHarmony::FretLinkHarmony(FretDiagram* diagram, Harmony* harmony, bool unlink)
+{
+    m_fretDiagram = diagram;
+    m_harmony = harmony;
+    m_unlink = unlink;
+}
+
+void FretLinkHarmony::undo(EditData*)
+{
+    if (m_unlink) {
+        m_fretDiagram->linkHarmony(m_harmony);
+    } else {
+        m_fretDiagram->unlinkHarmony();
+    }
+}
+
+void FretLinkHarmony::redo(EditData*)
+{
+    if (m_unlink) {
+        m_fretDiagram->unlinkHarmony();
+    } else {
+        m_fretDiagram->linkHarmony(m_harmony);
+    }
+}
+
+RemoveFretDiagramFromFretBox::RemoveFretDiagramFromFretBox(FretDiagram* f)
+    : m_fretDiagram(f)
+{
+    FBox* fbox = toFBox(f->parent());
+    const ElementList& el = fbox->el();
+    m_idx = muse::indexOf(el, m_fretDiagram);
+}
+
+void RemoveFretDiagramFromFretBox::redo(EditData*)
+{
+    FBox* fbox = toFBox(m_fretDiagram->parent());
+    fbox->remove(m_fretDiagram);
+}
+
+void RemoveFretDiagramFromFretBox::undo(EditData*)
+{
+    FBox* fbox = toFBox(m_fretDiagram->parent());
+    fbox->addAtIdx(m_fretDiagram, m_idx);
+}
+
+AddFretDiagramToFretBox::AddFretDiagramToFretBox(FretDiagram* f, size_t idx)
+    : m_fretDiagram(f), m_idx(idx)
+{
+}
+
+void AddFretDiagramToFretBox::redo(EditData*)
+{
+    FBox* fbox = toFBox(m_fretDiagram->parent());
+    fbox->addAtIdx(m_fretDiagram, m_idx);
+}
+
+void AddFretDiagramToFretBox::undo(EditData*)
+{
+    FBox* fbox = toFBox(m_fretDiagram->parent());
+    fbox->remove(m_fretDiagram);
 }

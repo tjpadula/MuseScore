@@ -59,6 +59,7 @@ class AbstractNotationPaintView : public muse::uicomponents::QuickPaintedView, p
     Q_PROPERTY(qreal startVerticalScrollPosition READ startVerticalScrollPosition NOTIFY verticalScrollChanged)
     Q_PROPERTY(qreal verticalScrollbarSize READ verticalScrollbarSize NOTIFY verticalScrollChanged)
 
+    Q_PROPERTY(QVariant matrix READ matrix NOTIFY matrixChanged)
     Q_PROPERTY(QRectF viewport READ viewport_property NOTIFY viewportChanged)
 
     Q_PROPERTY(bool publishMode READ publishMode WRITE setPublishMode NOTIFY publishModeChanged)
@@ -122,9 +123,9 @@ public:
     void showContextMenu(const ElementType& elementType, const QPointF& pos) override;
     void hideContextMenu() override;
 
-    void showElementPopup(const ElementType& elementType, const muse::RectF& elementRect) override;
+    void showElementPopup(const ElementType& elementType) override;
     void hideElementPopup(const ElementType& elementType = ElementType::INVALID) override;
-    void toggleElementPopup(const ElementType& elementType, const muse::RectF& elementRect) override;
+    void toggleElementPopup(const ElementType& elementType) override;
 
     bool elementPopupIsOpen(const ElementType& elementType) const override;
 
@@ -137,6 +138,8 @@ public:
     qreal horizontalScrollbarSize() const;
     qreal startVerticalScrollPosition() const;
     qreal verticalScrollbarSize() const;
+
+    QVariant matrix() const;
 
     muse::PointF viewportTopLeft() const override;
     muse::RectF viewport() const;
@@ -152,7 +155,7 @@ signals:
     void showContextMenuRequested(int elementType, const QPointF& viewPos);
     void hideContextMenuRequested();
 
-    void showElementPopupRequested(mu::notation::PopupModelType modelType, const QRectF& elementRect);
+    void showElementPopupRequested(mu::notation::PopupModelType modelType);
     void hideElementPopupRequested();
     void isPopupOpenChanged(bool isPopupOpen);
 
@@ -160,6 +163,7 @@ signals:
     void verticalScrollChanged();
 
     void backgroundColorChanged(QColor color);
+    void matrixChanged();
     void viewportChanged();
     void publishModeChanged();
 
@@ -254,6 +258,7 @@ private:
     void onPlaybackCursorRectChanged();
 
     void updateLoopMarkers();
+    void updateShadowNoteVisibility();
 
     const Page* pageByPoint(const muse::PointF& point) const;
     muse::PointF alignToCurrentPageBorder(const muse::RectF& showRect, const muse::PointF& pos) const;
@@ -266,6 +271,7 @@ private:
     INotationPtr m_notation;
     muse::draw::Transform m_matrix;
 
+    bool m_loadCalled = false;
     std::unique_ptr<NotationViewInputController> m_inputController;
     std::unique_ptr<PlaybackCursor> m_playbackCursor;
     std::unique_ptr<NoteInputCursor> m_noteInputCursor;

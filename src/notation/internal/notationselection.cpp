@@ -69,7 +69,12 @@ Ret NotationSelection::canCopy() const
     return muse::make_ok();
 }
 
-QMimeData* NotationSelection::mimeData() const
+muse::ByteArray NotationSelection::mimeData() const
+{
+    return score()->selection().mimeData();
+}
+
+QMimeData* NotationSelection::qMimeData() const
 {
     QString mimeType = score()->selection().mimeType();
     if (mimeType.isEmpty()) {
@@ -158,4 +163,9 @@ std::vector<mu::engraving::System*> NotationSelection::selectedSystems() const
 EngravingItem* NotationSelection::lastElementHit() const
 {
     return m_lastElementHit;
+}
+
+bool NotationSelection::elementsSelected(const mu::engraving::ElementTypeSet& types) const
+{
+    return score()->selection().elementsSelected(types);
 }

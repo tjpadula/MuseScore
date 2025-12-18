@@ -54,7 +54,7 @@ void DynamicsLayout::doLayoutDynamic(Dynamic* item, Dynamic::LayoutData* ldata, 
     }
 
     const StaffType* stType = item->staffType();
-    if (stType && stType->isHiddenElementOnTab(conf.style(), Sid::dynamicsShowTabCommon, Sid::dynamicsShowTabSimple)) {
+    if (stType && stType->isHiddenElementOnTab(Sid::dynamicsShowTabCommon, Sid::dynamicsShowTabSimple)) {
         ldata->setIsSkipDraw(true);
         return;
     }
@@ -83,7 +83,7 @@ void DynamicsLayout::doLayoutDynamic(Dynamic* item, Dynamic::LayoutData* ldata, 
         return;
     }
 
-    // Use Smufl optical center for dynamic if available
+    // Use SMuFL optical center for dynamic if available
     SymId symId = TConv::symId(item->dynamicType());
     double opticalCenter = item->symSmuflAnchor(symId, SmuflAnchorId::opticalCenter).x();
     if (symId != SymId::noSym && opticalCenter) {

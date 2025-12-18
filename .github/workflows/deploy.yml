@@ -15,6 +15,10 @@ on:
         description: 'Create tag & release: (if enabled, release type must be alpha,beta,rc,stable)'
         type: boolean
         default: false
+      use_qt69:
+        description: 'Use Qt 6.9'
+        default: 'on'
+        required: false   
 
 defaults:
   run:
@@ -30,7 +34,7 @@ jobs:
       release_name: ${{ steps.make_tag_info.outputs.RELEASE_NAME }}
     steps:
     - name: Clone repo with history
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0 # entire history for all branches and tags
     - id: make_tag_info
@@ -60,6 +64,7 @@ jobs:
       platforms: ${{ inputs.platforms }}
       build_mode: ${{ inputs.release_type == 'stable' && 'stable' || 'testing' }}
       publish: ${{ inputs.create_tag && 'on' || 'off' }}
+      deploy_backend: 'on'
       sentry_project: ${{ (inputs.create_tag && inputs.release_type == 'stable') && 'mu4' || 'sandbox' }}
 
   update_learn_playlists:
@@ -84,9 +89,9 @@ jobs:
       url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.plan.outputs.tag_name }}
     steps:
     - name: Clone repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Download and extract artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         path: build.artifacts
     - name: Collate release binaries

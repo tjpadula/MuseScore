@@ -2,14 +2,17 @@
 
 #include <QApplication>
 #include <QQmlApplicationEngine>
-#include <QThreadPool>
 #include <QQuickWindow>
 
 #include "appshell/view/internal/splashscreen/splashscreen.h"
 #include "ui/iuiengine.h"
+#include "ui/graphicsapiprovider.h"
 
 #include "muse_framework_config.h"
-#include "ui/graphicsapiprovider.h"
+#include "app_config.h"
+#ifdef QT_CONCURRENT_SUPPORTED
+#include <QThreadPool>
+#endif
 
 #include "log.h"
 
@@ -100,7 +103,8 @@ void GuiApp::perform()
     aTimer.Split(std::string("Done onPreInit."));
 #endif
 
-    SplashScreen* splashScreen = nullptr;
+#ifdef MUE_ENABLE_SPLASHSCREEN
+    static SplashScreen* splashScreen = nullptr;
     if (multiInstancesProvider()->isMainInstance()) {
         splashScreen = new SplashScreen(SplashScreen::Default);
     } else {
@@ -126,6 +130,12 @@ void GuiApp::perform()
         splashScreen->show();
 #endif
     }
+#else
+    struct SplashScreen {
+        void close() {}
+    };
+    static SplashScreen* splashScreen = nullptr;
+#endif
 
     // ====================================================
     // Setup modules: onInit
@@ -191,6 +201,7 @@ void GuiApp::perform()
         }
 
         LOGI() << "Using graphics api: " << GraphicsApiProvider::graphicsApiName();
+        LOGI() << "Gui platform: " << QGuiApplication::platformName();
 
         if (GraphicsApiProvider::graphicsApi() == GraphicsApi::Software) {
             gApiProvider->destroy();
@@ -217,16 +228,16 @@ void GuiApp::perform()
 
     QQmlApplicationEngine* engine = ioc()->resolve<muse::ui::IUiEngine>("app")->qmlAppEngine();
 
-#if defined(Q_OS_WIN)
-    const QString mainQmlFile = "/platform/win/Main.qml";
+#ifdef MUE_CONFIGURATION_IS_APPWEB
+    const QString mainQmlFile = "/Main.qml";
 #elif defined(Q_OS_MACOS)
     const QString mainQmlFile = "/platform/mac/Main.qml";
 #elif defined(Q_OS_IOS)
     const QString mainQmlFile = "/platform/ios/Main.qml";
+#elif defined(Q_OS_WIN)
+    const QString mainQmlFile = "/platform/win/Main.qml";
 #elif defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
     const QString mainQmlFile = "/platform/linux/Main.qml";
-#elif defined(Q_OS_WASM)
-    const QString mainQmlFile = "/Main.wasm.qml";
 #endif
 
 #ifdef MUE_ENABLE_LOAD_QML_FROM_SOURCE
@@ -246,42 +257,61 @@ void GuiApp::perform()
     }, Qt::DirectConnection);
 
     QObject::connect(engine, &QQmlApplicationEngine::objectCreated,
-                     qApp, [this, url, splashScreen](QObject* obj, const QUrl& objUrl) {
-        if (!obj && url == objUrl) {
+                     qApp, [this, url, engine, &aTimer](QObject* obj, const QUrl& objUrl) {
+        if (url != objUrl) {
+            return;
+        }
+
+        if (!obj) {
             LOGE() << "failed Qml load\n";
             QCoreApplication::exit(-1);
             return;
         }
 
-        if (url == objUrl) {
-            // ====================================================
-            // Setup modules: onDelayedInit
-            // ====================================================
+        // ====================================================
+        // Setup modules: onDelayedInit
+        // ====================================================
 
-            m_globalModule.onDelayedInit();
-            for (modularity::IModuleSetup* m : m_modules) {
-                m->onDelayedInit();
+        m_globalModule.onDelayedInit();
+        for (modularity::IModuleSetup* m : m_modules) {
+            m->onDelayedInit();
+        }
+
+        const auto finalizeStartup = [&, this, obj]() {
+            static bool haveFinalized = false;
+            IF_ASSERT_FAILED(!haveFinalized) {
+                // Only call this once...
+                return;
             }
-
-            startupScenario()->runOnSplashScreen();
 
             if (splashScreen) {
                 splashScreen->close();
                 delete splashScreen;
             }
 
-            startupScenario()->runAfterSplashScreen();
-        }
-    }, Qt::QueuedConnection);
-
-    QObject::connect(engine, &QQmlEngine::warnings, [](const QList<QQmlError>& warnings) {
-        for (const QQmlError& e : warnings) {
-            LOGE() << "error: " << e.toString().toStdString() << "\n";
-        }
-    });
+            // The main window must be shown at this point so KDDockWidgets can read its size correctly
+            // and scale all sizes properly. https://github.com/musescore/MuseScore/issues/21148
+            QQuickWindow* w = dynamic_cast<QQuickWindow*>(obj);
+            w->setVisible(true);
+            
+            
+            QObject::connect(engine, &QQmlEngine::warnings, [](const QList<QQmlError>& warnings) {
+                for (const QQmlError& e : warnings) {
+                    LOGE() << "error: " << e.toString().toStdString() << "\n";
+                }
+            });
 #if defined(Q_OS_IOS)
-    aTimer.Split(std::string("Done connecting."));
+            aTimer.Split(std::string("Done connecting."));
 #endif
+            startupScenario()->runAfterSplashScreen();
+            haveFinalized = true;
+        };
+
+        muse::async::Promise<Ret> promise = startupScenario()->runOnSplashScreen();
+        promise.onResolve(nullptr, [finalizeStartup](Ret) {
+            finalizeStartup();
+        });
+    }, Qt::QueuedConnection);
 
     // ====================================================
     // Load Main qml
@@ -300,7 +330,7 @@ void GuiApp::finish()
     PROFILER_PRINT;
 
 // Wait Thread Poll
-#ifndef Q_OS_WASM
+#ifdef QT_CONCURRENT_SUPPORTED
     QThreadPool* globalThreadPool = QThreadPool::globalInstance();
     if (globalThreadPool) {
         LOGI() << "activeThreadCount: " << globalThreadPool->activeThreadCount();

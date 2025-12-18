@@ -51,6 +51,7 @@
 #include "engraving/dom/gradualtempochange.h"
 #include "engraving/dom/guitarbend.h"
 #include "engraving/dom/hairpin.h"
+#include "engraving/dom/hammeronpulloff.h"
 #include "engraving/dom/harppedaldiagram.h"
 #include "engraving/dom/instrchange.h"
 #include "engraving/dom/jump.h"
@@ -89,6 +90,8 @@
 using namespace mu;
 using namespace mu::palette;
 using namespace mu::engraving;
+
+static const qreal FRAME_MAG = 1.25;
 
 // Default wrapper...
 template<class C>
@@ -166,6 +169,7 @@ PaletteTreePtr PaletteCreator::newMasterPaletteTree()
     tree->append(newFretboardDiagramPalette());
     tree->append(newAccordionPalette());
     tree->append(newBagpipeEmbellishmentPalette());
+    tree->append(newHandbellsPalette());
     tree->append(newBeamPalette());
     tree->append(newLinesPalette());
 
@@ -199,12 +203,12 @@ PaletteTreePtr PaletteCreator::newDefaultPaletteTree()
     defaultPalette->append(newHarpPalette());
     defaultPalette->append(newGuitarPalette(true));
     defaultPalette->append(newFingeringPalette(true));
-    defaultPalette->append(newFretboardDiagramPalette());
+    defaultPalette->append(newFretboardDiagramPalette(true));
     defaultPalette->append(newAccordionPalette());
     defaultPalette->append(newBagpipeEmbellishmentPalette());
+    defaultPalette->append(newHandbellsPalette(true));
     defaultPalette->append(newBeamPalette());
     defaultPalette->append(newLinesPalette(true));
-
     return defaultPalette;
 }
 
@@ -258,9 +262,9 @@ PalettePtr PaletteCreator::newDynamicsPalette(bool defaultPalette)
 
     static const std::vector<HairpinType> hairpins {
         HairpinType::CRESC_LINE,
-        HairpinType::DECRESC_LINE,
+        HairpinType::DIM_LINE,
         HairpinType::CRESC_HAIRPIN,
-        HairpinType::DECRESC_HAIRPIN,
+        HairpinType::DIM_HAIRPIN,
     };
 
     const qreal w = gpaletteScore->style().spatium() * 8;
@@ -269,8 +273,8 @@ PalettePtr PaletteCreator::newDynamicsPalette(bool defaultPalette)
         auto hairpin = Factory::makeHairpin(gpaletteScore->dummy());
         hairpin->setHairpinType(hairpinType);
         hairpin->setLen(w);
-        qreal mag = (hairpinType == HairpinType::CRESC_LINE || hairpinType == HairpinType::DECRESC_LINE) ? 1 : 0.9;
-        const QPointF offset = (hairpinType == HairpinType::CRESC_LINE || hairpinType == HairpinType::DECRESC_LINE)
+        qreal mag = (hairpinType == HairpinType::CRESC_LINE || hairpinType == HairpinType::DIM_LINE) ? 1 : 0.9;
+        const QPointF offset = (hairpinType == HairpinType::CRESC_LINE || hairpinType == HairpinType::DIM_LINE)
                                ? QPointF(1, 0.25) : QPointF(0, 0);
         sp->appendElement(hairpin, hairpin->subtypeUserName(), mag, offset);
     }
@@ -412,7 +416,7 @@ PalettePtr PaletteCreator::newRepeatsPalette(bool defaultPalette)
     }
 
     const std::vector<MarkerType> defaultMarkers = {
-        MarkerType::SEGNO, MarkerType::CODA, MarkerType::FINE, MarkerType::TOCODA
+        MarkerType::SEGNO, MarkerType::CODA, MarkerType::FINE, MarkerType::TOCODA, MarkerType::TOCODASYM
     };
 
     const std::vector<MarkerType> allMarkers = {
@@ -558,15 +562,15 @@ PalettePtr PaletteCreator::newLayoutPalette(bool defaultPalette)
     for (SpacerType spacerType : spacers) {
         auto spacer = Factory::makeSpacer(gpaletteScore->dummy()->measure());
         spacer->setSpacerType(spacerType);
-        spacer->setGap(Millimetre(3 * gpaletteScore->style().spatium()));
+        spacer->setGap(Spatium(3));
         PaletteCellPtr cell = sp->appendElement(spacer, spacer->subtypeUserName());
         cell->mag = .7;
     }
 
-    sp->appendActionIcon(ActionIconType::VFRAME, "insert-vbox");
-    sp->appendActionIcon(ActionIconType::HFRAME, "insert-hbox");
-    sp->appendActionIcon(ActionIconType::TFRAME, "insert-textframe");
-    sp->appendActionIcon(ActionIconType::FFRAME, "insert-fretframe");
+    sp->appendActionIcon(ActionIconType::VFRAME, "insert-vbox", FRAME_MAG);
+    sp->appendActionIcon(ActionIconType::HFRAME, "insert-hbox", FRAME_MAG);
+    sp->appendActionIcon(ActionIconType::TFRAME, "insert-textframe", FRAME_MAG);
+    sp->appendActionIcon(ActionIconType::FFRAME, "insert-fretframe", FRAME_MAG);
     sp->appendActionIcon(ActionIconType::STAFF_TYPE_CHANGE, "insert-staff-type-change");
     sp->appendActionIcon(ActionIconType::MEASURE, "insert-measure");
 
@@ -802,9 +806,12 @@ PalettePtr PaletteCreator::newOrnamentsPalette(bool defaultPalette)
         SymId::ornamentTurn,
         SymId::ornamentTurnInverted,
         SymId::ornamentTurnSlash,
+        SymId::ornamentTurnUp,
+        SymId::ornamentTurnUpS,
         SymId::ornamentTrill,
         SymId::ornamentShortTrill,
         SymId::ornamentMordent,
+        SymId::ornamentHaydn,
         SymId::ornamentTremblement,
         SymId::ornamentPrallMordent,
         SymId::ornamentUpPrall,
@@ -1147,9 +1154,9 @@ PalettePtr PaletteCreator::newLinesPalette(bool defaultPalette)
 
     static const std::vector<HairpinType> hairpins {
         HairpinType::CRESC_HAIRPIN,
-        HairpinType::DECRESC_HAIRPIN,
+        HairpinType::DIM_HAIRPIN,
         HairpinType::CRESC_LINE,
-        HairpinType::DECRESC_LINE
+        HairpinType::DIM_LINE
     };
 
     for (HairpinType hairpinType : hairpins) {
@@ -1687,7 +1694,7 @@ PalettePtr PaletteCreator::newTimePalette(bool defaultPalette)
     return sp;
 }
 
-PalettePtr PaletteCreator::newFretboardDiagramPalette()
+PalettePtr PaletteCreator::newFretboardDiagramPalette(bool defaultPalette)
 {
     PalettePtr sp = std::make_shared<Palette>(Palette::Type::FretboardDiagram);
     sp->setName(QT_TRANSLATE_NOOP("palette", "Fretboard diagrams"));
@@ -1696,45 +1703,57 @@ PalettePtr PaletteCreator::newFretboardDiagramPalette()
     sp->setVisible(false);
 
     struct FretDiagramInfo {
-        String diagram;
         String harmony;
         muse::TranslatableString userName;
     };
 
     static const std::vector<FretDiagramInfo> fretboardDiagrams = {
-        { u"X32O1O", u"C",  muse::TranslatableString("palette", "C") },
-        { u"X-554-", u"Cm", muse::TranslatableString("palette", "Cm") },
-        { u"X3231O", u"C7", muse::TranslatableString("palette", "C7") },
+        { u"",  muse::TranslatableString("palette", "Blank") },
 
-        { u"XXO232", u"D",  muse::TranslatableString("palette", "D") },
-        { u"XXO231", u"Dm", muse::TranslatableString("palette", "Dm") },
-        { u"XXO212", u"D7", muse::TranslatableString("palette", "D7") },
+        { u"C",  muse::TranslatableString("palette", "C") },
+        { u"Cm", muse::TranslatableString("palette", "Cm") },
+        { u"C7", muse::TranslatableString("palette", "C7") },
 
-        { u"O221OO", u"E",  muse::TranslatableString("palette", "E") },
-        { u"O22OOO", u"Em", muse::TranslatableString("palette", "Em") },
-        { u"O2O1OO", u"E7", muse::TranslatableString("palette", "E7") },
+        { u"D",  muse::TranslatableString("palette", "D") },
+        { u"Dm", muse::TranslatableString("palette", "Dm") },
+        { u"D7", muse::TranslatableString("palette", "D7") },
 
-        { u"-332--", u"F",  muse::TranslatableString("palette", "F") },
-        { u"-33---", u"Fm", muse::TranslatableString("palette", "Fm") },
-        { u"-3-2--", u"F7", muse::TranslatableString("palette", "F7") },
+        { u"E",  muse::TranslatableString("palette", "E") },
+        { u"Em", muse::TranslatableString("palette", "Em") },
+        { u"E7", muse::TranslatableString("palette", "E7") },
 
-        { u"32OOO3", u"G",  muse::TranslatableString("palette", "G") },
-        { u"-55---", u"Gm", muse::TranslatableString("palette", "Gm") },
-        { u"32OOO1", u"G7", muse::TranslatableString("palette", "G7") },
+        { u"F",  muse::TranslatableString("palette", "F") },
+        { u"Fm", muse::TranslatableString("palette", "Fm") },
+        { u"F7", muse::TranslatableString("palette", "F7") },
 
-        { u"XO222O", u"A",  muse::TranslatableString("palette", "A") },
-        { u"XO221O", u"Am", muse::TranslatableString("palette", "Am") },
-        { u"XO2O2O", u"A7", muse::TranslatableString("palette", "A7") },
+        { u"G",  muse::TranslatableString("palette", "G") },
+        { u"Gm", muse::TranslatableString("palette", "Gm") },
+        { u"G7", muse::TranslatableString("palette", "G7") },
 
-        { u"X-444-", u"B",  muse::TranslatableString("palette", "B") },
-        { u"X-443-", u"Bm", muse::TranslatableString("palette", "Bm") },
-        { u"X212O2", u"B7", muse::TranslatableString("palette", "B7") }
+        { u"A",  muse::TranslatableString("palette", "A") },
+        { u"Am", muse::TranslatableString("palette", "Am") },
+        { u"A7", muse::TranslatableString("palette", "A7") },
+
+        { u"B",  muse::TranslatableString("palette", "B") },
+        { u"Bm", muse::TranslatableString("palette", "Bm") },
+        { u"B7", muse::TranslatableString("palette", "B7") }
     };
 
     for (const FretDiagramInfo& fretboardDiagram : fretboardDiagrams) {
-        auto fret = FretDiagram::createFromString(gpaletteScore, fretboardDiagram.diagram);
-        fret->setHarmony(fretboardDiagram.harmony);
+        auto fret = Factory::makeFretDiagram(gpaletteScore->dummy()->segment());
+
+        if (fretboardDiagram.harmony.empty()) {
+            fret->clear();
+        } else {
+            fret->setHarmony(fretboardDiagram.harmony);
+            fret->updateDiagram(fretboardDiagram.harmony);
+        }
+
         sp->appendElement(fret, fretboardDiagram.userName);
+    }
+
+    if (!defaultPalette) {
+        sp->appendActionIcon(ActionIconType::FFRAME, "insert-fretframe", FRAME_MAG);
     }
 
     return sp;
@@ -1819,6 +1838,17 @@ PalettePtr PaletteCreator::newGuitarPalette(bool defaultPalette)
         sp->appendElement(f, QT_TRANSLATE_NOOP("palette", "String number %1"));
     }
 
+    auto lhTapping = Factory::makeTapping(gpaletteScore->dummy()->chord());
+    lhTapping->setHand(TappingHand::LEFT);
+    sp->appendElement(lhTapping, QT_TRANSLATE_NOOP("palette", "Left-hand tapping"), 1.0);
+
+    auto rhTapping = Factory::makeTapping(gpaletteScore->dummy()->chord());
+    rhTapping->setHand(TappingHand::RIGHT);
+    sp->appendElement(rhTapping, QT_TRANSLATE_NOOP("palette", "Right-hand tapping"), 1.0);
+
+    auto hopo = Factory::makeHammerOnPullOff(gpaletteScore->dummy());
+    sp->appendElement(hopo, QT_TRANSLATE_NOOP("palette", "Hammer-on / pull-off"), 0.8);
+
     static const SymIdList luteSymbols {
         SymId::stringsThumbPosition,
         SymId::luteFingeringRHThumb, SymId::luteFingeringRHFirst,
@@ -1850,6 +1880,8 @@ PalettePtr PaletteCreator::newGuitarPalette(bool defaultPalette)
         pta->setTechniqueType(playTechAnnotation.playTechType);
         sp->appendElement(pta, TConv::userName(playTechAnnotation.playTechType), 0.8)->setElementTranslated(true);
     }
+
+    sp->appendActionIcon(ActionIconType::FFRAME, "insert-fretframe", FRAME_MAG);
 
     return sp;
 }
@@ -1971,6 +2003,99 @@ PalettePtr PaletteCreator::newHarpPalette()
     pedalTextDiagram->setIsDiagram(false);
 
     sp->appendElement(pedalTextDiagram, QT_TRANSLATE_NOOP("palette", "Harp pedal text diagram"));
+
+    return sp;
+}
+
+PalettePtr PaletteCreator::newHandbellsPalette(bool defaultPalette)
+{
+    PalettePtr sp = std::make_shared<Palette>(Palette::Type::Handbells);
+    sp->setName(QT_TRANSLATE_NOOP("palette", "Handbells"));
+    sp->setGridSize(42, 25);
+    sp->setDrawGrid(true);
+    sp->setVisible(false);
+
+    static const std::vector<SymId> standardHandbellsArticSymbols {
+        SymId::handbellsMartellato,
+        SymId::handbellsMartellatoLift,
+        SymId::handbellsMalletBellSuspended,
+        SymId::handbellsMalletBellOnTable,
+        SymId::handbellsMalletLft,
+        SymId::handbellsPluckLift,
+        SymId::handbellsGyro,
+    };
+
+    static const std::vector<ArticulationTextType> handbellsTextTypes {
+        ArticulationTextType::TD,
+        ArticulationTextType::BD,
+        ArticulationTextType::RT,
+        ArticulationTextType::PL,
+        ArticulationTextType::SB,
+        ArticulationTextType::VIB,
+    };
+
+    struct HandbellsPlayTechInfo {
+        const char* xmlText;
+        PlayingTechniqueType playTechType;
+    };
+
+    static const std::vector<HandbellsPlayTechInfo> standardHandbellsPlayTech {
+        { "R", PlayingTechniqueType::HandbellsR, },
+        { "LV", PlayingTechniqueType::HandbellsLV, },
+        { "<sym>handbellsDamp3</sym>",   PlayingTechniqueType::HandbellsDamp, },
+        { "<sym>handbellsSwingUp</sym>",   PlayingTechniqueType::HandbellsSwingUp, },
+        { "<sym>handbellsSwingDown</sym>",   PlayingTechniqueType::HandbellsSwingDown, },
+        { "<sym>handbellsEcho1</sym>",   PlayingTechniqueType::HandbellsEcho1, },
+    };
+
+    for (SymId symId : standardHandbellsArticSymbols) {
+        auto artic = Factory::makeArticulation(gpaletteScore->dummy()->chord());
+        artic->setSymId(symId);
+        sp->appendElement(artic, artic->subtypeUserName(),
+                          symId == SymId::handbellsGyro ? 0.7 : symId == SymId::handbellsMalletBellSuspended ? 1.4 : 1.0);
+    }
+
+    for (ArticulationTextType textType : handbellsTextTypes) {
+        auto artic = Factory::makeArticulation(gpaletteScore->dummy()->chord());
+        artic->setTextType(textType);
+        sp->appendElement(artic, artic->subtypeUserName(), 1.1);
+    }
+
+    for (const HandbellsPlayTechInfo& info : standardHandbellsPlayTech) {
+        auto element = makeElement<PlayTechAnnotation>(gpaletteScore);
+        element->setProperty(Pid::TEXT_STYLE, TextStyleType::ARTICULATION);
+        element->setXmlText(info.xmlText);
+        element->setTechniqueType(info.playTechType);
+        sp->appendElement(element, TConv::userName(info.playTechType),
+                          info.playTechType == PlayingTechniqueType::HandbellsLV
+                          || info.playTechType == PlayingTechniqueType::HandbellsR ? 1.1 : 1.0);
+    }
+
+    if (!defaultPalette) {
+        static const std::vector<SymId> additionalHandbellsArticSymbols {
+            SymId::handbellsHandMartellato,
+            SymId::handbellsMutedMartellato,
+        };
+
+        for (SymId symId : additionalHandbellsArticSymbols) {
+            auto artic = Factory::makeArticulation(gpaletteScore->dummy()->chord());
+            artic->setSymId(symId);
+            sp->appendElement(artic, artic->subtypeUserName());
+        }
+
+        static const std::vector<HandbellsPlayTechInfo> additionalHandbellsPlayTech {
+            { "<sym>handbellsSwing</sym>",   PlayingTechniqueType::HandbellsSwing, },
+            { "<sym>handbellsEcho2</sym>",   PlayingTechniqueType::HandbellsEcho2, },
+        };
+
+        for (const HandbellsPlayTechInfo& info : additionalHandbellsPlayTech) {
+            auto element = makeElement<PlayTechAnnotation>(gpaletteScore);
+            element->setProperty(Pid::TEXT_STYLE, TextStyleType::ARTICULATION);
+            element->setXmlText(info.xmlText);
+            element->setTechniqueType(info.playTechType);
+            sp->appendElement(element, TConv::userName(info.playTechType));
+        }
+    }
 
     return sp;
 }

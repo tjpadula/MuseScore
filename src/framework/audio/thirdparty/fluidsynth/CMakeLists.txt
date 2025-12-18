@@ -25,6 +25,8 @@ set (MODULE_DEF
 if (IOS)
 	set(LIBOGG_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libogg.a")
 	set(LIBVORBIS_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libvorbis.a")
+    message(STATUS "Set up libogg.a: ${LIBOGG_LIBRARY}")
+    message(STATUS "Set up libvorbis.a: ${LIBVORBIS_LIBRARY}")
 endif (IOS)
 
 set(MODULE_LINK
@@ -51,3 +53,4 @@ target_no_warning(${MODULE} -WMSVC-no-assignment-within-conditional-expression)
 target_no_warning(${MODULE} -WMSVC-no-hides-previous)
 target_no_warning(${MODULE} -WMSVC-no-undefined-assuming-extern)
 target_no_warning(${MODULE} -WMSVC-named-type-definition-in-parentheses)
+target_no_warning(${MODULE} -WMSVC-no-different-enum-types)

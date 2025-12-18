@@ -21,6 +21,7 @@
  */
 #include "dummyelement.h"
 
+#include "dom/barline.h"
 #include "dom/factory.h"
 #include "dom/score.h"
 #include "dom/page.h"

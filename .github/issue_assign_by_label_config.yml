@@ -1,15 +1,15 @@
 crash:
-- RomanPudashkin
-- DmitryArefiev
-- zacjansheski
+  - RomanPudashkin
+  - DmitryArefiev
+  - zacjansheski
 engraving:
-- oktophonie
+  - its-not-nice
 VST:
-- RomanPudashkin
+  - RomanPudashkin
 "MuseSounds":
-- matthewreadbass
+  - matthewreadbass
 playback:
-- RomanPudashkin
+  - RomanPudashkin
 cloud:
-- shoogle
-- cbjeukendrup
+  - shoogle
+  - cbjeukendrup

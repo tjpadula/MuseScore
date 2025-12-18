@@ -26,7 +26,9 @@
 #include "dom/chord.h"
 #include "dom/lyrics.h"
 #include "dom/measure.h"
+#include "dom/measurenumber.h"
 #include "dom/note.h"
+#include "dom/parenthesis.h"
 #include "dom/segment.h"
 #include "dom/staff.h"
 #include "dom/stafflines.h"
@@ -191,6 +193,11 @@ std::vector<TextBase*> MaskLayout::collectAllSystemText(const System* system)
         if (!mb->isMeasure()) {
             continue;
         }
+        for (const MStaff* mstaff : toMeasure(mb)->mstaves()) {
+            if (MeasureNumber* measureNumber = mstaff->measureNumber()) {
+                allText.push_back(measureNumber);
+            }
+        }
         for (const Segment& s : toMeasure(mb)->segments()) {
             if (!s.isType(Segment::CHORD_REST_OR_TIME_TICK_TYPE) || !s.enabled()) {
                 continue;
@@ -217,7 +224,8 @@ std::vector<TextBase*> MaskLayout::collectAllSystemText(const System* system)
     }
 
     for (SpannerSegment* spannerSegment : system->spannerSegments()) {
-        if (!spannerSegment->isTextLineBaseSegment() || !system->staff(spannerSegment->staffIdx())->show()) {
+        if (!spannerSegment->isTextLineBaseSegment() || !system->staff(spannerSegment->staffIdx())->show()
+            || !spannerSegment->getProperty(Pid::VISIBLE).toBool()) {
             continue;
         }
         TextLineBaseSegment* textLineBaseSegment = static_cast<TextLineBaseSegment*>(spannerSegment);
@@ -251,7 +259,17 @@ void MaskLayout::maskTABStringLinesForFrets(StaffLines* staffLines, const Layout
     auto maskFret = [&mask, linesThrough, padding, staffLinesPos] (Chord* chord) {
         for (Note* note : chord->notes()) {
             if (note->visible() && !note->shouldHideFret() && (!linesThrough || note->fretConflict())) {
-                RectF noteShape = note->ldata()->bbox().translated(note->pagePos());
+                Shape noteShape = note->ldata()->bbox();
+                const Parenthesis* leftParen = note->leftParen();
+                if (leftParen && leftParen->addToSkyline()) {
+                    noteShape.add(leftParen->ldata()->bbox().translated(leftParen->pos()));
+                }
+                const Parenthesis* rightParen = note->rightParen();
+                if (rightParen && rightParen->addToSkyline()) {
+                    noteShape.add(rightParen->ldata()->bbox().translated(rightParen->pos()));
+                }
+                noteShape.translate(note->pagePos());
+
                 noteShape.pad(padding);
                 mask.add(noteShape.translated(-staffLinesPos));
             }

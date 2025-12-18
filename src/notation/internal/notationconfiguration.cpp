@@ -64,6 +64,7 @@ static const Settings::Key KEYBOARD_ZOOM_PRECISION(module_name, "ui/canvas/zoomP
 static const Settings::Key MOUSE_ZOOM_PRECISION(module_name, "ui/canvas/zoomPrecisionMouse");
 
 static const Settings::Key USER_STYLES_PATH(module_name, "application/paths/myStyles");
+static const Settings::Key USER_MUSIC_FONTS_PATH(module_name, "application/paths/myMusicFonts");
 
 static const Settings::Key DEFAULT_NOTE_INPUT_METHOD(module_name, "score/defaultInputMethod");
 
@@ -71,8 +72,8 @@ static const Settings::Key ADD_ACCIDENTAL_ARTICULATIONS_DOTS_TO_NEXT_NOTE_ENTERE
                                                                                   "score/addAccidentalDotsArticulationsToNextNoteEntered");
 
 static const Settings::Key IS_MIDI_INPUT_ENABLED(module_name, "io/midi/enableInput");
-static const Settings::Key START_NOTE_INPUT_AT_SELECTION_WHEN_PRESSING_MIDI_KEY(module_name,
-                                                                                "score/startNoteInputAtSelectionWhenPressingMidiKey");
+static const Settings::Key START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY(module_name,
+                                                                                         "score/startNoteInputAtSelectionWhenPressingMidiKey");
 static const Settings::Key USE_MIDI_INPUT_WRITTEN_PITCH(module_name, "io/midi/useWrittenPitch");
 static const Settings::Key IS_AUTOMATICALLY_PAN_ENABLED(module_name, "application/playback/panPlayback");
 static const Settings::Key PLAYBACK_SMOOTH_PANNING(module_name, "application/playback/smoothPan");
@@ -80,6 +81,7 @@ static const Settings::Key IS_PLAY_REPEATS_ENABLED(module_name, "application/pla
 static const Settings::Key IS_PLAY_CHORD_SYMBOLS_ENABLED(module_name, "application/playback/playChordSymbols");
 static const Settings::Key IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED(module_name,
                                                                               "application/playback/playPreviewNotesInInputByDuration");
+static const Settings::Key PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS(module_name, "application/playback/playPreviewNotesWithScoreDynamics");
 static const Settings::Key IS_METRONOME_ENABLED(module_name, "application/playback/metronomeEnabled");
 static const Settings::Key IS_COUNT_IN_ENABLED(module_name, "application/playback/countInEnabled");
 
@@ -91,6 +93,8 @@ static const Settings::Key IS_LIMIT_CANVAS_SCROLL_AREA_KEY(module_name, "ui/canv
 static const Settings::Key COLOR_NOTES_OUTSIDE_OF_USABLE_PITCH_RANGE(module_name, "score/note/warnPitchRange");
 static const Settings::Key WARN_GUITAR_BENDS(module_name, "score/note/warnGuitarBends");
 static const Settings::Key REALTIME_DELAY(module_name, "io/midi/realtimeDelay");
+static const Settings::Key USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT(module_name,
+                                                                            "io/midi/useMidiVelocityAndDurationDuringNoteInput");
 static const Settings::Key NOTE_DEFAULT_PLAY_DURATION(module_name, "score/note/defaultPlayDuration");
 
 static const Settings::Key FIRST_SCORE_ORDER_LIST_KEY(module_name, "application/paths/scoreOrderList1");
@@ -137,8 +141,7 @@ void NotationConfiguration::init()
         m_backgroundChanged.notify();
     });
 
-    uiConfiguration()->currentThemeChanged().onNotify(this, [this]()
-    {
+    uiConfiguration()->currentThemeChanged().onNotify(this, [this]() {
         m_backgroundChanged.notify();
     });
 
@@ -227,6 +230,11 @@ void NotationConfiguration::init()
 #endif
     }
 
+    settings()->setDefaultValue(USER_MUSIC_FONTS_PATH, Val(io::path_t {}));
+    settings()->valueChanged(USER_MUSIC_FONTS_PATH).onReceive(this, [this](const Val& val) {
+        m_userMusicFontsPathChanged.send(val.toString());
+    });
+
     settings()->setDefaultValue(DEFAULT_NOTE_INPUT_METHOD, Val(BY_NOTE_NAME_INPUT_METHOD));
     settings()->valueChanged(DEFAULT_NOTE_INPUT_METHOD).onReceive(this, [this](const Val&) {
         m_defaultNoteInputMethodChanged.notify();
@@ -247,14 +255,19 @@ void NotationConfiguration::init()
         m_isMidiInputEnabledChanged.notify();
     });
 
-    settings()->setDefaultValue(START_NOTE_INPUT_AT_SELECTION_WHEN_PRESSING_MIDI_KEY, Val(true));
-    settings()->valueChanged(START_NOTE_INPUT_AT_SELECTION_WHEN_PRESSING_MIDI_KEY).onReceive(this, [this](const Val&) {
-        m_startNoteInputAtSelectionWhenPressingMidiKeyChanged.notify();
+    settings()->setDefaultValue(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY, Val(true));
+    settings()->valueChanged(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY).onReceive(this, [this](const Val&) {
+        m_startNoteInputAtSelectedNoteRestWhenPressingMidiKeyChanged.notify();
     });
 
     settings()->setDefaultValue(IS_AUTOMATICALLY_PAN_ENABLED, Val(true));
     settings()->setDefaultValue(IS_PLAY_REPEATS_ENABLED, Val(true));
+
     settings()->setDefaultValue(IS_METRONOME_ENABLED, Val(false));
+    settings()->valueChanged(IS_METRONOME_ENABLED).onReceive(this, [this](const Val&) {
+        m_isMetronomeEnabledChanged.notify();
+    });
+
     settings()->setDefaultValue(IS_COUNT_IN_ENABLED, Val(false));
 
     settings()->setDefaultValue(PLAYBACK_SMOOTH_PANNING, Val(false));
@@ -269,6 +282,11 @@ void NotationConfiguration::init()
     settings()->setDefaultValue(IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED, Val(true));
     settings()->valueChanged(IS_PLAY_PREVIEW_NOTES_IN_INPUT_BY_DURATION_ENABLED).onReceive(nullptr, [this](const Val&) {
         m_isPlayNotesPreviewInInputByDurationChanged.notify();
+    });
+
+    settings()->setDefaultValue(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS, Val(true));
+    settings()->valueChanged(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS).onReceive(nullptr, [this](const Val&) {
+        m_playPreviewNotesWithScoreDynamicsChanged.notify();
     });
 
     settings()->setDefaultValue(IS_CANVAS_ORIENTATION_VERTICAL_KEY, Val(false));
@@ -293,6 +311,12 @@ void NotationConfiguration::init()
     settings()->valueChanged(REALTIME_DELAY).onReceive(this, [this](const Val& val) {
         m_delayBetweenNotesInRealTimeModeMillisecondsChanged.send(val.toInt());
     });
+
+    settings()->setDefaultValue(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT, Val(true));
+    settings()->valueChanged(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT).onReceive(this, [this](const Val& val) {
+        m_useMidiVelocityAndDurationDuringNoteInputChanged.send(val.toBool());
+    });
+
     settings()->setDefaultValue(NOTE_DEFAULT_PLAY_DURATION, Val(500));
     settings()->valueChanged(NOTE_DEFAULT_PLAY_DURATION).onReceive(this, [this](const Val& val) {
         m_notePlayDurationMillisecondsChanged.send(val.toInt());
@@ -303,8 +327,7 @@ void NotationConfiguration::init()
         m_styleFileImportPathChanged.send(val.toString());
     });
 
-    settings()->setDefaultValue(FIRST_SCORE_ORDER_LIST_KEY,
-                                Val(globalConfiguration()->appDataPath().toStdString() + "instruments/orders.xml"));
+    settings()->setDefaultValue(FIRST_SCORE_ORDER_LIST_KEY, Val(":/engraving/instruments/orders.xml"));
     settings()->valueChanged(FIRST_SCORE_ORDER_LIST_KEY).onReceive(nullptr, [this](const Val&) {
         m_scoreOrderListPathsChanged.notify();
     });
@@ -381,7 +404,6 @@ void NotationConfiguration::init()
 
     mu::engraving::MScore::warnPitchRange = colorNotesOutsideOfUsablePitchRange();
     mu::engraving::MScore::warnGuitarBends = warnGuitarBends();
-    mu::engraving::MScore::defaultPlayDuration = notePlayDurationMilliseconds();
 
     mu::engraving::MScore::setHRaster(DEFAULT_GRID_SIZE_SPATIUM);
     mu::engraving::MScore::setVRaster(DEFAULT_GRID_SIZE_SPATIUM);
@@ -389,6 +411,15 @@ void NotationConfiguration::init()
     context()->currentProjectChanged().onNotify(this, [this]() {
         resetStyleDialogPageIndices();
     });
+}
+
+QColor NotationConfiguration::notationColor() const
+{
+    if (engravingConfiguration()->scoreInversionEnabled()) {
+        return engravingConfiguration()->scoreInversionColor().toQColor();
+    }
+
+    return engravingConfiguration()->defaultColor().toQColor();
 }
 
 QColor NotationConfiguration::backgroundColor() const
@@ -588,6 +619,11 @@ QColor NotationConfiguration::selectionColor(engraving::voice_idx_t voiceIndex) 
     return engravingConfiguration()->selectionColor(voiceIndex).toQColor();
 }
 
+QColor NotationConfiguration::highlightSelectionColor(engraving::voice_idx_t voiceIndex) const
+{
+    return engravingConfiguration()->highlightSelectionColor(voiceIndex).toQColor();
+}
+
 QColor NotationConfiguration::dropRectColor() const
 {
     QColor color = selectionColor();
@@ -742,6 +778,21 @@ async::Channel<muse::io::path_t> NotationConfiguration::partStyleFilePathChanged
     return engravingConfiguration()->partStyleFilePathChanged();
 }
 
+muse::io::path_t NotationConfiguration::userMusicFontsPath() const
+{
+    return settings()->value(USER_MUSIC_FONTS_PATH).toPath();
+}
+
+void NotationConfiguration::setUserMusicFontsPath(const muse::io::path_t& path)
+{
+    settings()->setSharedValue(USER_MUSIC_FONTS_PATH, Val(path));
+}
+
+muse::async::Channel<muse::io::path_t> NotationConfiguration::userMusicFontsPathChanged() const
+{
+    return m_userMusicFontsPathChanged;
+}
+
 NoteInputMethod NotationConfiguration::defaultNoteInputMethod() const
 {
     std::string str = settings()->value(DEFAULT_NOTE_INPUT_METHOD).toString();
@@ -789,19 +840,19 @@ async::Notification NotationConfiguration::isMidiInputEnabledChanged() const
     return m_isMidiInputEnabledChanged;
 }
 
-bool NotationConfiguration::startNoteInputAtSelectionWhenPressingMidiKey() const
+bool NotationConfiguration::startNoteInputAtSelectedNoteRestWhenPressingMidiKey() const
 {
-    return settings()->value(START_NOTE_INPUT_AT_SELECTION_WHEN_PRESSING_MIDI_KEY).toBool();
+    return settings()->value(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY).toBool();
 }
 
-void NotationConfiguration::setStartNoteInputAtSelectionWhenPressingMidiKey(bool value)
+void NotationConfiguration::setStartNoteInputAtSelectedNoteRestWhenPressingMidiKey(bool value)
 {
-    settings()->setSharedValue(START_NOTE_INPUT_AT_SELECTION_WHEN_PRESSING_MIDI_KEY, Val(value));
+    settings()->setSharedValue(START_NOTE_INPUT_AT_SELECTED_NOTE_REST_WHEN_PRESSING_MIDI_KEY, Val(value));
 }
 
-async::Notification NotationConfiguration::startNoteInputAtSelectionWhenPressingMidiKeyChanged() const
+async::Notification NotationConfiguration::startNoteInputAtSelectedNoteRestWhenPressingMidiKeyChanged() const
 {
-    return m_startNoteInputAtSelectionWhenPressingMidiKeyChanged;
+    return m_startNoteInputAtSelectedNoteRestWhenPressingMidiKeyChanged;
 }
 
 bool NotationConfiguration::isAutomaticallyPanEnabled() const
@@ -870,6 +921,21 @@ muse::async::Notification NotationConfiguration::isPlayPreviewNotesInInputByDura
     return m_isPlayNotesPreviewInInputByDurationChanged;
 }
 
+bool NotationConfiguration::playPreviewNotesWithScoreDynamics() const
+{
+    return settings()->value(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS).toBool();
+}
+
+void NotationConfiguration::setPlayPreviewNotesWithScoreDynamics(bool use)
+{
+    settings()->setSharedValue(PLAY_PREVIEW_NOTES_WITH_SCORE_DYNAMICS, Val(use));
+}
+
+muse::async::Notification NotationConfiguration::playPreviewNotesWithScoreDynamicsChanged() const
+{
+    return m_playPreviewNotesWithScoreDynamicsChanged;
+}
+
 bool NotationConfiguration::isMetronomeEnabled() const
 {
     return settings()->value(IS_METRONOME_ENABLED).toBool();
@@ -878,6 +944,11 @@ bool NotationConfiguration::isMetronomeEnabled() const
 void NotationConfiguration::setIsMetronomeEnabled(bool enabled)
 {
     settings()->setSharedValue(IS_METRONOME_ENABLED, Val(enabled));
+}
+
+muse::async::Notification NotationConfiguration::isMetronomeEnabledChanged() const
+{
+    return m_isMetronomeEnabledChanged;
 }
 
 bool NotationConfiguration::isCountInEnabled() const
@@ -980,6 +1051,21 @@ async::Channel<int> NotationConfiguration::delayBetweenNotesInRealTimeModeMillis
     return m_delayBetweenNotesInRealTimeModeMillisecondsChanged;
 }
 
+bool NotationConfiguration::useMidiVelocityAndDurationDuringNoteInput() const
+{
+    return settings()->value(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT).toBool();
+}
+
+void NotationConfiguration::setUseMidiVelocityAndDurationDuringNoteInput(bool use)
+{
+    settings()->setSharedValue(USE_MIDI_VELOCITY_AND_DURATION_DURING_NOTE_INPUT, Val(use));
+}
+
+muse::async::Channel<bool> NotationConfiguration::useMidiVelocityAndDurationDuringNoteInputChanged() const
+{
+    return m_useMidiVelocityAndDurationDuringNoteInputChanged;
+}
+
 int NotationConfiguration::notePlayDurationMilliseconds() const
 {
     return settings()->value(NOTE_DEFAULT_PLAY_DURATION).toInt();
@@ -987,7 +1073,6 @@ int NotationConfiguration::notePlayDurationMilliseconds() const
 
 void NotationConfiguration::setNotePlayDurationMilliseconds(int durationMs)
 {
-    mu::engraving::MScore::defaultPlayDuration = durationMs;
     settings()->setSharedValue(NOTE_DEFAULT_PLAY_DURATION, Val(durationMs));
 }
 
@@ -1008,7 +1093,7 @@ void NotationConfiguration::setTestModeEnabled(std::optional<bool> enabled)
 
 muse::io::path_t NotationConfiguration::instrumentListPath() const
 {
-    return globalConfiguration()->appDataPath() + "instruments/instruments.xml";
+    return ":/engraving/instruments/instruments.xml";
 }
 
 io::paths_t NotationConfiguration::scoreOrderListPaths() const
@@ -1055,7 +1140,7 @@ void NotationConfiguration::setUserScoreOrderListPaths(const io::paths_t& paths)
 
 muse::io::path_t NotationConfiguration::stringTuningsPresetsPath() const
 {
-    return globalConfiguration()->appDataPath() + "instruments/string_tunings_presets.json";
+    return ":/engraving/instruments/string_tunings_presets.json";
 }
 
 bool NotationConfiguration::isSnappedToGrid(muse::Orientation gridOrientation) const

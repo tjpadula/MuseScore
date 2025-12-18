@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_NOTATIONVIEWINPUTCONTROLLER_H
-#define MU_NOTATION_NOTATIONVIEWINPUTCONTROLLER_H
+#pragma once
 
 #include <QtEvents>
 
@@ -39,6 +38,8 @@
 #include "playback/iplaybackcontroller.h"
 
 #include "global/iglobalconfiguration.h"
+#include "ui/idragcontroller.h"
+#include "ui/iuiconfiguration.h"
 
 class QQuickItem;
 
@@ -73,9 +74,9 @@ public:
     virtual void showContextMenu(const ElementType& elementType, const QPointF& pos) = 0;
     virtual void hideContextMenu() = 0;
 
-    virtual void showElementPopup(const ElementType& elementType, const muse::RectF& elementRect) = 0;
+    virtual void showElementPopup(const ElementType& elementType) = 0;
     virtual void hideElementPopup(const ElementType& elementType = ElementType::INVALID) = 0;
-    virtual void toggleElementPopup(const ElementType& elementType, const muse::RectF& elementRect) = 0;
+    virtual void toggleElementPopup(const ElementType& elementType) = 0;
 
     virtual bool elementPopupIsOpen(const ElementType& elementType) const = 0;
 
@@ -93,6 +94,8 @@ public:
     muse::Inject<playback::IPlaybackController> playbackController = { this };
     muse::Inject<context::IGlobalContext> globalContext = { this };
     muse::Inject<muse::IGlobalConfiguration> globalConfiguration = { this };
+    muse::Inject<muse::ui::IDragController> dragController = { this };
+    muse::Inject<muse::ui::IUiConfiguration> uiConfiguration = { this };
 
 public:
     NotationViewInputController(IControlledView* view, const muse::modularity::ContextPtr& iocCtx);
@@ -180,13 +183,21 @@ private:
         bool isHitGrip = false;
     };
 
-    bool needSelect(const ClickContext& ctx) const;
+    void handleClickInNoteInputMode(QMouseEvent* event);
+    bool mousePress_considerGrip(const ClickContext& ctx); // returns true if event is consumed
+    bool mousePress_considerDragOutgoingElement(const ClickContext& ctx);
+    void mousePress_considerSelect(const ClickContext& ctx);
+    void cycleOverlappingHitElements(const std::vector<EngravingItem*>& hitElements, staff_idx_t hitStaffIndex);
+    bool mousePress_considerDragOutgoingRange(const ClickContext& ctx);
+    bool mousePress_considerStartPasteRangeOnRelease(const ClickContext& ctx);
     void handleLeftClick(const ClickContext& ctx);
     void handleRightClick(const ClickContext& ctx);
     void handleLeftClickRelease(const QPointF& releasePoint);
 
     bool startTextEditingAllowed() const;
     void updateTextCursorPosition();
+
+    bool isAnchorEditingEvent(QKeyEvent* event) const;
 
     bool tryPercussionShortcut(QKeyEvent* event);
 
@@ -204,6 +215,7 @@ private:
         enum DragAction {
             DragOutgoingElement,
             DragOutgoingRange,
+            PasteRangeOnRelease,
             Other,
             Nothing
         } dragAction = Other;
@@ -212,12 +224,19 @@ private:
         muse::PointF logicalBeginPoint;
     } m_mouseDownInfo;
 
-    const mu::engraving::EngravingItem* m_prevHitElement = nullptr;
+    struct DragMoveEvent {
+        QPointF position;
+        Qt::KeyboardModifiers modifiers;
+        Qt::DropAction dropAction = Qt::DropAction::CopyAction;
+        QObject* source = nullptr;
+    };
+    bool dropEvent(const DragMoveEvent& event, const QMimeData* mimeData = nullptr);
+    DragMoveEvent m_lastDragMoveEvent;
+
     const mu::engraving::EngravingItem* m_prevSelectedElement = nullptr;
 
+    bool m_hitElementWasAlreadySingleSelected = false;
+    bool m_shouldSelectOnLeftClickRelease = false;
     bool m_shouldStartEditOnLeftClickRelease = false;
-    bool m_shouldTogglePopupOnLeftClickRelease = false;
 };
 }
-
-#endif // MU_NOTATION_NOTATIONVIEWINPUTCONTROLLER_H

@@ -19,9 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MUSE_UICOMPONENTS_POPUPVIEW_H
-#define MUSE_UICOMPONENTS_POPUPVIEW_H
+#pragma once
 
 #include <QQuickItem>
 #include <QQmlParserStatus>
@@ -46,6 +44,23 @@ class INavigationControl;
 }
 
 namespace muse::uicomponents {
+class PopupPosition
+{
+    Q_GADGET
+
+public:
+    enum Type: int {
+        Left = 0x01,
+        Right = 0x02,
+        Horizontal = 0x03,
+        Bottom = 0x04,
+        Top = 0x08,
+        Vertical = 0x0C,
+    };
+
+    Q_ENUM(Type)
+};
+
 class PopupView : public QObject, public QQmlParserStatus, public Injectable, public async::Asyncable
 {
     Q_OBJECT
@@ -58,6 +73,7 @@ class PopupView : public QObject, public QQmlParserStatus, public Injectable, pu
     Q_PROPERTY(int contentHeight READ contentHeight WRITE setContentHeight NOTIFY contentHeightChanged)
 
     Q_PROPERTY(QWindow * window READ window NOTIFY windowChanged)
+    Q_PROPERTY(QWindow * parentWindow READ parentWindow WRITE setParentWindow NOTIFY parentWindowChanged FINAL)
 
     //! NOTE Local, related parent
     Q_PROPERTY(qreal x READ localX WRITE setLocalX NOTIFY xChanged)
@@ -65,11 +81,13 @@ class PopupView : public QObject, public QQmlParserStatus, public Injectable, pu
 
     Q_PROPERTY(bool showArrow READ showArrow WRITE setShowArrow NOTIFY showArrowChanged)
     Q_PROPERTY(int padding READ padding WRITE setPadding NOTIFY paddingChanged)
-    Q_PROPERTY(Placement placement READ placement WRITE setPlacement NOTIFY placementChanged)
+    Q_PROPERTY(PlacementPolicies placementPolicies READ placementPolicies WRITE setPlacementPolicies NOTIFY placementPoliciesChanged)
 
     Q_PROPERTY(QQuickItem * anchorItem READ anchorItem WRITE setAnchorItem NOTIFY anchorItemChanged)
-    Q_PROPERTY(bool opensUpward READ opensUpward NOTIFY opensUpwardChanged)
+    Q_PROPERTY(PopupPosition::Type popupPosition READ popupPosition WRITE setPopupPosition NOTIFY popupPositionChanged)
+
     Q_PROPERTY(int arrowX READ arrowX WRITE setArrowX NOTIFY arrowXChanged)
+    Q_PROPERTY(int arrowY READ arrowY WRITE setArrowY NOTIFY arrowYChanged)
 
     Q_PROPERTY(bool isOpened READ isOpened NOTIFY isOpenedChanged)
     Q_PROPERTY(OpenPolicies openPolicies READ openPolicies WRITE setOpenPolicies NOTIFY openPoliciesChanged)
@@ -126,12 +144,16 @@ public:
     Q_DECLARE_FLAGS(FocusPolicies, FocusPolicy)
     Q_FLAG(FocusPolicies)
 
-    enum class Placement {
-        Default,
-        PreferBelow,
-        PreferAbove
+    enum class PlacementPolicy {
+        Default = 0x00000000,
+        PreferBelow = 0x00000001,
+        PreferAbove = 0x00000002,
+        PreferLeft = 0x00000004,
+        PreferRight = 0x00000008,
+        IgnoreFit = 0x0000000F,
     };
-    Q_ENUM(Placement)
+    Q_DECLARE_FLAGS(PlacementPolicies, PlacementPolicy)
+    Q_FLAG(PlacementPolicies)
 
     QQuickItem* parentItem() const;
 
@@ -153,13 +175,11 @@ public:
     Q_INVOKABLE void close(bool force = false);
     Q_INVOKABLE void toggleOpened();
 
-    Q_INVOKABLE void setParentWindow(QWindow* window);
-
     Q_INVOKABLE QRectF anchorGeometry() const;
 
     OpenPolicies openPolicies() const;
     ClosePolicies closePolicies() const;
-    Placement placement() const;
+    PlacementPolicies placementPolicies() const;
 
     bool activateParentOnClose() const;
     FocusPolicies focusPolicies() const;
@@ -176,8 +196,9 @@ public:
     bool alwaysOnTop() const;
     QVariantMap ret() const;
 
-    bool opensUpward() const;
+    PopupPosition::Type popupPosition() const;
     int arrowX() const;
+    int arrowY() const;
     int padding() const;
     bool showArrow() const;
     QQuickItem* anchorItem() const;
@@ -196,8 +217,8 @@ public slots:
     void setLocalY(qreal y);
     void setOpenPolicies(muse::uicomponents::PopupView::OpenPolicies openPolicies);
     void setClosePolicies(muse::uicomponents::PopupView::ClosePolicies closePolicies);
-    void setPlacement(muse::uicomponents::PopupView::Placement newPlacement);
-    void setNavigationParentControl(ui::INavigationControl* parentNavigationControl);
+    void setPlacementPolicies(muse::uicomponents::PopupView::PlacementPolicies placementPolicies);
+    void setNavigationParentControl(muse::ui::INavigationControl* parentNavigationControl);
     void setObjectId(QString objectId);
     void setTitle(QString title);
     void setModal(bool modal);
@@ -206,14 +227,15 @@ public slots:
     void setAlwaysOnTop(bool alwaysOnTop);
     void setRet(QVariantMap ret);
 
-    void setOpensUpward(bool opensUpward);
+    void setPopupPosition(PopupPosition::Type position);
     void setArrowX(int arrowX);
+    void setArrowY(int arrowY);
     void setPadding(int padding);
     void setShowArrow(bool showArrow);
     void setAnchorItem(QQuickItem* anchorItem);
 
     void setActivateParentOnClose(bool activateParentOnClose);
-    void setFocusPolicies(const FocusPolicies& policies);
+    void setFocusPolicies(const muse::uicomponents::PopupView::FocusPolicies& policies);
 
 signals:
     void parentItemChanged();
@@ -225,8 +247,8 @@ signals:
     void yChanged(qreal y);
     void openPoliciesChanged(muse::uicomponents::PopupView::OpenPolicies openPolicies);
     void closePoliciesChanged(muse::uicomponents::PopupView::ClosePolicies closePolicies);
-    void placementChanged(muse::uicomponents::PopupView::Placement placement);
-    void navigationParentControlChanged(ui::INavigationControl* navigationParentControl);
+    void placementPoliciesChanged(muse::uicomponents::PopupView::PlacementPolicies placementPolicies);
+    void navigationParentControlChanged(muse::ui::INavigationControl* navigationParentControl);
     void objectIdChanged(QString objectId);
     void titleChanged(QString title);
     void modalChanged(bool modal);
@@ -240,8 +262,9 @@ signals:
     void aboutToClose(QQuickCloseEvent* closeEvent);
     void closed(bool force);
 
-    void opensUpwardChanged(bool opensUpward);
+    void popupPositionChanged(PopupPosition::Type position);
     void arrowXChanged(int arrowX);
+    void arrowYChanged(int arrowY);
     void paddingChanged(int padding);
     void showArrowChanged(bool showArrow);
     void anchorItemChanged(QQuickItem* anchorItem);
@@ -250,6 +273,8 @@ signals:
     void focusPoliciesChanged();
 
     void isContentReadyChanged();
+
+    void parentWindowChanged();
 
 protected:
     virtual bool isDialog() const;
@@ -274,6 +299,10 @@ protected:
 
     void setErrCode(Ret::Code code);
 
+    QWindow* parentWindow() const;
+    void setParentWindow(QWindow* window);
+    void resolveParentWindow();
+
     virtual QScreen* resolveScreen() const;
     QRect currentScreenGeometry() const;
     virtual void updateGeometry();
@@ -286,6 +315,7 @@ protected:
 
     QQmlEngine* engine() const;
 
+    QWindow* m_parentWindow = nullptr;
     IPopupWindow* m_window = nullptr;
 
     QQmlComponent* m_component = nullptr;
@@ -307,7 +337,7 @@ protected:
     ClosePolicies m_closePolicies = { ClosePolicy::CloseOnPressOutsideParent };
     FocusPolicies m_focusPolicies = { FocusPolicy::DefaultFocus };
 
-    Placement m_placement = { Placement::Default };
+    PlacementPolicies m_placementPolicies = { PlacementPolicy::Default };
 
     bool m_activateParentOnClose = true;
     ui::INavigationControl* m_navigationParentControl = nullptr;
@@ -318,8 +348,9 @@ protected:
     bool m_resizable = false;
     bool m_alwaysOnTop = false;
     QVariantMap m_ret;
-    bool m_opensUpward = false;
+    PopupPosition::Type m_popupPosition = PopupPosition::Bottom;
     int m_arrowX = 0;
+    int m_arrowY = 0;
     int m_padding = 0;
     bool m_showArrow = false;
 
@@ -327,5 +358,3 @@ protected:
     bool m_forceClosed = false;
 };
 }
-
-#endif // MUSE_UICOMPONENTS_POPUPVIEW_H

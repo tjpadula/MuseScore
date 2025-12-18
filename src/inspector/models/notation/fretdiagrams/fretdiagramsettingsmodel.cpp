@@ -92,11 +92,15 @@ void FretDiagramSettingsModel::createProperties()
     connect(m_fingerings, &PropertyItem::valueChanged, this, [this]() {
         emit fingeringsChanged(fingerings());
     });
+
+    m_verticalAlign = buildPropertyItem(mu::engraving::Pid::EXCLUDE_VERTICAL_ALIGN);
 }
 
 void FretDiagramSettingsModel::requestElements()
 {
     m_elementList = m_repository->findElementsByType(mu::engraving::ElementType::FRET_DIAGRAM);
+
+    updateIsInFretBox();
 
     emit fretDiagramChanged(fretDiagram());
     emit areSettingsAvailableChanged(areSettingsAvailable());
@@ -120,6 +124,7 @@ void FretDiagramSettingsModel::loadProperties()
     loadPropertyItem(m_showFingerings);
     loadPropertyItem(m_fingerings);
     emit fingeringsChanged(fingerings());
+    loadPropertyItem(m_verticalAlign);
 }
 
 void FretDiagramSettingsModel::resetProperties()
@@ -131,6 +136,7 @@ void FretDiagramSettingsModel::resetProperties()
     m_isNutVisible->resetToDefault();
     m_placement->resetToDefault();
     m_showFingerings->resetToDefault();
+    m_verticalAlign->resetToDefault();
 }
 
 PropertyItem* FretDiagramSettingsModel::scale() const
@@ -166,6 +172,11 @@ PropertyItem* FretDiagramSettingsModel::placement() const
 PropertyItem* FretDiagramSettingsModel::orientation() const
 {
     return m_orientation;
+}
+
+PropertyItem* FretDiagramSettingsModel::verticalAlign() const
+{
+    return m_verticalAlign;
 }
 
 PropertyItem* FretDiagramSettingsModel::showFingerings() const
@@ -257,4 +268,33 @@ void FretDiagramSettingsModel::setCurrentFretDotType(int currentFretDotType)
 
     m_currentFretDotType = newFretDotType;
     emit currentFretDotTypeChanged(currentFretDotType);
+}
+
+void FretDiagramSettingsModel::updateIsInFretBox()
+{
+    bool isInFretBox = false;
+
+    for (mu::engraving::EngravingItem* item : std::as_const(m_elementList)) {
+        if (engraving::toFretDiagram(item)->isInFretBox()) {
+            isInFretBox = true;
+            break;
+        }
+    }
+
+    setIsInFretBox(isInFretBox);
+}
+
+bool FretDiagramSettingsModel::isInFretBox() const
+{
+    return m_isInFretBox;
+}
+
+void FretDiagramSettingsModel::setIsInFretBox(bool isInFretBox)
+{
+    if (m_isInFretBox == isInFretBox) {
+        return;
+    }
+
+    m_isInFretBox = isInFretBox;
+    emit isInFretBoxChanged(isInFretBox);
 }

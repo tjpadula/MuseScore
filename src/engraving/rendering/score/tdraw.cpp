@@ -56,13 +56,13 @@
 #include "dom/figuredbass.h"
 #include "dom/fingering.h"
 #include "dom/fret.h"
-#include "dom/fretcircle.h"
 
 #include "dom/glissando.h"
 #include "dom/gradualtempochange.h"
 #include "dom/guitarbend.h"
 
 #include "dom/hairpin.h"
+#include "dom/hammeronpulloff.h"
 #include "dom/harppedaldiagram.h"
 #include "dom/harmonicmark.h"
 #include "dom/harmony.h"
@@ -104,6 +104,7 @@
 #include "dom/part.h"
 #include "dom/pedal.h"
 #include "dom/pickscrape.h"
+#include "dom/playcounttext.h"
 #include "dom/playtechannotation.h"
 
 #include "dom/rasgueado.h"
@@ -120,17 +121,18 @@
 #include "dom/stafftext.h"
 #include "dom/stafftype.h"
 #include "dom/stafftypechange.h"
+#include "dom/staffvisibilityindicator.h"
 #include "dom/stem.h"
 #include "dom/stemslash.h"
 #include "dom/sticking.h"
 #include "dom/stringtunings.h"
-#include "dom/stretchedbend.h"
 #include "dom/symbol.h"
 #include "dom/systemdivider.h"
 #include "dom/systemtext.h"
 #include "dom/systemlock.h"
 #include "dom/soundflag.h"
 
+#include "dom/tapping.h"
 #include "dom/tempotext.h"
 #include "dom/text.h"
 #include "dom/textbase.h"
@@ -154,6 +156,8 @@
 #include "dom/mscoreview.h"
 
 #include "infrastructure/rtti.h"
+
+#include "stemlayout.h"
 
 // dev
 #include "dom/system.h"
@@ -225,8 +229,6 @@ void TDraw::drawItem(const EngravingItem* item, Painter* painter)
         break;
     case ElementType::FRET_DIAGRAM: draw(item_cast<const FretDiagram*>(item), painter);
         break;
-    case ElementType::FRET_CIRCLE:  draw(item_cast<const FretCircle*>(item), painter);
-        break;
     case ElementType::FSYMBOL:      draw(item_cast<const FSymbol*>(item), painter);
         break;
 
@@ -242,6 +244,10 @@ void TDraw::drawItem(const EngravingItem* item, Painter* painter)
         break;
 
     case ElementType::HAIRPIN_SEGMENT: draw(item_cast<const HairpinSegment*>(item), painter);
+        break;
+    case ElementType::HAMMER_ON_PULL_OFF_SEGMENT: draw(item_cast<const HammerOnPullOffSegment*>(item), painter);
+        break;
+    case ElementType::HAMMER_ON_PULL_OFF_TEXT: draw(item_cast<const HammerOnPullOffText*>(item), painter);
         break;
     case ElementType::HARP_DIAGRAM: draw(item_cast<const HarpPedalDiagram*>(item), painter);
         break;
@@ -318,6 +324,8 @@ void TDraw::drawItem(const EngravingItem* item, Painter* painter)
         break;
     case ElementType::PICK_SCRAPE_SEGMENT:  draw(item_cast<const PickScrapeSegment*>(item), painter);
         break;
+    case ElementType::PLAY_COUNT_TEXT:      draw(item_cast<const PlayCountText*>(item), painter);
+        break;
     case ElementType::PLAYTECH_ANNOTATION:  draw(item_cast<const PlayTechAnnotation*>(item), painter);
         break;
 
@@ -342,6 +350,8 @@ void TDraw::drawItem(const EngravingItem* item, Painter* painter)
         break;
     case ElementType::STAFFTYPE_CHANGE:     draw(item_cast<const StaffTypeChange*>(item), painter);
         break;
+    case ElementType::STAFF_VISIBILITY_INDICATOR: draw(item_cast<const StaffVisibilityIndicator*>(item), painter);
+        break;
     case ElementType::STEM:                 draw(item_cast<const Stem*>(item), painter);
         break;
     case ElementType::STEM_SLASH:           draw(item_cast<const StemSlash*>(item), painter);
@@ -349,8 +359,6 @@ void TDraw::drawItem(const EngravingItem* item, Painter* painter)
     case ElementType::STICKING:             draw(item_cast<const Sticking*>(item), painter);
         break;
     case ElementType::STRING_TUNINGS:       draw(item_cast<const StringTunings*>(item), painter);
-        break;
-    case ElementType::STRETCHED_BEND:       draw(item_cast<const StretchedBend*>(item), painter);
         break;
     case ElementType::SYMBOL:               draw(item_cast<const Symbol*>(item), painter);
         break;
@@ -364,6 +372,10 @@ void TDraw::drawItem(const EngravingItem* item, Painter* painter)
         break;
 
     case ElementType::TAB_DURATION_SYMBOL:  draw(item_cast<const TabDurationSymbol*>(item), painter);
+        break;
+    case ElementType::TAPPING:              draw(toTapping(item), painter);
+        break;
+    case ElementType::TAPPING_HALF_SLUR_SEGMENT: draw(toSlurSegment(item), painter);
         break;
     case ElementType::TEMPO_TEXT:           draw(item_cast<const TempoText*>(item), painter);
         break;
@@ -550,17 +562,12 @@ void TDraw::draw(const Articulation* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
 
-    const Articulation::LayoutData* ldata = item->ldata();
-
     painter->setPen(item->curColor());
 
     if (item->textType() == ArticulationTextType::NO_TEXT) {
-        item->drawSymbol(item->symId(), painter, PointF(-0.5 * item->width(), 0.0));
+        item->drawSymbol(item->symId(), painter);
     } else {
-        Font scaledFont(item->font());
-        scaledFont.setPointSizeF(scaledFont.pointSizeF() * item->magS() * MScore::pixelRatio);
-        painter->setFont(scaledFont);
-        painter->drawText(ldata->bbox(), TextDontClip | AlignLeft | AlignTop, TConv::text(item->textType()));
+        drawTextBase(item->text(), painter);
     }
 }
 
@@ -640,15 +647,6 @@ static void drawDots(const BarLine* item, Painter* painter, double x)
 
         y1l = st->doty1() * spatium;
         y2l = st->doty2() * spatium;
-
-        //workaround to make Emmentaler, Gonville and MuseJazz font work correctly with repeatDots
-        if (item->score()->engravingFont()->name() == "Emmentaler"
-            || item->score()->engravingFont()->name() == "Gonville"
-            || item->score()->engravingFont()->name() == "MuseJazz") {
-            double offset = 0.5 * item->style().spatium() * item->mag();
-            y1l += offset;
-            y2l += offset;
-        }
 
         //adjust for staffType offset
         double stYOffset = item->staffOffsetY();
@@ -1183,7 +1181,7 @@ void TDraw::draw(const Fermata* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
     painter->setPen(item->curColor());
-    item->drawSymbol(item->symId(), painter, PointF(-0.5 * item->width(), 0.0));
+    item->drawSymbol(item->symId(), painter);
 }
 
 void TDraw::draw(const FiguredBass* item, Painter* painter)
@@ -1413,7 +1411,9 @@ void TDraw::draw(const FretDiagram* item, Painter* painter)
             pen.setJoinStyle(PenJoinStyle::RoundJoin);
             painter->setPen(pen);
             painter->setBrush(Brush(pen.color()));
-            painter->drawPath(ldata->slurPath);
+            for (const PainterPath& path : ldata->slurPaths) {
+                painter->drawPath(path);
+            }
         } else {
             pen.setWidthF(dotd * item->style().styleD(Sid::barreLineWidth));
             pen.setCapStyle(PenCapStyle::RoundCap);
@@ -1473,17 +1473,6 @@ void TDraw::draw(const FretDiagram* item, Painter* painter)
     if (item->orientation() == Orientation::HORIZONTAL) {
         painter->restore();
     }
-}
-
-void TDraw::draw(const FretCircle* item, Painter* painter)
-{
-    TRACE_DRAW_ITEM;
-    const FretCircle::LayoutData* ldata = item->ldata();
-    painter->save();
-    painter->setPen(Pen(item->curColor(), item->spatium() * FretCircle::CIRCLE_WIDTH));
-    painter->setBrush(BrushStyle::NoBrush);
-    painter->drawEllipse(ldata->rect);
-    painter->restore();
 }
 
 static void setDashAndGapLen(const SLine* line, double& dash, double& gap, Pen& pen)
@@ -1626,84 +1615,6 @@ void TDraw::draw(const GuitarBendHoldSegment* item, Painter* painter)
     painter->setPen(pen);
 
     painter->drawLine(PointF(), item->pos2());
-}
-
-void TDraw::draw(const StretchedBend* item, Painter* painter)
-{
-    TRACE_DRAW_ITEM;
-
-    double sp = item->spatium();
-    const Color& color = item->curColor();
-    const int textFlags = item->textFlags();
-
-    Pen pen(color, item->absoluteFromSpatium(item->lineWidth()), PenStyle::SolidLine, PenCapStyle::RoundCap, PenJoinStyle::RoundJoin);
-    painter->setPen(pen);
-    painter->setBrush(Brush(color));
-    Font f = item->font(sp * MScore::pixelRatio);
-    painter->setFont(f);
-
-    bool isTextDrawn = false;
-
-    for (const StretchedBend::BendSegment& bendSegment : item->bendSegmentsStretched()) {
-        if (!bendSegment.visible) {
-            continue;
-        }
-
-        const PointF& src = bendSegment.src;
-        const PointF& dest = bendSegment.dest;
-        const String& text = item->toneToLabel(bendSegment.tone);
-
-        switch (bendSegment.type) {
-        case StretchedBend::BendSegmentType::LINE_UP:
-        {
-            painter->drawLine(LineF(src, dest));
-            painter->setBrush(color);
-            painter->drawPolygon(item->arrows().up.translated(dest));
-            /// TODO: remove substraction after fixing bRect
-            PointF pos = dest - PointF(0, sp * 0.5);
-            painter->drawText(RectF(pos.x(), pos.y(), .0, .0), textFlags, text);
-            break;
-        }
-
-        case StretchedBend::BendSegmentType::CURVE_UP:
-        case StretchedBend::BendSegmentType::CURVE_DOWN:
-        {
-            bool bendUp = (bendSegment.type == StretchedBend::BendSegmentType::CURVE_UP);
-            double endY = dest.y() + item->arrows().width * (bendUp ? 1 : -1);
-
-            PainterPath path = item->bendCurveFromPoints(src, PointF(dest.x(), endY));
-            const auto& arrowPath = (bendUp ? item->arrows().up : item->arrows().down);
-
-            painter->setBrush(BrushStyle::NoBrush);
-            painter->drawPath(path);
-            painter->setBrush(color);
-            painter->drawPolygon(arrowPath.translated(dest));
-
-            if (bendUp && !isTextDrawn) {
-                /// TODO: remove subtraction after fixing bRect
-                PointF pos = dest - PointF(0, sp * 0.5);
-                painter->drawText(RectF(pos.x(), pos.y(), .0, .0), textFlags, text);
-                isTextDrawn = true;
-            }
-
-            break;
-        }
-
-        case StretchedBend::BendSegmentType::LINE_STROKED:
-        {
-            PainterPath path;
-            path.moveTo(src + PointF(item->arrows().width, 0));
-            path.lineTo(dest);
-            Pen p(painter->pen());
-            p.setStyle(PenStyle::DashLine);
-            painter->strokePath(path, p);
-            break;
-        }
-
-        default:
-            break;
-        }
-    }
 }
 
 void TDraw::drawTextBase(const TextBase* item, Painter* painter)
@@ -1873,6 +1784,17 @@ void TDraw::draw(const HairpinSegment* item, Painter* painter)
     }
 }
 
+void TDraw::draw(const HammerOnPullOffSegment* item, muse::draw::Painter* painter)
+{
+    draw(toSlurSegment(item), painter);
+}
+
+void TDraw::draw(const HammerOnPullOffText* item, muse::draw::Painter* painter)
+{
+    TRACE_DRAW_ITEM;
+    drawTextBase(item, painter);
+}
+
 void TDraw::draw(const HarpPedalDiagram* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
@@ -1889,14 +1811,9 @@ void TDraw::draw(const Harmony* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
 
-    const TextBase::LayoutData* ldata = item->ldata();
+    const Harmony::LayoutData* ldata = item->ldata();
 
-    if (item->isDrawEditMode()) {
-        drawTextBase(item, painter);
-        return;
-    }
-
-    if (item->textList().empty()) {
+    if (ldata->renderItemList().empty()) {
         drawTextBase(item, painter);
         return;
     }
@@ -1925,15 +1842,32 @@ void TDraw::draw(const Harmony* item, Painter* painter)
     painter->setBrush(BrushStyle::NoBrush);
     Color color = item->textColor();
     painter->setPen(color);
-    for (const TextSegment* ts : item->textList()) {
-        Font f(ts->m_font);
-        f.setPointSizeF(f.pointSizeF() * MScore::pixelRatio);
+    for (const HarmonyRenderItem* renderItem : ldata->renderItemList()) {
+        if (const TextSegment* ts = dynamic_cast<const TextSegment*>(renderItem)) {
+            Font f(ts->font());
+            f.setPointSizeF(f.pointSizeF() * MScore::pixelRatio);
 #if !(defined(Q_OS_MACOS) || defined(Q_OS_IOS))
-        TextBase::drawTextWorkaround(painter, f, ts->pos(), ts->text);
+            TextBase::drawTextWorkaround(painter, f, ts->pos(), ts->text());
 #else
-        painter->setFont(f);
-        painter->drawText(ts->pos(), ts->text);
+            painter->setFont(f);
+            painter->drawText(ts->pos(), ts->text());
 #endif
+        } else if (const ChordSymbolParen* parenItem = dynamic_cast<const ChordSymbolParen*>(renderItem)) {
+            Parenthesis* p = parenItem->parenItem;
+            painter->translate(parenItem->pos());
+            draw(p, painter);
+            painter->translate(-parenItem->pos());
+        }
+    }
+
+    if (item->isPolychord()) {
+        Pen pen(painter->pen());
+        pen.setWidthF(item->style().styleS(Sid::polychordDividerThickness).toMM(item->spatium()));
+        pen.setColor(color);
+        painter->setPen(pen);
+        for (const LineF& line : ldata->polychordDividerLines()) {
+            painter->drawLine(line.translated(PointF(0.0, ldata->polychordDividerOffset)));
+        }
     }
 }
 
@@ -2275,7 +2209,7 @@ void TDraw::draw(const Note* item, Painter* painter)
         const Staff* st = item->staff();
         const StaffType* tab = st->staffTypeForElement(item);
 
-        if (item->fretConflict() && !item->score()->printing() && item->score()->showUnprintable()) {                    //on fret conflict, draw on red background
+        if (negativeFret || (item->fretConflict() && !item->score()->printing() && item->score()->showUnprintable())) {                    //on fret conflict, draw on red background
             painter->save();
             painter->setPen(config->criticalColor());
             painter->setBrush(config->criticalColor());
@@ -2289,8 +2223,7 @@ void TDraw::draw(const Note* item, Painter* painter)
         painter->setPen(c);
         double startPosX = ldata->bbox().x();
 
-        const MStyle& style = item->style();
-        double yOffset = tab->fretFontYOffset(style);
+        double yOffset = tab->fretFontYOffset();
         painter->drawText(PointF(startPosX, yOffset * item->magS()), item->fretString());
     }
     // NOT tablature
@@ -2435,23 +2368,27 @@ void TDraw::draw(const Parenthesis* item, muse::draw::Painter* painter)
 {
     TRACE_DRAW_ITEM;
 
-    Segment* seg = item->segment();
-    EngravingItem* segItem = seg ? seg->element(item->track()) : nullptr;
-    TimeSig* segTs = segItem && segItem->isTimeSig() ? toTimeSig(segItem) : nullptr;
+    EngravingItem* parent = item->parentItem();
+    TimeSig* parentTs = parent && parent->isTimeSig() ? toTimeSig(parent) : nullptr;
 
-    if (segTs && !segTs->showOnThisStaff()) {
+    if (parentTs && !parentTs->showOnThisStaff()) {
         return;
     }
 
-    Color penColor = item->curColor(item->getProperty(Pid::VISIBLE).toBool(), item->getProperty(Pid::COLOR).value<Color>());
+    Color penColor = item->curColor();
 
     Pen pen(penColor);
     double mag = item->staff() ? item->staff()->staffMag(item->tick()) : 1.0;
 
+    if (item->ldata()->symId != SymId::noSym) {
+        item->drawSymbol(item->ldata()->symId, painter);
+        return;
+    }
+
     painter->setBrush(Brush(pen.color()));
     pen.setCapStyle(PenCapStyle::RoundCap);
     pen.setJoinStyle(PenJoinStyle::RoundJoin);
-    pen.setWidthF(Parenthesis::PARENTHESIS_END_WIDTH * item->spatium() * mag);
+    pen.setWidthF(item->ldata()->endPointThickness * item->spatium() * mag);
 
     painter->setPen(pen);
     painter->drawPath(item->ldata()->path());
@@ -2478,6 +2415,12 @@ void TDraw::draw(const PickScrapeSegment* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
     drawTextLineBaseSegment(item, painter);
+}
+
+void TDraw::draw(const PlayCountText* item, muse::draw::Painter* painter)
+{
+    TRACE_DRAW_ITEM;
+    drawTextBase(item, painter);
 }
 
 void TDraw::draw(const PlayTechAnnotation* item, Painter* painter)
@@ -2508,7 +2451,12 @@ void TDraw::draw(const Rest* item, Painter* painter)
     const Rest::LayoutData* ldata = item->ldata();
 
     painter->setPen(item->curColor());
-    item->drawSymbol(ldata->sym, painter);
+
+    if (DeadSlapped* ds = item->deadSlapped()) {
+        draw(ds, painter);
+    } else {
+        item->drawSymbol(ldata->sym, painter);
+    }
 }
 
 //! NOTE May be removed later (should be only single mode)
@@ -2614,7 +2562,10 @@ void TDraw::draw(const SlurSegment* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
 
-    Pen pen(item->curColor(item->getProperty(Pid::VISIBLE).toBool(), item->getProperty(Pid::COLOR).value<Color>()));
+    painter->save();
+    setMask(item, painter);
+
+    Pen pen(item->curColor());
     double mag = item->staff() ? item->staff()->staffMag(item->slur()->tick()) : 1.0;
 
     //Replace generic Qt dash patterns with improved equivalents to show true dots (keep in sync with tie.cpp)
@@ -2650,6 +2601,8 @@ void TDraw::draw(const SlurSegment* item, Painter* painter)
     }
     painter->setPen(pen);
     painter->drawPath(item->ldata()->path());
+
+    painter->restore();
 }
 
 void TDraw::draw(const Spacer* item, Painter* painter)
@@ -2665,7 +2618,7 @@ void TDraw::draw(const Spacer* item, Painter* painter)
 
     painter->setPen(pen);
     painter->setBrush(BrushStyle::NoBrush);
-    painter->drawPath(item->path());
+    painter->drawPath(item->ldata()->path);
 }
 
 void TDraw::draw(const StaffLines* item, Painter* painter)
@@ -2784,19 +2737,19 @@ void TDraw::draw(const Stem* item, Painter* painter)
     if (item->chord()->durationType().type() == DurationType::V_HALF
         && staffType->minimStyle() == TablatureMinimStyle::SLASHED) {
         // position slashes onto stem
-        double y = isUp ? -item->length() + STAFFTYPE_TAB_SLASH_2STARTY_UP * sp
-                   : item->length() - STAFFTYPE_TAB_SLASH_2STARTY_DN * sp;
+        double y = isUp ? -item->length() + StemLayout::STAFFTYPE_TAB_SLASH_2STARTY_UP * sp
+                   : item->length() - StemLayout::STAFFTYPE_TAB_SLASH_2STARTY_DN * sp;
         // if stems through, try to align slashes within or across lines
         if (staffType->stemThrough()) {
             double halfLineDist = staffType->lineDistance().val() * sp * 0.5;
-            double halfSlashHgt = STAFFTYPE_TAB_SLASH_2TOTHEIGHT * sp * 0.5;
+            double halfSlashHgt = StemLayout::STAFFTYPE_TAB_SLASH_2TOTHEIGHT * sp * 0.5;
             y = lrint((y + halfSlashHgt) / halfLineDist) * halfLineDist - halfSlashHgt;
         }
         // draw slashes
-        double hlfWdt= sp * STAFFTYPE_TAB_SLASH_WIDTH * 0.5;
-        double sln   = sp * STAFFTYPE_TAB_SLASH_SLANTY;
-        double thk   = sp * STAFFTYPE_TAB_SLASH_THICK;
-        double displ = sp * STAFFTYPE_TAB_SLASH_DISPL;
+        double hlfWdt= sp * StemLayout::STAFFTYPE_TAB_SLASH_WIDTH * 0.5;
+        double sln   = sp * StemLayout::STAFFTYPE_TAB_SLASH_SLANTY;
+        double thk   = sp * StemLayout::STAFFTYPE_TAB_SLASH_THICK;
+        double displ = sp * StemLayout::STAFFTYPE_TAB_SLASH_DISPL;
         PainterPath path;
         for (int i = 0; i < 2; ++i) {
             path.moveTo(hlfWdt, y);                   // top-right corner
@@ -2817,7 +2770,7 @@ void TDraw::draw(const Stem* item, Painter* painter)
     int nDots = item->chord()->dots();
     if (nDots > 0 && !staffType->stemThrough()) {
         double x     = item->chord()->dotPosX();
-        double y     = ((STAFFTYPE_TAB_DEFAULTSTEMLEN_DN * 0.2) * sp) * (isUp ? -1.0 : 1.0);
+        double y     = ((StemLayout::STAFFTYPE_TAB_DEFAULTSTEMLEN_DN * 0.2) * sp) * (isUp ? -1.0 : 1.0);
         double step  = item->style().styleS(Sid::dotDotDistance).val() * sp;
         for (int dot = 0; dot < nDots; dot++, x += step) {
             item->drawSymbol(SymId::augmentationDot, painter, PointF(x, y));
@@ -2884,24 +2837,6 @@ void TDraw::draw(const Symbol* item, Painter* painter)
 {
     TRACE_DRAW_ITEM;
     bool tabStaff = item->staff() ? item->staff()->isTabStaff(item->tick()) : false;
-    if (tabStaff && (item->sym() == SymId::noteheadParenthesisLeft || item->sym() == SymId::noteheadParenthesisRight)) {
-        // Draw background for parentheses on TAB staves
-        auto config = item->configuration();
-        const Symbol::LayoutData* ldata = item->ldata();
-        double d = item->style().styleS(Sid::tabFretPadding).val() * item->spatium();
-        RectF bb = RectF(ldata->bbox().x() - d,
-                         ldata->bbox().y() - d,
-                         ldata->bbox().width() + 2 * d,
-                         ldata->bbox().height() + 2 * d
-                         );
-        if (!item->score()->getViewer().empty()) {
-            for (MuseScoreView* view : item->score()->getViewer()) {
-                view->drawBackground(painter, bb);
-            }
-        } else {
-            painter->fillRect(bb, config->noteBackgroundColor());
-        }
-    }
 
     if (!item->isNoteDot() || !tabStaff) {
         painter->setPen(item->curColor());
@@ -2935,7 +2870,7 @@ void TDraw::draw(const SystemText* item, Painter* painter)
     drawTextBase(item, painter);
 }
 
-void TDraw::draw(const SystemLockIndicator* item, muse::draw::Painter* painter)
+void TDraw::draw(const IndicatorIcon* item, muse::draw::Painter* painter)
 {
     TRACE_DRAW_ITEM;
 
@@ -2952,15 +2887,17 @@ void TDraw::draw(const SystemLockIndicator* item, muse::draw::Painter* painter)
 
     painter->drawSymbol(PointF(), item->iconCode());
 
-    if (item->selected()) {
-        Color lockedAreaColor = item->configuration()->selectionColor();
+    if (item->isSystemLockIndicator() && item->selected()) {
+        const SystemLockIndicator* sli = toSystemLockIndicator(item);
+
+        Color lockedAreaColor = sli->configuration()->selectionColor();
         lockedAreaColor.setAlpha(38);
         Brush brush(lockedAreaColor);
         painter->setBrush(brush);
         painter->setNoPen();
-        double radius = 0.5 * item->spatium();
+        double radius = 0.5 * sli->spatium();
 
-        painter->drawRoundedRect(item->ldata()->rangeRect, radius, radius);
+        painter->drawRoundedRect(sli->ldata()->rangeRect, radius, radius);
     }
 }
 
@@ -3042,6 +2979,20 @@ void TDraw::draw(const TabDurationSymbol* item, Painter* painter)
         }
     }
     painter->scale(imag, imag);
+}
+
+void TDraw::draw(const Tapping* item, muse::draw::Painter* painter)
+{
+    painter->setPen(item->curColor());
+    if (item->ldata()->symId != SymId::noSym) {
+        item->drawSymbol(item->ldata()->symId, painter);
+    } else if (TappingText* text = item->text()) {
+        painter->translate(text->pos());
+        drawTextBase(text, painter);
+        painter->translate(-text->pos());
+    } else {
+        assert(false && "Drawing Tapping item without text or symbol");
+    }
 }
 
 void TDraw::draw(const TempoText* item, Painter* painter)

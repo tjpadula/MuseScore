@@ -32,6 +32,8 @@
 #include <Cocoa/Cocoa.h>
 #endif
 
+#include "types/uri.h"
+
 #include "log.h"
 
 #include <sstream>
@@ -70,7 +72,7 @@ Ret MacOSInteractiveHelper::isAppExists(const std::string& appIdentifier)
 #endif
 }
 
-Ret MacOSInteractiveHelper::canOpenApp(const Uri& uri)
+Ret MacOSInteractiveHelper::canOpenApp(const UriQuery& uri)
 {
     if (__builtin_available(macOS 10.15, *)) {
         NSString* nsUrlString = [NSString stringWithUTF8String:uri.toString().c_str()];
@@ -96,16 +98,16 @@ Ret MacOSInteractiveHelper::canOpenApp(const Uri& uri)
     }
 }
 
-async::Promise<Ret> MacOSInteractiveHelper::openApp(const Uri& uri)
+async::Promise<Ret> MacOSInteractiveHelper::openApp(const UriQuery& uri)
 {
 #if defined(Q_OS_IOS)
-    return Promise<Ret>([&uri](auto resolve, auto reject) {
+    return Promise<Ret>([uri](auto resolve, auto reject) {
         std::stringstream aStream;
         aStream << __PRETTY_FUNCTION__ << " is not implemented, uri: " << uri.toString();
         return reject(int(Ret::Code::NotImplemented), aStream.str());
     });
 #else
-    return Promise<Ret>([&uri](auto resolve, auto reject) {
+    return Promise<Ret>([uri](auto resolve, auto reject) {
         if (__builtin_available(macOS 10.15, *)) {
             NSString* nsUrlString = [NSString stringWithUTF8String:uri.toString().c_str()];
             if (nsUrlString == nil) {

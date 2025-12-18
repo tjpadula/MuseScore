@@ -21,25 +21,9 @@
  */
 
 #include "writecontext.h"
-#include "containers.h"
 
 using namespace mu::engraving;
 using namespace mu::engraving::write;
-
-int WriteContext::assignLocalIndex(const Location& mainElementLocation)
-{
-    return m_linksIndexer.assignLocalIndex(mainElementLocation);
-}
-
-void WriteContext::setLidLocalIndex(int lid, int localIndex)
-{
-    m_lidLocalIndices.insert({ lid, localIndex });
-}
-
-int WriteContext::lidLocalIndex(int lid) const
-{
-    return muse::value(m_lidLocalIndices, lid, 0);
-}
 
 bool WriteContext::canWrite(const EngravingItem* e) const
 {
@@ -47,6 +31,15 @@ bool WriteContext::canWrite(const EngravingItem* e) const
         return true;
     }
     return _filter.canSelect(e);
+}
+
+bool WriteContext::canWriteNoteIdx(size_t noteIdx, size_t totalNotesInChord) const
+{
+    if (!_clipboardmode) {
+        return true;
+    }
+    const Selection& sel = m_score->selection();
+    return _filter.canSelectNoteIdx(noteIdx, totalNotesInChord, sel.rangeContainsMultiNoteChords());
 }
 
 bool WriteContext::canWriteVoice(track_idx_t track) const

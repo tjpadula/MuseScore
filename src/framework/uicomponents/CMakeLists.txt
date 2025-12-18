@@ -119,12 +119,37 @@ if (MUSE_MODULE_UI_DISABLE_MODALITY)
     set(MODULE_DEF ${MODULE_DEF} -DMUSE_MODULE_UI_DISABLE_MODALITY)
 endif()
 
+if(QT_SUPPORT)
+    list(APPEND MODULE_LINK Qt::Widgets Qt::Quick)
+endif()
+
 set(MODULE_USE_UNITY OFF)
 
 setup_module()
 
+if (NOT IOS)
+qt_add_shaders(${MODULE} "${MODULE}_shaders"
+    FILES
+        "qml/Muse/GraphicalEffects/shaders/roundcorners.frag"
+)
+endif()
+
+if (${Qt6_VERSION} VERSION_GREATER_EQUAL 6.9)
+    qt_add_resources(${MODULE} "${MODULE}"
+        PREFIX "/"
+        FILES "qml/Muse/UiComponents/StyledRectangularShadow.qml"
+    )
+else()
+    set_source_files_properties("qml/Muse/UiComponents/StubStyledRectangularShadow.qml"
+        PROPERTIES
+        QT_RESOURCE_ALIAS "qml/Muse/UiComponents/StyledRectangularShadow.qml"
+    )
+    qt_add_resources(${MODULE} "${MODULE}"
+        PREFIX "/"
+        FILES "qml/Muse/UiComponents/StubStyledRectangularShadow.qml"
+    )
+endif()
+
 if (MUSE_MODULE_UI_TESTS)
     add_subdirectory(tests)
 endif()
-
-

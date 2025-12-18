@@ -48,6 +48,7 @@
 #include "spacer.h"
 #include "spanner.h"
 #include "staff.h"
+#include "staffvisibilityindicator.h"
 #include "system.h"
 #include "systemdivider.h"
 
@@ -129,6 +130,9 @@ System::~System()
     muse::DeleteAll(m_staves);
     muse::DeleteAll(m_brackets);
     muse::DeleteAll(m_lockIndicators);
+    if (m_staffVisibilityIndicator) {
+        delete m_staffVisibilityIndicator;
+    }
     delete m_systemDividerLeft;
     delete m_systemDividerRight;
 }
@@ -272,6 +276,17 @@ size_t System::getBracketsColumnsCount()
     return columns;
 }
 
+void System::setHasStaffVisibilityIndicator(bool has)
+{
+    if (has && !m_staffVisibilityIndicator) {
+        m_staffVisibilityIndicator = Factory::createStaffVisibilityIndicator(this);
+        m_staffVisibilityIndicator->setParent(this);
+    } else if (!has && m_staffVisibilityIndicator) {
+        delete m_staffVisibilityIndicator;
+        m_staffVisibilityIndicator = nullptr;
+    }
+}
+
 bool System::isLocked() const
 {
     return m_ml.front()->isStartOfSystemLock();
@@ -359,6 +374,27 @@ staff_idx_t System::prevVisibleStaff(staff_idx_t startStaffIdx) const
             return i;
         }
 
+        if (i == 0) {
+            break;
+        }
+    }
+
+    return muse::nidx;
+}
+
+staff_idx_t System::lastVisibleStaff() const
+{
+    size_t nstaves = score()->nstaves();
+    if (nstaves < 1) {
+        return muse::nidx;
+    }
+
+    for (staff_idx_t i = nstaves - 1; ; --i) {
+        Staff* staff = score()->staff(i);
+        SysStaff* sysStaff = m_staves[i];
+        if (staff->show() && sysStaff->show()) {
+            return i;
+        }
         if (i == 0) {
             break;
         }
@@ -489,6 +525,8 @@ void System::add(EngravingItem* el)
     case ElementType::PICK_SCRAPE_SEGMENT:
     case ElementType::GUITAR_BEND_SEGMENT:
     case ElementType::GUITAR_BEND_HOLD_SEGMENT:
+    case ElementType::HAMMER_ON_PULL_OFF_SEGMENT:
+    case ElementType::TAPPING_HALF_SLUR_SEGMENT:
     {
         SpannerSegment* ss = toSpannerSegment(el);
 #ifndef NDEBUG
@@ -680,6 +718,10 @@ void System::scanElements(void* data, void (* func)(void*, EngravingItem*), bool
     }
     if (m_systemDividerRight) {
         func(data, m_systemDividerRight);
+    }
+
+    if (m_staffVisibilityIndicator) {
+        func(data, m_staffVisibilityIndicator);
     }
 
     for (auto i : m_lockIndicators) {
@@ -913,10 +955,10 @@ double System::spacerDistance(bool up) const
             Spacer* sp = up ? m->vspacerUp(staff) : m->vspacerDown(staff);
             if (sp) {
                 if (sp->spacerType() == SpacerType::FIXED) {
-                    dist = sp->gap();
+                    dist = sp->absoluteGap();
                     break;
                 } else {
-                    dist = std::max(dist, sp->gap().val());
+                    dist = std::max(dist, sp->absoluteGap());
                 }
             }
         }
@@ -1003,7 +1045,7 @@ double System::firstNoteRestSegmentX(bool leading) const
             break;
         }
     }
-    LOGD("firstNoteRestSegmentX: did not find segment");
+
     return margin;
 }
 
@@ -1100,12 +1142,18 @@ staff_idx_t System::firstSysStaffOfPart(const Part* part) const
 staff_idx_t System::firstVisibleSysStaffOfPart(const Part* part) const
 {
     staff_idx_t firstIdx = firstSysStaffOfPart(part);
+    if (firstIdx == muse::nidx) {
+        return muse::nidx;
+    }
+
     for (staff_idx_t idx = firstIdx; idx < firstIdx + part->nstaves(); ++idx) {
-        if (staff(idx)->show()) {
+        const SysStaff* s = staff(idx);
+        if (s && s->show()) {
             return idx;
         }
     }
-    return muse::nidx;   // No visible staves on this part.
+
+    return muse::nidx; // No visible staves on this part.
 }
 
 //---------------------------------------------------------

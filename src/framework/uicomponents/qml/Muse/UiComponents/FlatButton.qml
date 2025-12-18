@@ -31,6 +31,7 @@ FocusScope {
     property int icon: IconCode.NONE
     property string text: ""
     property int textFormat: Text.AutoText
+    property int maximumLineCount: 1
 
     //!NOTE: used to sort buttons inside a button box
     property int buttonId: 0
@@ -114,6 +115,10 @@ FocusScope {
 
     opacity: root.enabled ? 1.0 : ui.theme.itemOpacityDisabled
 
+    function doClicked(mouse) {
+        Qt.callLater(root.clicked, mouse)
+    }
+
     NavigationControl {
         id: navCtrl
         name: root.objectName !== "" ? root.objectName : "FlatButton"
@@ -127,7 +132,7 @@ FocusScope {
 
         onTriggered: {
             if (navCtrl.enabled && root.isClickOnKeyNavTriggered) {
-                root.clicked(null)
+                root.doClicked(null)
                 navCtrl.notifyAboutControlWasTriggered()
             }
         }
@@ -217,7 +222,8 @@ FocusScope {
                 text: root.text
                 font: root.textFont
                 textFormat: root.textFormat
-                maximumLineCount: 1
+                wrapMode: Text.Wrap
+                maximumLineCount: root.maximumLineCount
                 visible: !isEmpty
             }
         }
@@ -244,7 +250,8 @@ FocusScope {
                 text: root.text
                 font: root.textFont
                 textFormat: root.textFormat
-                maximumLineCount: 1
+                wrapMode: Text.Wrap
+                maximumLineCount: root.maximumLineCount
                 visible: !isEmpty
             }
         }
@@ -307,7 +314,7 @@ FocusScope {
             navigation.requestActiveByInteraction()
             navigation.notifyAboutControlWasTriggered()
 
-            root.clicked(mouse)
+            root.doClicked(mouse)
         }
 
         onPressed: {

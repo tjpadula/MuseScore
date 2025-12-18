@@ -118,6 +118,11 @@ int RepeatSegment::len() const
     return (m_measureList.empty()) ? 0 : (m_measureList.back()->endTick().ticks() - tick);
 }
 
+int RepeatSegment::endTick() const
+{
+    return tick + len();
+}
+
 void RepeatSegment::popMeasure()
 {
     if (!m_measureList.empty()) {
@@ -205,8 +210,9 @@ void RepeatList::updateTempo()
         s->utime      = t;
         double ct      = tl->tick2time(s->tick);
         s->timeOffset = t - ct;
-        utick        += s->len();
-        t            += tl->tick2time(s->tick + s->len()) - ct;
+        int len       = s->len();
+        utick        += len;
+        t            += tl->tick2time(s->tick + len) - ct;
     }
 }
 
@@ -245,7 +251,7 @@ int RepeatList::tick2utick(int tick) const
         return 0;
     }
     for (const RepeatSegment* s : *this) {
-        if (tick >= s->tick && tick < (s->tick + s->len())) {
+        if (tick >= s->tick && tick < s->endTick()) {
             return s->utick + (tick - s->tick);
         }
     }
@@ -551,23 +557,17 @@ void RepeatList::collectRepeatListElements()
                     }
                 } else if (e->isMarker()) {
                     RepeatListElement* markerRLE = new RepeatListElement(RepeatListElementType::MARKER, e, toMeasure(mb));
-                    // There may be multiple markers in the same measure and there is no guarantee we're reading
-                    // them from left to right. The only way available to guess their order is to look at their
-                    // text alignment and order them left to right
+                    // There may be multiple markers in the same measure. Make sure we place right markers before left
                     // At the same time, we should ensure Markers are evaluated before Jumps
-                    Align markerRLEalignmentH = toMarker(e)->align();
+                    bool markerRLEisRight = toMarker(e)->isRightMarker();
                     auto insertionIt = sectionRLElements.end() - 1;
                     while ((*insertionIt)->measure == markerRLE->measure) {
                         bool markerShouldGoBefore = false;
                         if (((*insertionIt)->repeatListElementType == RepeatListElementType::MARKER)
-                            && (markerRLEalignmentH != AlignH::RIGHT) // We can be the end when right aligned
+                            && (!markerRLEisRight) // We can be the end when right aligned
                             ) {
-                            Align storedMarkerAlignmentH = toMarker((*insertionIt)->element)->align();
-                            if (markerRLEalignmentH == AlignH::HCENTER) {
-                                markerShouldGoBefore = (storedMarkerAlignmentH == AlignH::RIGHT);
-                            } else { //(markerRLEalignmentH == Align::LEFT)
-                                markerShouldGoBefore = (storedMarkerAlignmentH != AlignH::LEFT);
-                            }
+                            bool storedMarkerIsRight = toMarker((*insertionIt)->element)->isRightMarker();
+                            markerShouldGoBefore = storedMarkerIsRight;
                         }
                         if (markerShouldGoBefore
                             || ((*insertionIt)->repeatListElementType == RepeatListElementType::JUMP)

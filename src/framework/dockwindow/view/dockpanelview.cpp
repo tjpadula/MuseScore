@@ -287,10 +287,6 @@ bool DockPanelView::isTabAllowed(const DockPanelView* tab) const
         return false;
     }
 
-    if (tab->location() != location()) {
-        return false;
-    }
-
     return m_groupName == tab->m_groupName;
 }
 
@@ -318,28 +314,4 @@ void DockPanelView::setCurrentTabIndex(int index)
     if (frame) {
         frame->setCurrentTabIndex(index);
     }
-}
-
-bool DockPanelView::isCurrentTabInFrame() const
-{
-    if (!dockWidget()) {
-        return false;
-    }
-
-    KDDockWidgets::Frame* frame = dockWidget()->frame();
-    return frame && frame->currentDockWidget() == dockWidget();
-}
-
-void DockPanelView::makeCurrentTabInFrame()
-{
-    IF_ASSERT_FAILED(dockWidget()) {
-        return;
-    }
-
-    KDDockWidgets::Frame* frame = dockWidget()->frame();
-    if (!frame) {
-        return;
-    }
-
-    frame->setCurrentDockWidget(dockWidget());
 }

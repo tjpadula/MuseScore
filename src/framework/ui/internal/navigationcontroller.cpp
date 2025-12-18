@@ -48,7 +48,7 @@
 
 using namespace muse::ui;
 
-static const muse::UriQuery DEV_SHOW_CONTROLS_URI("muse://devtools/keynav/controls?sync=false&modal=false");
+static const muse::UriQuery DEV_SHOW_CONTROLS_URI("muse://devtools/keynav/controls?modal=false");
 
 using MoveDirection = NavigationController::MoveDirection;
 using Event = INavigation::Event;
@@ -648,11 +648,24 @@ INavigationControl* NavigationController::activeControl() const
     return findActive(activePanel->controls());
 }
 
-const INavigationControl* NavigationController::findControl(const std::string& section, const std::string& panel,
+const INavigationSection* NavigationController::findSection(const std::string& sectionName) const
+{
+    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(sectionName));
+    return sec;
+}
+
+const INavigationPanel* NavigationController::findPanel(const std::string& sectionName, const std::string& panelName) const
+{
+    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(sectionName));
+    const INavigationPanel* pnl = sec ? findByName(sec->panels(), QString::fromStdString(panelName)) : nullptr;
+    return pnl;
+}
+
+const INavigationControl* NavigationController::findControl(const std::string& sectionName, const std::string& panelName,
                                                             const std::string& controlName) const
 {
-    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(section));
-    const INavigationPanel* pnl = sec ? findByName(sec->panels(), QString::fromStdString(panel)) : nullptr;
+    const INavigationSection* sec = findByName(m_sections, QString::fromStdString(sectionName));
+    const INavigationPanel* pnl = sec ? findByName(sec->panels(), QString::fromStdString(panelName)) : nullptr;
     const INavigationControl* ctrl = pnl ? findByName(pnl->controls(), QString::fromStdString(controlName)) : nullptr;
 
     return ctrl;
@@ -968,7 +981,19 @@ void NavigationController::onEscape()
     activeCtrl->setActive(false);
 
     if (m_defaultNavigationControl) {
-        doActivateControl(m_defaultNavigationControl);
+        INavigationPanel* defaultPanel = m_defaultNavigationControl->panel();
+        if (!defaultPanel) {
+            return;
+        }
+
+        INavigationSection* defaultSection = defaultPanel->section();
+        if (!defaultSection) {
+            return;
+        }
+
+        onActiveRequested(defaultSection, defaultPanel, m_defaultNavigationControl, true);
+    } else {
+        m_navigationChanged.notify();
     }
 }
 

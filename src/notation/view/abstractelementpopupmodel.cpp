@@ -33,10 +33,24 @@ static const QMap<mu::engraving::ElementType, PopupModelType> ELEMENT_POPUP_TYPE
     { mu::engraving::ElementType::CAPO, PopupModelType::TYPE_CAPO },
     { mu::engraving::ElementType::STRING_TUNINGS, PopupModelType::TYPE_STRING_TUNINGS },
     { mu::engraving::ElementType::SOUND_FLAG, PopupModelType::TYPE_SOUND_FLAG },
+    { mu::engraving::ElementType::STAFF_VISIBILITY_INDICATOR, PopupModelType::TYPE_STAFF_VISIBILITY },
     { mu::engraving::ElementType::DYNAMIC, PopupModelType::TYPE_DYNAMIC },
+    { mu::engraving::ElementType::TEXT, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::STAFF_TEXT, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::SYSTEM_TEXT, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::EXPRESSION, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::REHEARSAL_MARK, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::INSTRUMENT_CHANGE, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::FINGERING, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::STICKING, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::HARMONY, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::LYRICS, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::FIGURED_BASS, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::TEMPO_TEXT, PopupModelType::TYPE_TEXT },
+    { mu::engraving::ElementType::PLAY_COUNT_TEXT, PopupModelType::TYPE_TEXT },
     { mu::engraving::ElementType::TIE_SEGMENT, PopupModelType::TYPE_PARTIAL_TIE },
     { mu::engraving::ElementType::PARTIAL_TIE_SEGMENT, PopupModelType::TYPE_PARTIAL_TIE },
-    { mu::engraving::ElementType::SHADOW_NOTE, PopupModelType::TYPE_SHADOW_NOTE }
+    { mu::engraving::ElementType::SHADOW_NOTE, PopupModelType::TYPE_SHADOW_NOTE },
 };
 
 static const QHash<PopupModelType, mu::engraving::ElementTypeSet> POPUP_DEPENDENT_ELEMENT_TYPES = {
@@ -44,7 +58,22 @@ static const QHash<PopupModelType, mu::engraving::ElementTypeSet> POPUP_DEPENDEN
     { PopupModelType::TYPE_CAPO, { mu::engraving::ElementType::CAPO } },
     { PopupModelType::TYPE_STRING_TUNINGS, { mu::engraving::ElementType::STRING_TUNINGS } },
     { PopupModelType::TYPE_SOUND_FLAG, { mu::engraving::ElementType::SOUND_FLAG, mu::engraving::ElementType::STAFF_TEXT } },
+    { PopupModelType::TYPE_STAFF_VISIBILITY, { mu::engraving::ElementType::STAFF_VISIBILITY_INDICATOR } },
     { PopupModelType::TYPE_DYNAMIC, { mu::engraving::ElementType::DYNAMIC } },
+    { PopupModelType::TYPE_TEXT,
+      { mu::engraving::ElementType::TEXT,
+        mu::engraving::ElementType::STAFF_TEXT,
+        mu::engraving::ElementType::SYSTEM_TEXT,
+        mu::engraving::ElementType::EXPRESSION,
+        mu::engraving::ElementType::REHEARSAL_MARK,
+        mu::engraving::ElementType::INSTRUMENT_CHANGE,
+        mu::engraving::ElementType::FINGERING,
+        mu::engraving::ElementType::STICKING,
+        mu::engraving::ElementType::HARMONY,
+        mu::engraving::ElementType::LYRICS,
+        mu::engraving::ElementType::FIGURED_BASS,
+        mu::engraving::ElementType::TEMPO_TEXT,
+        mu::engraving::ElementType::PLAY_COUNT_TEXT } },
     { PopupModelType::TYPE_PARTIAL_TIE, { mu::engraving::ElementType::PARTIAL_TIE_SEGMENT, mu::engraving::ElementType::TIE_SEGMENT } },
 };
 
@@ -63,7 +92,7 @@ QRect AbstractElementPopupModel::itemRect() const
     return m_itemRect;
 }
 
-bool AbstractElementPopupModel::supportsPopup(const EngravingItem* element)
+bool AbstractElementPopupModel::hasElementEditPopup(const EngravingItem* element)
 {
     if (!element) {
         return false;
@@ -71,6 +100,11 @@ bool AbstractElementPopupModel::supportsPopup(const EngravingItem* element)
 
     const PopupModelType modelType = modelTypeFromElement(element->type());
     if (modelType == PopupModelType::TYPE_UNDEFINED) {
+        return false;
+    }
+
+    if (modelType == PopupModelType::TYPE_TEXT) {
+        // Text style popup is only opened when making a selection during text editing
         return false;
     }
 
@@ -82,6 +116,16 @@ bool AbstractElementPopupModel::supportsPopup(const EngravingItem* element)
     default:
         return true;
     }
+}
+
+bool AbstractElementPopupModel::hasTextStylePopup(const EngravingItem* element)
+{
+    if (!element) {
+        return false;
+    }
+
+    const PopupModelType modelType = modelTypeFromElement(element->type());
+    return modelType == PopupModelType::TYPE_TEXT;
 }
 
 PopupModelType AbstractElementPopupModel::modelTypeFromElement(const engraving::ElementType& elementType)
@@ -207,11 +251,16 @@ void AbstractElementPopupModel::init()
 
     m_item = selection->element();
 
-    undoStack->changesChannel().onReceive(this, [this] (const ChangesRange& range) {
+    undoStack->changesChannel().onReceive(this, [this] (const ScoreChanges& changes) {
+        if (ignoreTextEditingChanges() && changes.isTextEditing) {
+            return;
+        }
+
         for (ElementType type : dependentElementTypes()) {
-            if (muse::contains(range.changedTypes, type)) {
+            if (muse::contains(changes.changedTypes, type)) {
                 emit dataChanged();
                 updateItemRect();
+                return;
             }
         }
     });
