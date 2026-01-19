@@ -301,7 +301,9 @@ void GuiApp::perform()
                 }
             });
 #if defined(Q_OS_IOS)
-            aTimer.Split(std::string("Done connecting."));
+            // lambda cpature did not work to get aTimer, it's a stack-based object
+            // and is probably deallocated by now.
+//            aTimer.Split(std::string("Done connecting."));
 #endif
             startupScenario()->runAfterSplashScreen();
             haveFinalized = true;
