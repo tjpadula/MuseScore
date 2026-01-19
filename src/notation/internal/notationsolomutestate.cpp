@@ -42,7 +42,7 @@ Ret NotationSoloMuteState::read(const engraving::MscReader& reader, const muse::
     const QJsonObject rootObj = QJsonDocument::fromJson(json.toQByteArrayNoCopy()).object();
 
     const QJsonArray tracksArray = rootObj.value("tracks").toArray();
-    for (const QJsonValueRef track : tracksArray) {
+    for (auto track : tracksArray) {
         const QJsonObject trackObject = track.toObject();
 
         const InstrumentTrackId id = {
