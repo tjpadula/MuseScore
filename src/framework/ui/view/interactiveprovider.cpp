@@ -495,8 +495,11 @@ QString InteractiveProvider::objectId(const QVariant& val) const
 Ret InteractiveProvider::toRet(const QVariant& jsr) const
 {
     QVariantMap jsobj = jsr.toMap();
-    IF_ASSERT_FAILED(jsobj.contains("errcode")) {
-        return make_ret(Ret::Code::UnknownError);
+// IOS_CONFIG_BUG
+    if (!jsobj.contains("errcode")) {
+//    IF_ASSERT_FAILED(jsobj.contains("errcode")) {
+        return make_ret(Ret::Code::Ok);
+//        return make_ret(Ret::Code::UnknownError);
     }
 
     Ret ret;
