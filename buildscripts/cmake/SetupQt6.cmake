@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if (OS_IS_WASM)
+if (OS_IS_WASM OR IOS)
     set(QT_IS_STATIC ON)
 endif()
 
@@ -121,7 +121,10 @@ else()
 endif()
 
 if (QT_IS_STATIC)
+    message (STATUS "Importing static plugins: ${all_qml_plugins}")
     qt_add_library(all_qml_plugins STATIC)
     qt_import_qml_plugins(all_qml_plugins)
     list(APPEND QT_LIBRARIES all_qml_plugins)
+else()
+    message (STATUS "QT_IS_STATIC is false --?")
 endif()
