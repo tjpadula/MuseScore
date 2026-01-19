@@ -144,6 +144,7 @@ set(LINK_LIB
     muse::cloud
     muse::languages
     muse::extensions
+    muse::multiinstances
 
     braille
     muse::diagnostics
@@ -162,7 +163,7 @@ set(LINK_LIB
 # print not available for iOS, we might to PDF export someday
 if (NOT IOS)
     list(APPEND LINK_LIB print)
-    list(APPEND LINK_LIB muse::multiinstances)
+#    list(APPEND LINK_LIB muse::multiinstances)
 endif()
 
 if (MUE_BUILD_BRAILLE_MODULE)
@@ -308,10 +309,17 @@ if (OS_IS_MAC)
             XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
             
             XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
-            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "9DSE6N75KE"
+
+# Let's try removing the development team, as the generated xcodeproj won't show us
+# the signing tab, maybe this is the issue? A created-from-xcode project has an empty
+# team here.
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
             XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic
+            
+            ENVIRONMENT "QV4_JS_MAX_STACK_SIZE=${QV4_JS_MAX_STACK_SIZE}"
             )
 
+#            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "9DSE6N75KE"
 #            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "V9R6W356UT"
 #            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "HUMBLE EARTH PRODUCTIONS INC"
 
@@ -419,7 +427,8 @@ if(IOS)
     message(STATUS "Adding MuseScoreStudio target_link_libraries: ${QT_LIBRARIES}")
     target_link_libraries(MuseScoreStudio PUBLIC ${QT_LIBRARIES})
     
-#    find_package(Qt6QmlImportScanner REQUIRED)
+    message(STATUS "Importing QML from path: ${CMAKE_SOURCE_DIR}")
+    find_package(Qt6QmlImportScanner REQUIRED)
     qt_import_qml_plugins(MuseScoreStudio PATH_TO_SCAN ${CMAKE_SOURCE_DIR})
 
     # Set iOS to use 8MB as its stack size, like MacOS does.
