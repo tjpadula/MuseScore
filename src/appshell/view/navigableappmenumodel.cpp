@@ -25,7 +25,8 @@
 #include <QWindow>
 #include <QKeyEvent>
 
-#include <private/qkeymapper_p.h>
+//#include <private/qkeymapper_p.h>
+//#include <include/QtGui/private/qkeymapper_p.h>
 
 #include "log.h"
 
@@ -53,14 +54,16 @@ QSet<int> possibleKeys(QKeyEvent* keyEvent)
     //! NOTE: correct work only with alt modifier
     correctedKeyEvent->setModifiers(Qt::AltModifier);
 
-    auto keys = QKeyMapper::possibleKeys(correctedKeyEvent);
+    QList<QKeyCombination> keys;
+//    auto keys = QKeyMapper::possibleKeys(correctedKeyEvent);
     return convertToSet(keys);
 }
 
 QSet<int> possibleKeys(const QChar& keySymbol)
 {
     QKeyEvent fakeKey(QKeyEvent::KeyRelease, Qt::Key_unknown, Qt::AltModifier, keySymbol);
-    auto keys = QKeyMapper::possibleKeys(&fakeKey);
+    QList<QKeyCombination> keys;
+//    auto keys = QKeyMapper::possibleKeys(&fakeKey);
 
     return convertToSet(keys);
 }
