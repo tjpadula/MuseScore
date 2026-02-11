@@ -22,45 +22,41 @@
 add_subdirectory(framework)
 
 # App (main)
-add_subdirectory(app)
+# IOS_CONFIG_BUG
+# Master moved this to the end
+#add_subdirectory(app)
 
 # IOS_CONFIG_BUG
-if(IOS)
+if (IOS)
 	message(STATUS "CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
-	target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-	target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR}/framework)
-    target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR}/framework/global)
-    target_include_directories(MuseScoreStudio PRIVATE ${PROJECT_SOURCE_DIR})
-	target_include_directories(MuseScoreStudio PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty)
+#	target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+#	target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR}/framework)
+#    target_include_directories(MuseScoreStudio PRIVATE ${CMAKE_CURRENT_LIST_DIR}/framework/global)
+#    target_include_directories(MuseScoreStudio PRIVATE ${PROJECT_SOURCE_DIR})
+#	target_include_directories(MuseScoreStudio PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty)
  
  
 
 	# IOS_CONFIG_BUG
 	# Why in the world should we have to include this all of a sudden?
 	message(STATUS "PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
-	target_include_directories(MuseScoreStudio PRIVATE ${PROJECT_BINARY_DIR})
+#	target_include_directories(MuseScoreStudio PRIVATE ${PROJECT_BINARY_DIR})
 
 endif()
 
 # Modules
-if (MUE_BUILD_APPSHELL_MODULE)
-
-    if (MUE_CONFIGURATION_IS_APPWEB)
-        add_subdirectory(appshell_web)
-    else()
-        add_subdirectory(appshell)
-    endif()
-
-endif()
 
 # IOS_CONFIG_BUG
 # liblouis requires more stack than iOS gives by default, we changed
 # the stack config for iOS to be adequate so liblouis works on iOS.
+
+# Modules must be listed in dependency order
 if (MUE_BUILD_BRAILLE_MODULE)
     add_subdirectory(braille)
+else()
+    add_subdirectory(stubs/braille)
 endif()
 
-add_subdirectory(commonscene)
 add_subdirectory(context)
 
 if (MUE_BUILD_CONVERTER_MODULE)
@@ -74,26 +70,48 @@ add_subdirectory(importexport)
 
 if (MUE_BUILD_INSPECTOR_MODULE)
     add_subdirectory(inspector)
+else()
+    add_subdirectory(stubs/inspector)
 endif()
 
 if (MUE_BUILD_INSTRUMENTSSCENE_MODULE)
     add_subdirectory(instrumentsscene)
+else()
+    add_subdirectory(stubs/instrumentsscene)
 endif()
 
 if (MUE_BUILD_MUSESOUNDS_MODULE)
     add_subdirectory(musesounds)
+else()
+    add_subdirectory(stubs/musesounds)
 endif()
 
 if (MUE_BUILD_NOTATION_MODULE)
     add_subdirectory(notation)
+else()
+    add_subdirectory(stubs/notation)
+endif()
+
+if (MUE_BUILD_NOTATIONSCENE_MODULE)
+    add_subdirectory(notationscene)
+else()
+    add_subdirectory(stubs/notationscene)
 endif()
 
 if (MUE_BUILD_PALETTE_MODULE)
     add_subdirectory(palette)
+else()
+    add_subdirectory(stubs/palette)
 endif()
 
 if (MUE_BUILD_PLAYBACK_MODULE)
     add_subdirectory(playback)
+else()
+    add_subdirectory(stubs/playback)
+endif()
+
+if (MUE_BUILD_PREFERENCES_MODULE)
+    add_subdirectory(preferences)
 endif()
 
 # IOS_CONFIG_BUG
@@ -105,11 +123,16 @@ if (MUE_BUILD_PROJECT_MODULE)
     add_subdirectory(project)
 endif()
 
-if (MUE_CONFIGURATION_IS_APPWEB)
-    add_subdirectory(webbridge)
+if (MUE_BUILD_APPSHELL_MODULE)
+    if (MUE_CONFIGURATION_IS_APPWEB)
+        add_subdirectory(web/appshell)
+    else()
+        add_subdirectory(appshell)
+    endif()
 endif()
 
-# Stubs
-add_subdirectory(stubs)
-
-
+# App (main)
+add_subdirectory(app)
+if (MUE_CONFIGURATION_IS_APPWEB)
+    add_subdirectory(web/appjs)
+endif()

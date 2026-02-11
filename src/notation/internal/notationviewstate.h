@@ -29,12 +29,12 @@
 
 namespace mu::notation {
 class Notation;
-class NotationViewState : public INotationViewState, public muse::async::Asyncable
+class NotationViewState : public INotationViewState, public muse::async::Asyncable, public muse::Injectable
 {
-    INJECT_STATIC(INotationConfiguration, configuration)
+    muse::GlobalInject<INotationConfiguration> configuration;
 
 public:
-    explicit NotationViewState(Notation* notation);
+    explicit NotationViewState(Notation* notation, const muse::modularity::ContextPtr& ctx);
 
     muse::Ret read(const engraving::MscReader& reader, const muse::io::path_t& pathPrefix = "") override;
     muse::Ret write(engraving::MscWriter& writer, const muse::io::path_t& pathPrefix = "") override;
@@ -42,7 +42,7 @@ public:
     bool isMatrixInited() const override;
     void setMatrixInited(bool inited) override;
 
-    muse::draw::Transform matrix() const override;
+    const muse::draw::Transform& matrix() const override;
     muse::async::Channel<muse::draw::Transform, NotationPaintView*> matrixChanged() const override;
     void setMatrix(const muse::draw::Transform& matrix, NotationPaintView* sender) override;
 

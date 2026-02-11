@@ -30,6 +30,7 @@
 #include <set>
 #include <memory>
 #include <optional>
+#include <utility>
 
 #include "global/async/channel.h"
 #include "global/types/ret.h"
@@ -50,8 +51,9 @@
 
 #include "../compat/midi/compatmidirenderinternal.h"
 
+#include "../editing/cmd.h"
+
 #include "chordlist.h"
-#include "cmd.h"
 #include "guitarbend.h"
 #include "input.h"
 #include "mscore.h"
@@ -128,7 +130,6 @@ class RehearsalMark;
 class RepeatList;
 class Rest;
 class Score;
-class ScoreElement;
 class IEngravingFont;
 class Segment;
 class Slur;
@@ -146,6 +147,8 @@ class UndoStack;
 
 class ShadowNote;
 
+class IAutomation;
+
 struct Interval;
 struct NoteVal;
 struct ShowAnchors;
@@ -155,11 +158,13 @@ enum class Key : signed char;
 enum class HairpinType : signed char;
 enum class SegmentType;
 enum class OttavaType : unsigned char;
+enum class Prefer : char;
 enum class Voicing : signed char;
 enum class HDuration : signed char;
 enum class AccidentalType : unsigned char;
 enum class LayoutBreakType : unsigned char;
 enum class CommandType : signed char;
+enum class SystemDividerType : unsigned char;
 
 enum class LoopBoundaryType : signed char {
     Unknown = -1,
@@ -267,7 +272,7 @@ struct ScoreChanges {
 
     bool isTextEditing = false;
 
-    std::map<EngravingItem*, std::unordered_set<CommandType> > changedItems;
+    std::map<EngravingObject*, std::unordered_set<CommandType> > changedObjects;
     ElementTypeSet changedTypes;
     PropertyIdSet changedPropertyIdSet;
     StyleIdSet changedStyleIdSet;
@@ -322,9 +327,9 @@ class Score : public EngravingObject, public muse::Injectable
     OBJECT_ALLOCATOR(engraving, Score)
     DECLARE_CLASSOF(ElementType::SCORE)
 
-    muse::Inject<muse::draw::IImageProvider> imageProvider = { this };
-    muse::Inject<IEngravingConfiguration> configuration = { this };
-    muse::Inject<IEngravingFontsProvider> engravingFonts = { this };
+    muse::GlobalInject<muse::draw::IImageProvider> imageProvider;
+    muse::GlobalInject<IEngravingConfiguration> configuration;
+    muse::GlobalInject<IEngravingFontsProvider> engravingFonts;
     muse::Inject<muse::IApplication> application = { this };
     muse::Inject<IEngravingElementsProvider> elementsProvider = { this };
 
@@ -345,10 +350,7 @@ public:
 
     static void onElementDestruction(EngravingItem* se);
 
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-    EngravingObjectList scanChildren() const override;
-    void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
+    void scanElements(std::function<void(EngravingItem*)> func) override;
 
     void dumpScoreTree();  // for debugging purposes
 
@@ -415,14 +417,8 @@ public:
     void cmdIncDurationDotted() { cmdIncDecDuration(-1, true); }
     void cmdDecDurationDotted() { cmdIncDecDuration(1, true); }
     void cmdIncDecDuration(int nSteps, bool stepDotted = false);
+    void cmdExtendToNextNote();
     void cmdToggleLayoutBreak(LayoutBreakType);
-    void cmdMoveMeasureToPrevSystem();
-    void cmdMoveMeasureToNextSystem();
-    void cmdToggleSystemLock();
-    void cmdApplyLockToSelection();
-    void cmdToggleScoreLock();
-    void cmdMakeIntoSystem();
-    void cmdAddStaffTypeChange(Measure* measure, staff_idx_t staffIdx, StaffTypeChange* stc);
     void cmdAddMeasureRepeat(Measure*, int numMeasures, staff_idx_t staffIdx);
     bool makeMeasureRepeatGroup(Measure*, int numMeasures, staff_idx_t staffIdx);
     void cmdFlip();
@@ -452,19 +448,13 @@ public:
 
     void realtimeAdvance(bool allowTransposition);
 
-    void addRemoveSystemLocks(int interval, bool lock);
-
-    bool transpose(Note* n, Interval, bool useSharpsFlats);
-    void transposeKeys(staff_idx_t staffStart, staff_idx_t staffEnd, const Fraction& tickStart, const Fraction& tickEnd, bool flip = false);
-    bool transpose(TransposeMode mode, TransposeDirection, Key transposeKey, int transposeInterval, bool trKeys, bool transposeChordNames,
-                   bool useDoubleSharpsFlats);
-
     bool appendMeasuresFromScore(Score* score, const Fraction& startTick, const Fraction& endTick);
     bool appendScore(Score*, bool addPageBreak = false, bool addSectionBreak = true);
 
     const std::vector<Staff*>& staves() const { return m_staves; }
     size_t nstaves() const { return m_staves.size(); }
     size_t visibleStavesCount() const;
+    bool allStavesInvisible() const;
     size_t ntracks() const { return m_staves.size() * VOICES; }
 
     staff_idx_t staffIdx(const Staff*) const;
@@ -494,8 +484,6 @@ public:
     void spellNotelist(std::vector<Note*>& notes);
     void undoChangeTpc(Note* note, int tpc);
     void undoChangeChordRestLen(ChordRest* cr, const TDuration&);
-    void undoTransposeHarmony(Harmony*, Interval interval, bool doubleSharpFlat = true);
-    void undoTransposeHarmonyDiatonic(Harmony*, int interval, bool doubleSharpFlat, bool transposeKeys);
     void undoExchangeVoice(Measure* measure, voice_idx_t val1, voice_idx_t val2, staff_idx_t staff1, staff_idx_t staff2);
     void undoRemovePart(Part* part, size_t partIdx = muse::nidx);
     void undoInsertPart(Part* part, size_t targetPartIndex);
@@ -538,7 +526,7 @@ public:
     void createCRSequence(const Fraction& f, ChordRest* cr, const Fraction& tick);
 
     Fraction makeGap(Segment*, track_idx_t track, const Fraction&, Tuplet*, bool keepChord = false);
-    bool makeGap1(const Fraction& baseTick, staff_idx_t staffIdx, const Fraction& len, int voiceOffset[VOICES]);
+    bool makeGap1(const Fraction& baseTick, staff_idx_t staffIdx, const Fraction& len, const Fraction voiceOffset[VOICES]);
     bool makeGapVoice(Segment* seg, track_idx_t track, Fraction len, const Fraction& tick);
 
     Rest* addRest(const Fraction& tick, track_idx_t track, TDuration, Tuplet*);
@@ -596,6 +584,7 @@ public:
     void cloneVoice(track_idx_t strack, track_idx_t dtrack, Segment* sf, const Fraction& lTick, bool link = true, bool spanner = true);
 
     muse::Ret repitchNote(const Position& pos, bool replace);
+    std::pair<Note*, Note*> repitchReplaceNote(Chord*, const NoteVal&, bool forceAccidental = false);   // returns new note and last tied note
     void regroupNotesAndRests(const Fraction& startTick, const Fraction& endTick, track_idx_t track);
 
     void startCmd(const TranslatableString& actionName);             // start undoable command
@@ -674,14 +663,15 @@ public:
     void select(const std::vector<EngravingItem*>& items, SelectType = SelectType::SINGLE, staff_idx_t staff = 0);
     void selectSimilar(EngravingItem* e, bool sameStaff);
     void selectSimilarInRange(EngravingItem* e);
-    static void collectMatch(void* data, EngravingItem* e);
-    static void collectNoteMatch(void* data, EngravingItem* e);
+    static void collectMatch(ElementPattern* p, EngravingItem* e);
+    static void collectNoteMatch(NotePattern* p, EngravingItem* e);
     void deselect(EngravingItem* obj);
     void deselectAll() { m_selection.deselectAll(); }
     void updateSelection() { m_selection.update(); }
     EngravingItem* getSelectedElement() const { return m_selection.element(); }
     const Selection& selection() const { return m_selection; }
     Selection& selection() { return m_selection; }
+    const SelectionFilter& selectionFilter() const { return m_selectionFilter; }
     SelectionFilter& selectionFilter() { return m_selectionFilter; }
     void setSelection(const Selection& s);
 
@@ -727,8 +717,7 @@ public:
     void setIsOpen(bool open);
 
     void spell();
-    void spell(staff_idx_t startStaff, staff_idx_t endStaff, Segment* startSegment, Segment* endSegment);
-    void spell(Note*);
+    void spellWithSharpsOrFlats(Prefer prefer);
     void changeEnharmonicSpelling(bool both);
 
     Fraction nextSeg(const Fraction& tick, int track);
@@ -770,17 +759,15 @@ public:
     void spatiumChanged(double oldValue, double newValue);
     void styleChanged() override;
 
-    std::vector<EngravingItem*> cmdPaste(const IMimeData* ms, MuseScoreView* view, Fraction scale = Fraction(1, 1));
+    bool cmdPaste(const IMimeData* ms, MuseScoreView* view, Fraction scale = Fraction(1, 1));
 
     // TODO: Not ideal that these are public but it's very convenient for testing purposes (a copy/paste refactor is coming soon)...
-    std::vector<EngravingItem*> cmdPasteSymbol(muse::ByteArray& data, MuseScoreView* view, Fraction scale = Fraction(1, 1));
-    void cmdPasteStaffList(muse::ByteArray& data, Fraction scale = Fraction(1, 1));
-    void cmdPasteSymbolList(muse::ByteArray& data);
+    bool cmdPasteSymbol(muse::ByteArray& data, MuseScoreView* view, Fraction scale = Fraction(1, 1));
+    bool cmdPasteStaffList(muse::ByteArray& data, Fraction scale = Fraction(1, 1));
+    bool cmdPasteSymbolList(muse::ByteArray& data);
 
     bool pasteStaff(XmlReader&, Segment* dst, staff_idx_t staffIdx, Fraction scale = Fraction(1, 1));
     void pasteSymbols(XmlReader& e, ChordRest* dst);
-
-    static void transposeChord(Chord* c, const Fraction& tick);
 
     BeatType tick2beatType(const Fraction& tick) const;
 
@@ -791,7 +778,7 @@ public:
 
     void updateSwing();
 
-    void updateCapo();
+    void updateCapo(bool ignoreNotationUpdate = false);
     void updateChannel();
 
     void cmdConcertPitchChanged(bool);
@@ -876,7 +863,7 @@ public:
     void connectTies(bool silent = false);
     void undoRemoveStaleTieJumpPoints(bool undo = true);
 
-    void scanElementsInRange(void* data, void (* func)(void*, EngravingItem*), bool all = true);
+    void scanElementsInRange(std::function<void(EngravingItem*)> func);
     int fileDivision() const { return m_fileDivision; }   ///< division of current loading *.msc file
     void splitStaff(staff_idx_t staffIdx, int splitPoint);
     FiguredBass* addFiguredBass();
@@ -906,13 +893,8 @@ public:
     std::map<String, String>& metaTags() { return m_metaTags; }
     void setMetaTags(const std::map<String, String>& t) { m_metaTags = t; }
 
-    //@ returns as a string the metatag named 'tag'
     String metaTag(const String& tag) const;
-    //@ sets the metatag named 'tag' to 'val'
     void setMetaTag(const String& tag, const String& val);
-
-    void cmdSplitMeasure(ChordRest*);
-    void cmdJoinMeasure(Measure*, Measure*);
 
     int pageNumberOffset() const { return m_pageNumberOffset; }
     void setPageNumberOffset(int v) { m_pageNumberOffset = v; }
@@ -943,8 +925,6 @@ public:
 
     void cmdSelectAll();
     void cmdSelectSection();
-    void transposeSemitone(int semitone);
-    void transposeDiatonicAlterations(TransposeDirection direction);
 
     struct InsertMeasureOptions {
         InsertMeasureOptions() {}
@@ -969,12 +949,12 @@ public:
 
     std::list<Score*> scoreList();
 
-    //@ appends to the score a number of measures
-    void appendMeasures(int);
+    void appendMeasures(int numMeasures);
 
     const std::multimap<int, Spanner*>& spanner() const { return m_spanner.map(); }
     SpannerMap& spannerMap() { return m_spanner; }
     const SpannerMap& spannerMap() const { return m_spanner; }
+    std::vector<Spanner*> spannerList() const; // Return all spanners as a vector for Plugin API
     bool isSpannerStartEnd(const Fraction& tick, track_idx_t track) const;
     void removeSpanner(Spanner*);
     void addSpanner(Spanner*, bool computeStartEnd = true);
@@ -986,6 +966,7 @@ public:
     void removeUnmanagedSpanner(Spanner*);
 
     Hairpin* addHairpin(HairpinType type, ChordRest* cr1, ChordRest* cr2 = nullptr);
+    Hairpin* addHairpin(HairpinType type, Fraction sTick, Fraction eTick, track_idx_t track);
     void addHairpin(Hairpin* hairpin, ChordRest* cr1, ChordRest* cr2 = nullptr);
     void addHairpinToDynamic(Hairpin* hairpin, Dynamic* dynamic);
     Hairpin* addHairpinToDynamicOnGripDrag(Dynamic* dynamic, bool isLeftGrip, const PointF& pos);
@@ -999,10 +980,7 @@ public:
     std::shared_ptr<IEngravingFont> engravingFont() const { return m_engravingFont; }
     void setEngravingFont(std::shared_ptr<IEngravingFont> f) { m_engravingFont = f; }
 
-    std::list<staff_idx_t> uniqueStaves() const;
-
-    void transpositionChanged(Part* part, Interval oldTransposition, Fraction tickStart = { 0, 1 }, Fraction tickEnd = { -1, 1 });
-    void transpositionChanged(Part* part, const Fraction& instrumentTick, Interval oldTransposition);
+    std::vector<staff_idx_t> uniqueStaves() const;
 
     void moveUp(ChordRest*);
     void moveDown(ChordRest*);
@@ -1015,19 +993,23 @@ public:
     EngravingItem* lastElement(bool frame = true);
 
     size_t nmeasures() const;
-    bool hasLyrics();
-    bool hasHarmonies();
-    int  lyricCount();
-    int  harmonyCount();
-    String extractLyrics();
-    int keysig();
-    int duration();
-    int durationWithoutRepeats();
+
+    bool hasHarmonies() const;
+    int harmonyCount() const;
+
+    bool hasLyrics() const;
+    int  lyricCount() const;
+    std::vector<Lyrics*> lyrics() const;
+    String extractLyrics() const;
+
+    int keysig() const;
+    int duration() const;
+    int durationWithoutRepeats() const;
 
     void cmdInsertClef(Clef* clef, ChordRest* cr);
 
-    void cmdExplode();
-    void cmdImplode();
+    bool cmdExplode();
+    bool cmdImplode();
     void cmdSlashFill();
     void cmdSlashRhythm();
     void cmdResequenceRehearsalMarks();
@@ -1082,18 +1064,13 @@ public:
     void removeSystemLock(const SystemLock* lock);
     void clearSystemLocks() { m_systemLocks.clear(); }
 
-    void undoAddSystemLock(const SystemLock* lock);
-    void undoRemoveSystemLock(const SystemLock* lock);
-    void undoRemoveAllLocks();
-    void toggleSystemLock(const std::vector<System*>& systems);
-    void makeIntoSystem(MeasureBase* first, MeasureBase* last);
-    void removeSystemLocksOnAddLayoutBreak(LayoutBreakType breakType, const MeasureBase* measure);
-    void removeLayoutBreaksOnAddSystemLock(const SystemLock* lock);
-    void removeSystemLocksOnRemoveMeasures(const MeasureBase* m1, const MeasureBase* m2);
-    void removeSystemLocksContainingMMRests();
-    void updateSystemLocksOnCreateMMRests(Measure* first, Measure* last);
-
     void rebuildFretBox();
+
+    const std::map<size_t, std::array<SystemDivider*, 2> > systemDividers() const { return m_systemDividers; }
+    SystemDivider* systemDivider(size_t systemIdx, SystemDividerType type) const;
+    void addSystemDivider(size_t systemIdx, SystemDivider* divider);
+
+    virtual IAutomation* automation() const;
 
     friend class Chord;
 
@@ -1137,7 +1114,7 @@ private:
 
     bool rewriteMeasures(Measure* fm, Measure* lm, const Fraction&, staff_idx_t staffIdx);
     bool rewriteMeasures(Measure* fm, const Fraction& ns, staff_idx_t staffIdx);
-    std::list<Fraction> splitGapToMeasureBoundaries(ChordRest*, Fraction);
+    std::vector<Fraction> splitGapToMeasureBoundaries(ChordRest*, Fraction);
     void pasteChordRest(ChordRest* cr, const Fraction& tick);
 
     void doSelect(EngravingItem* e, SelectType type, staff_idx_t staffIdx);
@@ -1183,11 +1160,13 @@ private:
 
     void applyAccidentalToInputNotes(AccidentalType accidentalType);
 
-    Note* addPitchToChord(NoteVal&, Chord* chord, InputState* externalInputState = nullptr);
+    Note* addPitchToChord(NoteVal&, Chord* chord, InputState* externalInputState = nullptr, bool forceAccidental = false);
     Note* addTiedMidiPitch(int pitch, bool addFlag, Chord* prevChord, bool allowTransposition);
     Note* addNoteToTiedChord(Chord*, const NoteVal& noteVal, bool forceAccidental = false, const std::set<SymId>& articulationIds = {});
 
     FBox* findFretBox() const;
+
+    void cmdAddParenthesesToNotes();
 
     MasterScore* m_masterScore = nullptr;
     std::list<MuseScoreView*> m_viewer;
@@ -1219,6 +1198,8 @@ private:
     //
     std::vector<Page*> m_pages;            // pages are build from systems
     std::vector<System*> m_systems;        // measures are accumulated to systems
+
+    std::map<size_t, std::array<SystemDivider*, 2> > m_systemDividers; // list of system dividers (left and right) indexed by system
 
     InputState m_is;
     MStyle m_style;

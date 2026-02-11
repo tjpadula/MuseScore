@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -11,6 +11,7 @@
       <titleFontFace>Arial</titleFontFace>
       <titleFontSize>48</titleFontSize>
       <titleFontSpatiumDependent>1</titleFontSpatiumDependent>
+      <titleMusicalSymbolSize>48</titleMusicalSymbolSize>
       <defaultsVersion>301</defaultsVersion>
       <spatium>1.364</spatium>
       </Style>
@@ -327,7 +328,7 @@
       <name>Flute</name>
       <Division>480</Division>
       <Style>
-        <spatium>1.74978</spatium>
+        <spatium>1.75</spatium>
         </Style>
       <showInvisible>1</showInvisible>
       <showUnprintable>1</showUnprintable>
@@ -537,7 +538,7 @@
       <name>Oboe</name>
       <Division>480</Division>
       <Style>
-        <spatium>1.74978</spatium>
+        <spatium>1.75</spatium>
         </Style>
       <showInvisible>1</showInvisible>
       <showUnprintable>1</showUnprintable>

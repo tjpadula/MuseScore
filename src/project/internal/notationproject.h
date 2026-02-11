@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2025 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_PROJECT_NOTATIONPROJECT_H
-#define MU_PROJECT_NOTATIONPROJECT_H
+#pragma once
 
 #include "../inotationproject.h"
 
@@ -34,7 +33,6 @@
 
 #include "engraving/engravingproject.h"
 
-#include "notation/inotationcreator.h"
 #include "notation/inotationconfiguration.h"
 #include "projectaudiosettings.h"
 #include "iprojectmigrator.h"
@@ -44,27 +42,29 @@
 namespace mu::engraving {
 class MscReader;
 class MscWriter;
+
+namespace write {
+class WriteContext;
+}
 }
 
 namespace mu::project {
 class NotationProject : public INotationProject, public muse::Injectable, public muse::async::Asyncable
 {
-    muse::Inject<muse::io::IFileSystem> fileSystem = { this };
-    muse::Inject<IProjectConfiguration> configuration = { this };
-    muse::Inject<notation::INotationConfiguration> notationConfiguration = { this };
-    muse::Inject<notation::INotationCreator> notationCreator = { this };
+    muse::GlobalInject<muse::io::IFileSystem> fileSystem;
+    muse::GlobalInject<IProjectConfiguration> configuration;
+    muse::GlobalInject<muse::IGlobalConfiguration> globalConfiguration;
+    muse::GlobalInject<notation::INotationConfiguration> notationConfiguration;
     muse::Inject<INotationReadersRegister> readers = { this };
     muse::Inject<INotationWritersRegister> writers = { this };
     muse::Inject<IProjectMigrator> migrator = { this };
-    muse::Inject<muse::IGlobalConfiguration> globalConfiguration = { this };
 
 public:
     NotationProject(const muse::modularity::ContextPtr& iocCtx)
         : muse::Injectable(iocCtx) {}
     ~NotationProject() override;
 
-    muse::Ret load(const muse::io::path_t& path,
-                   const muse::io::path_t& stylePath = muse::io::path_t(), bool forceMode = false, const std::string& format = "") override;
+    muse::Ret load(const muse::io::path_t& path, const OpenParams& params = {}, const std::string& format = "") override;
     muse::Ret createNew(const ProjectCreateOptions& projectInfo) override;
 
     muse::io::path_t path() const override;
@@ -96,6 +96,7 @@ public:
 
     muse::Ret save(
         const muse::io::path_t& path = muse::io::path_t(), SaveMode saveMode = SaveMode::Save, bool createBackup = true) override;
+    muse::Ret savePage(const muse::io::path_t& path, const size_t pageNum) override;
     muse::async::Channel<muse::io::path_t, SaveMode> saveComplited() const override;
 
     muse::Ret writeToDevice(QIODevice* device) override;
@@ -111,8 +112,8 @@ private:
 
     muse::Ret loadTemplate(const ProjectCreateOptions& projectOptions);
 
-    muse::Ret doLoad(const muse::io::path_t& path, const muse::io::path_t& stylePath, bool forceMode, const std::string& format);
-    muse::Ret doImport(const muse::io::path_t& path, const muse::io::path_t& stylePath, bool forceMode);
+    muse::Ret doLoad(const muse::io::path_t& path, const OpenParams& params, const std::string& format);
+    muse::Ret doImport(const muse::io::path_t& path, const OpenParams& params);
 
     muse::Ret saveScore(const muse::io::path_t& path, const std::string& fileSuffix, bool generateBackup = true,
                         bool createThumbnail = true, bool isAutosave = false);
@@ -121,7 +122,9 @@ private:
     muse::Ret doSave(const muse::io::path_t& path, engraving::MscIoMode ioMode, bool generateBackup = true, bool createThumbnail = true,
                      bool isAutosave = false);
     muse::Ret makeBackup(muse::io::path_t filePath);
-    muse::Ret writeProject(engraving::MscWriter& msczWriter, bool onlySelection, bool createThumbnail = true);
+    muse::Ret writeProject(const muse::io::path_t& path, const engraving::write::WriteContext* ctx = nullptr);
+    muse::Ret writeProject(engraving::MscWriter& msczWriter, bool createThumbnail = true,
+                           const engraving::write::WriteContext* ctx = nullptr);
     muse::Ret checkSavedFileForCorruption(engraving::MscIoMode ioMode, const muse::io::path_t& path, const muse::io::path_t& scoreFileName);
 
     void listenIfNeedSaveChanges();
@@ -148,5 +151,3 @@ private:
     bool m_hasNonUndoStackChanges = false;
 };
 }
-
-#endif // MU_PROJECT_NOTATIONPROJECT_H

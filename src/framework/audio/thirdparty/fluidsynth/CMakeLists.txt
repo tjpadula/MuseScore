@@ -1,14 +1,22 @@
-declare_thirdparty_module(fluidsynth)
+# Well, well, well, this file is included in the build twice. Yes, we intentionally
+# misnamed the directory, because "turbo" doesn't appear anywhere else in the build.
+# Ok, and turning off the extra fluidsynth build commands in 
+# src/framework/audio/CMakeLists.txt leads to us only being included once. Progress...
+message(STATUS "Processing src/framework/audio/thirdparty/turbosynth/CMakeLists.txt")
+
+if (SOMETHING_BROKE_IN_THE_MERGE)
+
+if (NOT IOS)
+muse_create_thirdparty_module(fluidsynth)
 
 include(${CMAKE_CURRENT_LIST_DIR}/fluidsynth.cmake)
 
-set(MODULE_SRC
+target_sources(fluidsynth PRIVATE 
     ${FLUIDSYNTH_SRC}
+    vorbis_decode.cpp
     )
 
-set (MODULE_INCLUDE
-    ${FLUIDSYNTH_INC}
-    )
+target_include_directories(fluidsynth PUBLIC ${FLUIDSYNTH_INC})
 
 set (MODULE_INCLUDE_PRIVATE
     ${SNDFILE_INCDIR}
@@ -17,6 +25,7 @@ set (MODULE_INCLUDE_PRIVATE
 set (MODULE_DEF
     ${FLUIDSYNTH_DEF}
     )
+endif()
 
 # IOS_CONFIG_BUG
 # This appears to be the place where we link libsndfile.a into the app, way down in
@@ -33,24 +42,49 @@ set(MODULE_LINK
     ${SNDFILE_LIB} ${LIBOGG_LIBRARY} ${LIBVORBIS_LIBRARY}
     )
 
-set(MODULE_USE_UNITY OFF)
-set(MODULE_USE_COVERAGE OFF)
+# Master has this:::
+#target_compile_definitions(fluidsynth PUBLIC ${FLUIDSYNTH_DEF})
 
-setup_module()
+if (NOT MUSE_ENABLE_UNIT_TESTS_CODE_COVERAGE)
+ #   target_compile_definitions(fluidsynth PRIVATE EXTERN_VORBIS_SUPPORT)
+endif()
+# Master ends here:::
 
-#target_no_warning(${MODULE} -Wunused-const-variable=0)
-target_no_warning(${MODULE} -Wno-deprecated)
-target_no_warning(${MODULE} -Wno-unused-parameter)
-target_no_warning(${MODULE} -Wno-unused-variable)
-target_no_warning(${MODULE} -Wno-type-limits)
-target_no_warning(${MODULE} -Wno-unknown-pragmas)
-target_no_warning(${MODULE} -Wno-conversion)
-target_no_warning(${MODULE} -Wno-uninitialized)
-target_no_warning(${MODULE} -Wno-deprecated-declarations)
-target_no_warning(${MODULE} -WMSVC-no-translation-unit-is-empty)
-target_no_warning(${MODULE} -WMSVC-no-nonstandard-extension-used)
-target_no_warning(${MODULE} -WMSVC-no-assignment-within-conditional-expression)
-target_no_warning(${MODULE} -WMSVC-no-hides-previous)
-target_no_warning(${MODULE} -WMSVC-no-undefined-assuming-extern)
-target_no_warning(${MODULE} -WMSVC-named-type-definition-in-parentheses)
-target_no_warning(${MODULE} -WMSVC-no-different-enum-types)
+endif(SOMETHING_BROKE_IN_THE_MERGE)
+
+muse_create_thirdparty_module(fluidsynth)
+
+include(${CMAKE_CURRENT_LIST_DIR}/fluidsynth.cmake)
+
+target_sources(fluidsynth PRIVATE 
+    ${FLUIDSYNTH_SRC}
+    vorbis_decode.cpp
+    )
+
+target_include_directories(fluidsynth PUBLIC ${FLUIDSYNTH_INC})
+
+target_compile_definitions(fluidsynth PUBLIC ${FLUIDSYNTH_DEF})
+
+if (NOT MUSE_ENABLE_UNIT_TESTS_CODE_COVERAGE)
+    target_compile_definitions(fluidsynth PRIVATE EXTERN_VORBIS_SUPPORT)
+endif()
+
+# if (FALSE)
+#target_no_warning(fluidsynth -Wunused-const-variable=0)
+target_no_warning(fluidsynth -Wno-deprecated)
+target_no_warning(fluidsynth -Wno-unused-parameter)
+target_no_warning(fluidsynth -Wno-unused-variable)
+target_no_warning(fluidsynth -Wno-type-limits)
+target_no_warning(fluidsynth -Wno-unknown-pragmas)
+target_no_warning(fluidsynth -Wno-conversion)
+target_no_warning(fluidsynth -Wno-uninitialized)
+target_no_warning(fluidsynth -Wno-deprecated-declarations)
+target_no_warning(fluidsynth -WMSVC-no-translation-unit-is-empty)
+target_no_warning(fluidsynth -WMSVC-no-nonstandard-extension-used)
+target_no_warning(fluidsynth -WMSVC-no-assignment-within-conditional-expression)
+target_no_warning(fluidsynth -WMSVC-no-hides-previous)
+target_no_warning(fluidsynth -WMSVC-no-undefined-assuming-extern)
+target_no_warning(fluidsynth -WMSVC-named-type-definition-in-parentheses)
+target_no_warning(fluidsynth -WMSVC-no-different-enum-types)
+# endif()
+

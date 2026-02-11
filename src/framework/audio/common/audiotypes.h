@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,11 +31,14 @@
 #include "global/types/secs.h"
 #include "global/types/ratio.h"
 #include "global/types/string.h"
+#include "global/types/ret.h"
 #include "global/realfn.h"
 #include "global/async/channel.h"
 #include "global/io/iodevice.h"
 
 #include "mpe/events.h"
+
+#include "log.h"
 
 namespace muse::audio {
 using msecs_t = int64_t;
@@ -78,6 +81,7 @@ static constexpr samples_t MINIMUM_BUFFER_SIZE = 128;
 #endif
 
 static constexpr samples_t MAXIMUM_BUFFER_SIZE = 4096;
+static constexpr samples_t DEFAULT_BUFFER_SIZE = 1024;
 
 struct OutputSpec {
     sample_rate_t sampleRate = 0;
@@ -104,25 +108,51 @@ enum class SoundTrackType {
     WAV
 };
 
+enum class AudioSampleFormat {
+    Undefined = 0,
+    Int16,
+    Int24,
+    Float32
+};
+
 struct SoundTrackFormat {
     SoundTrackType type = SoundTrackType::Undefined;
     OutputSpec outputSpec;
+    AudioSampleFormat sampleFormat = AudioSampleFormat::Undefined;
     int bitRate = 0;
 
     bool operator==(const SoundTrackFormat& other) const
     {
         return type == other.type
                && outputSpec == other.outputSpec
+               && sampleFormat == other.sampleFormat
                && bitRate == other.bitRate;
     }
 
     bool isValid() const
     {
-        return type != SoundTrackType::Undefined && outputSpec.isValid();
+        if (!outputSpec.isValid()) {
+            return false;
+        }
+
+        switch (type) {
+        case SoundTrackType::WAV:
+        case SoundTrackType::FLAC:
+            // For lossless/uncompressed, sample format must be defined
+            return sampleFormat != AudioSampleFormat::Undefined;
+
+        case SoundTrackType::MP3:
+        case SoundTrackType::OGG:
+            // For lossy, bitrate must be positive
+            return bitRate > 0;
+
+        default:
+            return false;
+        }
     }
 };
 
-struct AudioWorkerConfig {
+struct AudioEngineConfig {
     bool autoProcessOnlineSoundsInBackground = false;
 };
 
@@ -133,8 +163,8 @@ using AudioResourceVendor = std::string;
 using AudioResourceAttributes = std::map<String, String>;
 using AudioUnitConfig = std::map<std::string, std::string>;
 
-static const String PLAYBACK_SETUP_DATA_ATTRIBUTE("playbackSetupData");
-static const String CATEGORIES_ATTRIBUTE("categories");
+static const String PLAYBACK_SETUP_DATA_ATTRIBUTE(u"playbackSetupData");
+static const String CATEGORIES_ATTRIBUTE(u"categories");
 
 enum class AudioResourceType {
     Undefined = -1,
@@ -360,13 +390,11 @@ struct AudioParams {
 };
 
 struct AudioSignalVal {
-    float amplitude = 0.f;
     volume_dbfs_t pressure = 0.f;
 
     inline bool operator ==(const AudioSignalVal& other) const
     {
-        return muse::is_equal(amplitude, other.amplitude)
-               && pressure == other.pressure;
+        return pressure == other.pressure;
     }
 };
 
@@ -375,9 +403,9 @@ using AudioSignalChanges = async::Channel<AudioSignalValuesMap>;
 
 static constexpr volume_dbfs_t MINIMUM_OPERABLE_DBFS_LEVEL = volume_dbfs_t::make(-100.f);
 struct AudioSignalsNotifier {
-    void updateSignalValues(const audioch_t audioChNumber, const float newAmplitude)
+    void updateSignalValue(const audioch_t audioChNumber, const float newPeak)
     {
-        volume_dbfs_t newPressure = (newAmplitude > 0.f) ? volume_dbfs_t(muse::linear_to_db(newAmplitude)) : MINIMUM_OPERABLE_DBFS_LEVEL;
+        volume_dbfs_t newPressure = (newPeak > 0.f) ? volume_dbfs_t(muse::linear_to_db(newPeak)) : MINIMUM_OPERABLE_DBFS_LEVEL;
         newPressure = std::max(newPressure, MINIMUM_OPERABLE_DBFS_LEVEL);
 
         AudioSignalVal& signalVal = m_signalValuesMap[audioChNumber];
@@ -390,27 +418,34 @@ struct AudioSignalsNotifier {
             return;
         }
 
-        signalVal.amplitude = newAmplitude;
         signalVal.pressure = newPressure;
-
-        m_needNotifyAboutChanges = true;
+        m_shouldNotifyAboutChanges = true;
     }
 
     void notifyAboutChanges()
     {
-        if (m_needNotifyAboutChanges) {
+        if (m_shouldNotifyAboutChanges) {
             audioSignalChanges.send(m_signalValuesMap);
-            m_needNotifyAboutChanges = false;
+            m_shouldNotifyAboutChanges = false;
         }
     }
 
-    AudioSignalChanges audioSignalChanges;
+    //! NOTE It would be nice if the driver callback was called in one thread.
+    //! But some drivers, for example PipeWire, use queues
+    //! And then the callback can be called in different threads.
+    //! If a score is open, we will change the audio API (change the driver)
+    //! then the number of threads used may increase...
+    //! Channels allow 10 threads by default. Here we're increasing that to the maximum...
+    //! If this is not enough, then we need to make sure that the callback is called in one thread,
+    //! or use something else here instead of channels, some kind of queues.
+    const int _max_threads = 100;
+    AudioSignalChanges audioSignalChanges = AudioSignalChanges(_max_threads);
 
 private:
     static constexpr volume_dbfs_t PRESSURE_MINIMAL_VALUABLE_DIFF = volume_dbfs_t::make(2.5f);
 
     AudioSignalValuesMap m_signalValuesMap;
-    bool m_needNotifyAboutChanges = false;
+    bool m_shouldNotifyAboutChanges = false;
 };
 
 enum class PlaybackStatus {
@@ -462,6 +497,16 @@ enum class RenderMode {
     OfflineMode
 };
 
+//! NOTE When commands arrive at the engine, it exec them.
+//! These can be quick commands like changing the volume,
+//! or longer commands like add a new track.
+enum class OperationType {
+    Undefined = -1,
+    NoOperation,
+    QuickOperation,
+    LongOperation,
+};
+
 struct InputProcessingProgress {
     struct ChunkInfo {
         secs_t start = 0.0;
@@ -491,23 +536,25 @@ struct InputProcessingProgress {
         Status status = Status::Undefined;
         int errorCode = 0;
         std::string errorText;
+        using StatusData = std::map<std::string, std::string>;
+        StatusData data;
     };
 
     void start()
     {
         isStarted = true;
-        processedChannel.send({ Status::Started, 0, {} }, {}, {});
+        processedChannel.send({ Status::Started, 0, {}, {} }, {}, {});
     }
 
-    void process(const ChunkInfoList& chuncs, int64_t current, int64_t total)
+    void process(const ChunkInfoList& chunks, int64_t current, int64_t total)
     {
-        processedChannel.send({ Status::Processing, 0, {} }, chuncs, { current, total });
+        processedChannel.send({ Status::Processing, 0, {}, {} }, chunks, { current, total });
     }
 
-    void finish(int errcode, const std::string& err = {})
+    void finish(int errcode, const std::string& err = {}, const StatusInfo::StatusData& data = {})
     {
         isStarted = false;
-        processedChannel.send({ Status::Finished, errcode, err }, {}, {});
+        processedChannel.send({ Status::Finished, errcode, err, data }, {}, {});
     }
 
     bool isStarted = false;

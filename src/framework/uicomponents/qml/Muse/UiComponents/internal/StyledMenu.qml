@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,13 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Window 2.15
+pragma ComponentBehavior: Bound
 
-import Muse.Ui 1.0
-import Muse.UiComponents 1.0
+import QtQuick
+import QtQuick.Window
+
+import Muse.Ui
+import Muse.UiComponents
 
 MenuView {
     id: root
@@ -33,7 +33,7 @@ MenuView {
     property alias model: view.model
 
     property int preferredAlign: Qt.AlignRight // Left, HCenter, Right
-    property bool hasSiblingMenus: loader.hasSiblingMenus
+    required property bool hasSiblingMenus
 
     signal handleMenuItem(string itemId)
     signal openPrevMenu()
@@ -55,10 +55,16 @@ MenuView {
         return focused
     }
 
+    property Component menuMetricsComponent: Component {
+        MenuMetrics{}
+    }
+
     function calculateSize() {
-        var menuMetricsComponent = Qt.createComponent("MenuMetrics.qml");
         root.menuMetrics = menuMetricsComponent.createObject(root)
         root.menuMetrics.calculate(model)
+
+        // for debuging
+        //ui.sleep(1000)
 
         //! NOTE: Due to the fact that the view has a dynamic delegate,
         //  the height calculation occurs with an error
@@ -66,7 +72,7 @@ MenuView {
         //  Let's manually adjust the height of the content
         var sepCount = 0
         for (let i = 0; i < model.length; i++) {
-            let item = Boolean(model.get) ? model.get(i).itemRole : model[i]
+            let item = Boolean(model.get) ? model.get(i).item : model[i]
             if (!Boolean(item.title)) {
                 sepCount++
             }
@@ -84,6 +90,9 @@ MenuView {
         root.contentWidth = root.menuMetrics.itemWidth
         root.contentHeight = Math.min(itemHeight * itemsCount + sepCount * prv.separatorHeight +
                                       prv.viewVerticalMargin * 2, anchorItemHeight - padding * 2)
+
+        // for debuging
+        // ui.sleep(1000)
 
         x = 0
         y = parent.height
@@ -118,7 +127,7 @@ MenuView {
                 index -= view.count
             }
 
-            let item = Boolean(model.get) ? model.get(index).itemRole : model[index]
+            let item = Boolean(model.get) ? model.get(index).item : model[index]
             if (item && item.enabled && requestingMenuModel.menuItemMatchesSymbol(item, symbol)) {
                 if (firstMatchingIndex === -1) {
                     firstMatchingIndex = index
@@ -256,8 +265,7 @@ MenuView {
             root.subMenuLoader.hasSiblingMenus = root.hasSiblingMenus
 
             root.subMenuLoader.handleMenuItem.connect(function(itemId) {
-                Qt.callLater(root.handleMenuItem, itemId)
-                root.subMenuLoader.close()
+                root.handleMenuItem(itemId)
             })
 
             root.subMenuLoader.opened.connect(function(itemId) {
@@ -328,34 +336,31 @@ MenuView {
             delegate: Loader {
                 id: loader
 
-                property var itemData: Boolean(root.model.get) ? model.itemRole : modelData
-                property bool isSeparator: !Boolean(itemData) || !Boolean(itemData.title) || itemData.title === ""
+                required property var model
+                required property int index
+
+                readonly property var modelData: Boolean(root.model.get) ? model.item : model.modelData
+                readonly property bool isSeparator: !(modelData?.title)
 
                 sourceComponent: isSeparator ? separatorComp : menuItemComp
-
-                onLoaded: {
-                    loader.item.modelData = Qt.binding(() => (itemData))
-                    loader.item.width = Qt.binding(() => ( Boolean(root.menuMetrics) ? root.menuMetrics.itemWidth : 0 ))
-                    if (Boolean(loader.item.navigation)) {
-                        loader.item.navigation.panel = content.navigationPanel
-                    }
-                }
 
                 Component {
                     id: menuItemComp
 
                     StyledMenuItem {
                         id: item
+                        width: root.menuMetrics?.itemWidth ?? 0
 
-                        property string title: Boolean (loader.itemData) ? loader.itemData.title : ""
+                        modelData: loader.modelData
 
                         menuAnchorItem: root.anchorItem
                         parentWindow: root.window
 
                         navigation.panel: content.navigationPanel
-                        navigation.row: model.index
+                        navigation.row: loader.index
 
-                        iconAndCheckMarkMode: Boolean(root.menuMetrics) ? root.menuMetrics.iconAndCheckMarkMode : StyledMenuItem.None
+                        iconAndCheckMarkMode: root.menuMetrics?.iconAndCheckMarkMode || StyledMenuItem.None
+                        wideIcon: root.menuMetrics?.hasItemsWithWideIcon || false
 
                         reserveSpaceForShortcutsOrSubmenuIndicator: Boolean(root.menuMetrics) ?
                                                                         (root.menuMetrics.hasItemsWithShortcut || root.menuMetrics.hasItemsWithSubmenu) : false
@@ -401,10 +406,9 @@ MenuView {
                     id: separatorComp
 
                     Rectangle {
+                        width: root.menuMetrics?.itemWidth ?? 0
                         height: prv.separatorHeight
                         color: ui.theme.strokeColor
-
-                        property var modelData
                     }
                 }
             }

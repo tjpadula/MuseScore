@@ -21,20 +21,18 @@
  */
 #include "dynamic.h"
 
-#include "types/translatablestring.h"
-#include "types/typesconv.h"
+#include "../editing/textedit.h"
+#include "../types/typesconv.h"
 
-#include "anchors.h"
 #include "dynamichairpingroup.h"
 #include "expression.h"
 #include "hairpin.h"
 #include "measure.h"
-#include "mscore.h"
 #include "score.h"
 #include "segment.h"
+#include "staff.h"
 #include "system.h"
 #include "tempo.h"
-#include "undo.h"
 
 #include "log.h"
 
@@ -109,7 +107,6 @@ const std::vector<Dyn> Dynamic::DYN_LIST = {
 static const ElementStyle dynamicsStyle {
     { Sid::dynamicsMinDistance, Pid::MIN_DISTANCE },
     { Sid::avoidBarLines, Pid::AVOID_BARLINES },
-    { Sid::dynamicsSize, Pid::DYNAMICS_SIZE },
     { Sid::centerOnNotehead, Pid::CENTER_ON_NOTEHEAD },
 };
 
@@ -135,7 +132,6 @@ Dynamic::Dynamic(const Dynamic& d)
     m_changeInVelocity = d.m_changeInVelocity;
     m_velChangeSpeed = d.m_velChangeSpeed;
     _avoidBarLines = d._avoidBarLines;
-    _dynamicsSize = d._dynamicsSize;
     _centerOnNotehead = d._centerOnNotehead;
 }
 
@@ -376,7 +372,7 @@ TranslatableString Dynamic::subtypeUserName() const
     }
 }
 
-void Dynamic::editDrag(EditData& ed)
+void Dynamic::dragGrip(EditData& ed)
 {
     const bool hasLeftGrip = this->hasLeftGrip();
     const bool hasRightGrip = this->hasRightGrip();
@@ -399,14 +395,14 @@ void Dynamic::editDrag(EditData& ed)
         return;
     }
 
-    TextBase::editDrag(ed);
+    UNREACHABLE;
 }
 
-void Dynamic::endEditDrag(EditData& ed)
+void Dynamic::endDragGrip(EditData& ed)
 {
     m_leftDragOffset = m_rightDragOffset = 0.0;
 
-    TextBase::endEditDrag(ed);
+    TextBase::endDragGrip(ed);
 }
 
 //---------------------------------------------------------
@@ -453,8 +449,6 @@ PropertyValue Dynamic::getProperty(Pid propertyId) const
         return m_dynamicType;
     case Pid::VELOCITY:
         return velocity();
-    case Pid::SUBTYPE:
-        return int(m_dynamicType);
     case Pid::VELO_CHANGE:
         if (isVelocityChangeAvailable()) {
             return changeInVelocity();
@@ -465,8 +459,6 @@ PropertyValue Dynamic::getProperty(Pid propertyId) const
         return m_velChangeSpeed;
     case Pid::AVOID_BARLINES:
         return avoidBarLines();
-    case Pid::DYNAMICS_SIZE:
-        return _dynamicsSize;
     case Pid::CENTER_ON_NOTEHEAD:
         return _centerOnNotehead;
     case Pid::PLAY:
@@ -495,9 +487,6 @@ bool Dynamic::setProperty(Pid propertyId, const PropertyValue& v)
     case Pid::VELOCITY:
         m_velocity = v.toInt();
         break;
-    case Pid::SUBTYPE:
-        m_dynamicType = v.value<DynamicType>();
-        break;
     case Pid::VELO_CHANGE:
         if (isVelocityChangeAvailable()) {
             setChangeInVelocity(v.toInt());
@@ -508,9 +497,6 @@ bool Dynamic::setProperty(Pid propertyId, const PropertyValue& v)
         break;
     case Pid::AVOID_BARLINES:
         setAvoidBarLines(v.toBool());
-        break;
-    case Pid::DYNAMICS_SIZE:
-        _dynamicsSize = v.toDouble();
         break;
     case Pid::CENTER_ON_NOTEHEAD:
         _centerOnNotehead = v.toBool();
@@ -597,8 +583,8 @@ String Dynamic::screenReaderInfo() const
 
 bool Dynamic::isEditAllowed(EditData& ed) const
 {
-    if (ed.key == Key_Tab) {
-        return false;
+    if (!dynamic_cast<TextEditData*>(ed.getData(this).get())) {
+        return EngravingItem::isEditAllowed(ed);
     }
 
     return TextBase::isEditAllowed(ed);
@@ -655,7 +641,7 @@ Shape Dynamic::symShapeWithCutouts(SymId id) const
 {
     Staff* stf = staff();
     double staffMag = stf ? stf->staffMag(tick()) : 1.0;
-    Shape shape = score()->engravingFont()->shapeWithCutouts(id, magS() * staffMag * dynamicsSize());
+    Shape shape = score()->engravingFont()->shapeWithCutouts(id, magS() * staffMag * symbolScale());
     for (ShapeElement& element : shape.elements()) {
         element.setItem(this);
     }

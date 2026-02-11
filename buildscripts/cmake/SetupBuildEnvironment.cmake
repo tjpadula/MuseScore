@@ -73,8 +73,8 @@ if(OS_IS_MAC)
             MACOSX_PACKAGE_LOCATION Resources)
 
     else(IOS)
-        set(MACOSX_DEPLOYMENT_TARGET 10.15)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
+        set(MACOSX_DEPLOYMENT_TARGET 10.15.4)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15.4)
     endif(IOS)
 endif(OS_IS_MAC)
 
@@ -108,9 +108,9 @@ endif()
 # Wasm-specific
 if(CC_IS_EMCC)
 
-    # set(EMCC_COMPILE_FLAGS "--bind -o .html --preload-file ../../files")
+    set(MU_ROOT ${CMAKE_CURRENT_LIST_DIR}/../..)
 
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/public_html)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MU_ROOT}/build.artifacts)
 
     set(EMCC_COMPILE_FLAGS "-s USE_ZLIB=1 -O2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMCC_COMPILE_FLAGS}")

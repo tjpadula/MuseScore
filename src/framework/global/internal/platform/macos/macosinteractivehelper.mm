@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2022 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -74,7 +74,6 @@ Ret MacOSInteractiveHelper::isAppExists(const std::string& appIdentifier)
 
 Ret MacOSInteractiveHelper::canOpenApp(const UriQuery& uri)
 {
-    if (__builtin_available(macOS 10.15, *)) {
         NSString* nsUrlString = [NSString stringWithUTF8String:uri.toString().c_str()];
         if (nsUrlString == nil) {
             return make_ret(Ret::Code::InternalError, std::string("Invalid UTF-8 string passed as URI"));
@@ -85,17 +84,15 @@ Ret MacOSInteractiveHelper::canOpenApp(const UriQuery& uri)
         aStream << __PRETTY_FUNCTION__ << " is not implemented, uri: " << uri.toString().c_str();
         return make_ret(Ret::Code::NotImplemented, aStream.str());
 #else
-        NSURL* nsUrl = [NSURL URLWithString:nsUrlString];
-        if (nsUrl == nil) {
-            return make_ret(Ret::Code::InternalError, std::string("Invalid URI"));
-        }
 
-        NSURL* appURL = [[NSWorkspace sharedWorkspace] URLForApplicationToOpenURL:nsUrl];
-        return appURL != nil;
-#endif
-    } else {
-        return false;
+    NSURL* nsUrl = [NSURL URLWithString:nsUrlString];
+    if (nsUrl == nil) {
+        return make_ret(Ret::Code::InternalError, std::string("Invalid URI"));
     }
+
+    NSURL* appURL = [[NSWorkspace sharedWorkspace] URLForApplicationToOpenURL:nsUrl];
+    return appURL != nil;
+#endif
 }
 
 async::Promise<Ret> MacOSInteractiveHelper::openApp(const UriQuery& uri)
@@ -108,36 +105,32 @@ async::Promise<Ret> MacOSInteractiveHelper::openApp(const UriQuery& uri)
     });
 #else
     return Promise<Ret>([uri](auto resolve, auto reject) {
-        if (__builtin_available(macOS 10.15, *)) {
-            NSString* nsUrlString = [NSString stringWithUTF8String:uri.toString().c_str()];
-            if (nsUrlString == nil) {
-                return reject(int(Ret::Code::InternalError), "Invalid UTF-8 string passed as URI");
-            }
-
-            NSURL* nsUrl = [NSURL URLWithString:nsUrlString];
-            if (nsUrl == nil) {
-                return reject(int(Ret::Code::InternalError), "Invalid URI");
-            }
-
-            auto configuration = [NSWorkspaceOpenConfiguration configuration];
-            [configuration setPromptsUserIfNeeded:NO];
-            [[NSWorkspace sharedWorkspace]
-             openURL: nsUrl
-             configuration: configuration
-             completionHandler: ^(NSRunningApplication*, NSError* error) {
-                 if (error) {
-                     std::string errorStr = [[error description] UTF8String];
-                     (void)reject(int(Ret::Code::InternalError), errorStr);
-                 } else {
-                     (void)resolve(make_ok());
-                 }
-             }
-            ];
-
-            return Promise<Ret>::Result::unchecked();
-        } else {
-            return reject(int(Ret::Code::NotSupported), "macOS 10.15 or later is required");
+        NSString* nsUrlString = [NSString stringWithUTF8String:uri.toString().c_str()];
+        if (nsUrlString == nil) {
+            return reject(int(Ret::Code::InternalError), "Invalid UTF-8 string passed as URI");
         }
+
+        NSURL* nsUrl = [NSURL URLWithString:nsUrlString];
+        if (nsUrl == nil) {
+            return reject(int(Ret::Code::InternalError), "Invalid URI");
+        }
+
+        auto configuration = [NSWorkspaceOpenConfiguration configuration];
+        [configuration setPromptsUserIfNeeded:NO];
+        [[NSWorkspace sharedWorkspace]
+         openURL: nsUrl
+         configuration: configuration
+         completionHandler: ^(NSRunningApplication*, NSError* error) {
+             if (error) {
+                 std::string errorStr = [[error description] UTF8String];
+                 (void)reject(int(Ret::Code::InternalError), errorStr);
+             } else {
+                 (void)resolve(make_ok());
+             }
+         }
+        ];
+
+        return Promise<Ret>::Result::unchecked();
     });
 #endif
 }

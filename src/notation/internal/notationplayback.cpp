@@ -56,7 +56,7 @@ static constexpr double PLAYBACK_TAIL_SECS = 3;
 NotationPlayback::NotationPlayback(IGetScore* getScore,
                                    muse::async::Notification notationChanged,
                                    const modularity::ContextPtr& iocCtx)
-    : m_getScore(getScore), m_notationChanged(notationChanged), m_playbackModel(iocCtx)
+    : muse::Injectable(iocCtx), m_getScore(getScore), m_notationChanged(notationChanged), m_playbackModel(iocCtx)
 {
     m_notationChanged.onNotify(this, [this]() {
         updateLoopBoundaries();
@@ -124,6 +124,16 @@ void NotationPlayback::init()
 void NotationPlayback::reload()
 {
     m_playbackModel.reload();
+}
+
+void NotationPlayback::setSendEventsOnScoreChange(const InstrumentTrackId& trackId, bool send)
+{
+    m_playbackModel.setSendEventsOnScoreChange(trackId, send);
+}
+
+void NotationPlayback::sendEventsForChangedTracks()
+{
+    m_playbackModel.sendEventsForChangedTracks();
 }
 
 muse::async::Channel<InstrumentTrackIdSet> NotationPlayback::tracksDataChanged() const
@@ -212,8 +222,8 @@ muse::async::Channel<InstrumentTrackId> NotationPlayback::trackRemoved() const
 void NotationPlayback::updateLoopBoundaries()
 {
     LoopBoundaries newBoundaries;
-    newBoundaries.loopInTick = score()->loopInTick().ticks();
-    newBoundaries.loopOutTick = score()->loopOutTick().ticks();
+    newBoundaries.loopInTick = score()->loopInTick();
+    newBoundaries.loopOutTick = score()->loopOutTick();
     newBoundaries.enabled = m_loopBoundaries.enabled;
 
     if (m_loopBoundaries != newBoundaries) {
@@ -302,10 +312,16 @@ RetVal<muse::midi::tick_t> NotationPlayback::playPositionTickByElement(const Eng
 
 void NotationPlayback::addLoopBoundary(LoopBoundaryType boundaryType, tick_t tick)
 {
+    const Measure* first = score()->firstMeasure();
+    const Measure* last = score()->lastMeasure();
+    IF_ASSERT_FAILED(first && last) {
+        return;
+    }
+
     if (tick == BoundaryTick::FirstScoreTick) {
-        tick = score()->firstMeasure()->tick().ticks();
+        tick = first->tick().ticks();
     } else if (tick == BoundaryTick::LastScoreTick) {
-        tick = score()->lastMeasure()->endTick().ticks();
+        tick = last->endTick().ticks();
     }
 
     switch (boundaryType) {
@@ -362,6 +378,11 @@ void NotationPlayback::setLoopBoundariesEnabled(bool enabled)
 
     m_loopBoundaries.enabled = enabled;
     m_loopBoundariesChanged.notify();
+}
+
+bool NotationPlayback::isLoopEnabled() const
+{
+    return !m_loopBoundaries.isNull() && m_loopBoundaries.enabled;
 }
 
 const LoopBoundaries& NotationPlayback::loopBoundaries() const

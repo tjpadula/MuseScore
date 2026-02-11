@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,9 +36,9 @@
 namespace muse::shortcuts {
 class ShortcutsController : public IShortcutsController, public Injectable, public async::Asyncable
 {
+    Inject<muse::ui::IUiActionsRegister> aregister = { this };
     Inject<IShortcutsRegister> shortcutsRegister = { this };
     Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
-    Inject<muse::ui::IUiActionsRegister> aregister = { this };
     Inject<muse::ui::IInteractiveProvider> interactiveProvider = { this };
     Inject<muse::ui::IUiContextResolver> uiContextResolver = { this };
 

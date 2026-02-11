@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,12 +37,9 @@ public:
 
     std::string moduleName() const override;
     void registerExports() override;
-    void registerResources() override;
-    void registerUiTypes() override;
     void resolveImports() override;
     void registerApi() override;
     void onInit(const IApplication::RunMode& mode) override;
-    void onDelayedInit() override;
 
 private:
 
@@ -50,6 +47,5 @@ private:
     std::shared_ptr<ExtensionsProvider> m_provider;
     std::shared_ptr<ExtensionsActionController> m_actionController;
     std::shared_ptr<ExtensionsExecPointsRegister> m_execPointsRegister;
-    bool m_extensionsLoaded = false;
 };
 }

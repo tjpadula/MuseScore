@@ -68,6 +68,8 @@ TempoText::TempoText(Segment* parent)
     m_followText     = false;
     m_relative       = 1.0;
     m_isRelative     = false;
+
+    setSymbolSize(styleValue(Pid::FONT_SIZE, Sid::tempoFontSize).toDouble() * TempoText::DEFAULT_SYM_SIZE_RATIO);
 }
 
 void TempoText::setTempoTextType(TempoTextType ttt)
@@ -163,7 +165,7 @@ TDuration TempoText::duration() const
     int dummy = 0;
     TDuration result;
 
-    findTempoDuration(xmlText(), dummy, result);
+    findTempoDuration(plainText(), dummy, result);
 
     return result;
 }
@@ -231,7 +233,7 @@ void TempoText::updateScore()
 
 void TempoText::updateRelative()
 {
-    BeatsPerSecond tempoBefore = score()->tempo(tick() - Fraction::fromTicks(1));
+    BeatsPerSecond tempoBefore = score()->tempo(tick() - Fraction::eps());
     setTempo(tempoBefore * m_relative);
 }
 
@@ -397,6 +399,8 @@ PropertyValue TempoText::propertyDefault(Pid id) const
         return false;
     case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
         return true;
+    case Pid::MUSIC_SYMBOL_SIZE:
+        return size() * DEFAULT_SYM_SIZE_RATIO;
     default:
         return TextBase::propertyDefault(id);
     }
@@ -431,6 +435,16 @@ String TempoText::duration2userName(const TDuration t)
 
 String TempoText::accessibleInfo() const
 {
+    String info = tempoInfo();
+    if (info.empty()) {
+        return TextBase::accessibleInfo();
+    }
+
+    return String(u"%1: %2").arg(EngravingItem::accessibleInfo(), info);
+}
+
+String TempoText::tempoInfo() const
+{
     TDuration t1;
     TDuration t2;
     int len1;
@@ -444,8 +458,9 @@ String TempoText::accessibleInfo() const
         x2 = findTempoDuration(secondPart, len2, t2);
     }
 
+    String info;
+
     if (x1 != -1) {
-        String info;
         String dots1 = duration2userName(t1);
         if (x2 != -1) {
             String dots2 = duration2userName(t2);
@@ -462,11 +477,9 @@ String TempoText::accessibleInfo() const
             //: translate "%1 note" with "%1", so that just the duration will be shown.
             info = muse::mtrc("engraving", "%1 note = %2").arg(dots1, secondPart);
         }
-
-        return String(u"%1: %2").arg(EngravingItem::accessibleInfo(), info);
-    } else {
-        return TextBase::accessibleInfo();
     }
+
+    return info;
 }
 
 void TempoText::added()

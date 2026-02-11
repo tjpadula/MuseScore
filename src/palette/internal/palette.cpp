@@ -51,8 +51,8 @@ using namespace muse;
 using namespace muse::io;
 using namespace muse::actions;
 
-Palette::Palette(Type t, QObject* parent)
-    : QObject(parent), m_type(t)
+Palette::Palette(const muse::modularity::ContextPtr& iocCtx, Type t, QObject* parent)
+    : QObject(parent), muse::Injectable(iocCtx), m_type(t)
 {
     static int id = 0;
     m_id = QString::number(++id);
@@ -110,7 +110,7 @@ PaletteCellPtr Palette::insertElement(size_t idx, ElementPtr element, const QStr
         engravingRender()->layoutItem(element.get());
     }
 
-    PaletteCellPtr cell = std::make_shared<PaletteCell>(element, name, mag, offset, tag, this);
+    PaletteCellPtr cell = std::make_shared<PaletteCell>(iocContext(), element, name, mag, offset, tag, this);
 
     auto cellHandler = cellHandlerByPaletteType(m_type);
     if (cellHandler) {
@@ -145,7 +145,7 @@ PaletteCellPtr Palette::appendElement(ElementPtr element, const QString& name, q
         engravingRender()->layoutItem(element.get());
     }
 
-    PaletteCellPtr cell = std::make_shared<PaletteCell>(element, name, mag, offset, tag, this);
+    PaletteCellPtr cell = std::make_shared<PaletteCell>(iocContext(), element, name, mag, offset, tag, this);
 
     auto cellHandler = cellHandlerByPaletteType(m_type);
     if (cellHandler) {
@@ -317,7 +317,7 @@ bool Palette::read(XmlReader& e, bool pasteMode)
         } else if (tag == "editable") {
             m_isEditable = e.readBool();
         } else if (tag == "Cell") {
-            PaletteCellPtr cell = std::make_shared<PaletteCell>(this);
+            PaletteCellPtr cell = std::make_shared<PaletteCell>(iocContext(), this);
             if (!cell->read(e, pasteMode)) {
                 continue;
             }
@@ -387,9 +387,9 @@ void Palette::write(XmlWriter& xml, bool pasteMode) const
     xml.endElement();
 }
 
-PalettePtr Palette::fromMimeData(const QByteArray& data)
+PalettePtr Palette::fromMimeData(const QByteArray& data, const muse::modularity::ContextPtr& iocCtx)
 {
-    return ::fromMimeData<Palette>(data, "Palette");
+    return ::fromMimeData<Palette>(data, "Palette", iocCtx);
 }
 
 bool Palette::readFromFile(const QString& p)
@@ -410,8 +410,8 @@ bool Palette::readFromFile(const QString& p)
 
     XmlReader e(ba);
     // extract first rootfile
-    QString rootfile = "";
-    QList<QString> images;
+    QString rootfile;
+    std::vector<std::string> images;
     while (e.readNextStartElement()) {
         if (e.name() != "container") {
             e.unknown();
@@ -431,7 +431,7 @@ bool Palette::readFromFile(const QString& p)
                     }
                     e.readNext();
                 } else if (tag == "file") {
-                    images.append(e.readText());
+                    images.push_back(e.readAsciiText().ascii());
                 } else {
                     e.unknown();
                 }
@@ -441,8 +441,8 @@ bool Palette::readFromFile(const QString& p)
     //
     // load images
     //
-    for (const QString& s : images) {
-        imageStore.add(s, f.fileData(s.toStdString()));
+    for (const std::string& s : images) {
+        imageStore.add(s, f.fileData(s));
     }
 
     if (rootfile.isEmpty()) {
@@ -475,13 +475,12 @@ bool Palette::readFromFile(const QString& p)
 
 bool Palette::writeToFile(const QString& p) const
 {
-    QSet<ImageStoreItem*> images;
-    size_t n = m_cells.size();
-    for (size_t i = 0; i < n; ++i) {
-        if (m_cells[i] == 0 || m_cells[i]->element == 0 || m_cells[i]->element->type() != ElementType::IMAGE) {
+    std::set<ImageStoreItem*> images;
+    for (const PaletteCellPtr& cell : m_cells) {
+        if (!cell || !cell->element || !cell->element->isImage()) {
             continue;
         }
-        images.insert(toImage(m_cells[i]->element.get())->storeItem());
+        images.insert(toImage(cell->element.get())->storeItem());
     }
 
     QString path(p);
@@ -503,21 +502,22 @@ bool Palette::writeToFile(const QString& p) const
     xml.startElement("rootfiles");
     xml.startElement("rootfile", { { "full-path", "palette.xml" } });
     xml.endElement();
-    foreach (ImageStoreItem* ip, images) {
-        QString ipath = QString("Pictures/") + ip->hashName().toQString();
+    for (const ImageStoreItem* ip : images) {
+        std::string ipath = "Pictures/" + ip->hashName();
         xml.tag("file", ipath);
     }
     xml.endElement();
     xml.endElement();
+    xml.flush();
     cbuf.seek(0);
     //f.addDirectory("META-INF");
     //f.addDirectory("Pictures");
     f.addFile("META-INF/container.xml", cbuf.data());
 
     // save images
-    for (ImageStoreItem* ip : images) {
-        QString ipath = QString("Pictures/") + ip->hashName().toQString();
-        f.addFile(ipath.toStdString(), ip->buffer());
+    for (const ImageStoreItem* ip : images) {
+        std::string ipath = "Pictures/" + ip->hashName();
+        f.addFile(ipath, ip->buffer());
     }
     {
         Buffer cbuf1;
@@ -527,6 +527,7 @@ bool Palette::writeToFile(const QString& p) const
         xml1.startElement("museScore", { { "version", Constants::MSC_VERSION_STR } });
         write(xml1, false);
         xml1.endElement();
+        xml1.flush();
         cbuf1.close();
         f.addFile("palette.xml", cbuf1.data());
     }
@@ -589,6 +590,7 @@ Palette::Type Palette::guessType() const
     case ElementType::BAR_LINE:
         return Type::BarLine;
     case ElementType::ARPEGGIO:
+    case ElementType::CHORD_BRACKET:
     case ElementType::GLISSANDO:
         return Type::Arpeggio;
     case ElementType::TREMOLO_SINGLECHORD:

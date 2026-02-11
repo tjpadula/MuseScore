@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,9 +24,13 @@
 
 #include "../iapplication.h"
 
+#include "modularity/ioc.h"
+#include "global/itickerprovider.h"
+
 namespace muse {
-class BaseApplication : public IApplication
+class BaseApplication : public IApplication, public muse::Injectable
 {
+    GlobalInject<ITickerProvider> tickerProvider;
 public:
 
     BaseApplication(const modularity::ContextPtr& ctx);
@@ -55,6 +59,8 @@ public:
 
     const modularity::ContextPtr iocContext() const override;
     modularity::ModulesIoC* ioc() const override;
+
+    void processEvents() override;
 
 #ifndef NO_QT_SUPPORT
     QWindow* focusWindow() const override;

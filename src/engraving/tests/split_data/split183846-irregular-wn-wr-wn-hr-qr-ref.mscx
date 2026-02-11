@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -124,6 +124,10 @@
             <eid>M_M</eid>
             <durationType>quarter</durationType>
             </Rest>
+          <BarLine>
+            <subtype>end</subtype>
+            <eid>N_N</eid>
+            </BarLine>
           </voice>
         </Measure>
       </Staff>

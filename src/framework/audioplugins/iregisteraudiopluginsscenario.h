@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -36,7 +36,8 @@ public:
     virtual ~IRegisterAudioPluginsScenario() = default;
 
     virtual io::paths_t scanForNewPluginPaths() const = 0;
-    virtual Ret registerNewPlugins(io::paths_t newPluginPaths = {}) = 0;
+
+    virtual Ret updatePluginsRegistry(io::paths_t newPluginPaths = {}) = 0;
     virtual Ret registerPlugin(const io::path_t& pluginPath) = 0;
     virtual Ret registerFailedPlugin(const io::path_t& pluginPath, int failCode) = 0;
 };

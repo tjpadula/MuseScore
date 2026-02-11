@@ -38,8 +38,11 @@ public:
 
     PlayingTechniqueType techniqueType() const;
     void setTechniqueType(const PlayingTechniqueType techniqueType);
+    bool playPlayTechAnnotation() const { return m_playPlayTechAnnotation; }
+    void setPlayPlayTechAnnotation(bool play) { m_playPlayTechAnnotation = play; }
 
     PlayTechAnnotation* clone() const override;
+    TranslatableString subtypeUserName() const override;
 
     bool isHandbellsSymbol() const;
     bool isEditable() const override { return !isHandbellsSymbol(); }
@@ -49,8 +52,8 @@ public:
     PropertyValue propertyDefault(Pid id) const override;
 
 private:
-
     PlayingTechniqueType m_techniqueType = PlayingTechniqueType::Undefined;
+    bool m_playPlayTechAnnotation = true;
 };
 }
 

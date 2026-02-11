@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_IMPORTEXPORT_MEICONVERTER_H
-#define MU_IMPORTEXPORT_MEICONVERTER_H
+#pragma once
 
 #include "engraving/dom/articulation.h"
 #include "engraving/dom/accidental.h"
@@ -31,7 +30,7 @@
 #include "engraving/dom/tremolosinglechord.h"
 #include "engraving/dom/volta.h"
 
-#include "iengravingfontsprovider.h"
+#include "engraving/iengravingfontsprovider.h"
 
 #include "thirdparty/libmei/cmn.h"
 #include "thirdparty/libmei/cmnornaments.h"
@@ -88,8 +87,8 @@ enum ElisionType {
 class Convert
 {
     // The fallback font is used to convert smufl codes (char32_t) to engraving::SymId
-    INJECT_STATIC(engraving::IEngravingFontsProvider, engravingFonts)
-    INJECT_STATIC(engraving::IEngravingConfiguration, engravingConfiguration)
+    static inline muse::GlobalInject<engraving::IEngravingFontsProvider> engravingFonts;
+    static inline muse::GlobalInject<engraving::IEngravingConfiguration> engravingConfiguration;
 public:
 
     /**
@@ -298,7 +297,7 @@ public:
     static libmei::StaffDef staffToMEI(const engraving::Staff* staff);
 
     static BracketStruct staffGrpFromMEI(const libmei::StaffGrp& meiStaffGrp);
-    static libmei::StaffGrp staffGrpToMEI(const engraving::BracketType, int barLineSpan);
+    static libmei::StaffGrp staffGrpToMEI(const engraving::BracketType, bool barLineSpan);
 
     static void staffIdentToMEI(const engraving::EngravingItem* item, libmei::Element& meiElement);
 
@@ -320,7 +319,7 @@ public:
     static engraving::TextStyleType textFromMEI(const libmei::Rend& meiRend, bool& warning);
     static std::tuple<libmei::Rend, TextCell, muse::String> textToMEI(const engraving::Text* text);
 
-    using textWithSmufl = std::list<std::pair<bool, muse::String> >;
+    using textWithSmufl = std::vector<std::pair<bool, muse::String> >;
 
     static void textFromMEI(muse::String& text, const textWithSmufl& textBlocks);
     static void textToMEI(textWithSmufl& textBlocks, const muse::String& text);
@@ -405,5 +404,3 @@ private:
     std::unordered_map<uintptr_t, std::string> m_uids;
 };
 } // namespace
-
-#endif // MU_IMPORTEXPORT_MEICONVERTER_H

@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,6 +27,8 @@
 #include <QStringList>
 #include <QDir>
 #include <QQmlContext>
+#include <QEventLoop>
+#include <QTimer>
 
 #include "global/types/color.h"
 #include "graphicsapiprovider.h"
@@ -35,47 +37,11 @@
 
 using namespace muse::ui;
 
-namespace muse::ui {
-class QmlApiEngine : public muse::api::IApiEngine
-{
-public:
-    QmlApiEngine(QQmlEngine* e, const modularity::ContextPtr& iocContext)
-        : m_engine(e), m_iocContext(iocContext) {}
-
-    const modularity::ContextPtr& iocContext() const override
-    {
-        return m_iocContext;
-    }
-
-    QJSValue newQObject(QObject* o) override
-    {
-        if (!o->parent()) {
-            o->setParent(m_engine);
-        }
-        return m_engine->newQObject(o);
-    }
-
-    QJSValue newObject() override
-    {
-        return m_engine->newObject();
-    }
-
-    QJSValue newArray(size_t length = 0) override
-    {
-        return m_engine->newArray(uint(length));
-    }
-
-private:
-    QQmlEngine* m_engine = nullptr;
-    const modularity::ContextPtr& m_iocContext;
-};
-}
-
 UiEngine::UiEngine(const modularity::ContextPtr& iocCtx)
     : Injectable(iocCtx)
 {
     m_engine = new QQmlApplicationEngine(this);
-    m_apiEngine = new QmlApiEngine(m_engine, iocContext());
+    m_apiEngine = new muse::api::JsApiEngine(m_engine, iocContext());
     m_translation = new QmlTranslation(this);
     m_interactiveProvider = std::make_shared<InteractiveProvider>(iocContext());
     m_api = new QmlApi(this, iocContext());
@@ -263,4 +229,13 @@ GraphicsApi UiEngine::graphicsApi() const
 QString UiEngine::graphicsApiName() const
 {
     return GraphicsApiProvider::graphicsApiName();
+}
+
+void UiEngine::sleep(int msec)
+{
+    QEventLoop loop;
+    QTimer::singleShot(msec, [&loop]() {
+        loop.quit();
+    });
+    loop.exec();
 }

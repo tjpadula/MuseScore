@@ -35,15 +35,18 @@ class Score;
 }
 
 namespace mu::notation {
-class NotationPlayback : public INotationPlayback, public muse::async::Asyncable
+class NotationPlayback : public INotationPlayback, public muse::async::Asyncable, public muse::Injectable
 {
-    INJECT(INotationConfiguration, configuration)
+    muse::GlobalInject<INotationConfiguration> configuration;
 
 public:
     NotationPlayback(IGetScore* getScore, muse::async::Notification notationChanged, const muse::modularity::ContextPtr& iocCtx);
 
     void init() override;
     void reload() override;
+
+    void setSendEventsOnScoreChange(const InstrumentTrackId& trackId, bool send) override;
+    void sendEventsForChangedTracks() override;
 
     muse::async::Channel<InstrumentTrackIdSet> tracksDataChanged() const override;
 
@@ -74,6 +77,7 @@ public:
 
     void addLoopBoundary(LoopBoundaryType boundaryType, muse::midi::tick_t tick) override;
     void setLoopBoundariesEnabled(bool enabled) override;
+    bool isLoopEnabled() const override;
     const LoopBoundaries& loopBoundaries() const override;
     muse::async::Notification loopBoundariesChanged() const override;
 

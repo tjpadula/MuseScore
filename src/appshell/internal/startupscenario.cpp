@@ -23,10 +23,8 @@
 #include "startupscenario.h"
 
 #include <QCoreApplication>
-#include <QTimer>
 
 #include "async/async.h"
-#include "network/networkerrors.h"
 #include "translation.h"
 #include "log.h"
 
@@ -38,8 +36,6 @@ static const muse::UriQuery FIRST_LAUNCH_SETUP_URI("musescore://firstLaunchSetup
 static const muse::UriQuery WELCOME_DIALOG_URI("musescore://welcomedialog");
 static const muse::Uri HOME_URI("musescore://home");
 static const muse::Uri NOTATION_URI("musescore://notation");
-
-static constexpr int CHECK_FOR_UPDATES_TIMEOUT(7500);
 
 static StartupModeType modeTypeTromString(const std::string& str)
 {
@@ -150,19 +146,6 @@ muse::async::Promise<muse::Ret> StartupScenario::runOnSplashScreen()
             }
         });
 
-        // Timeout if the checks take too long...
-        QTimer::singleShot(CHECK_FOR_UPDATES_TIMEOUT, [this, resolve]() {
-            if (!m_updateChecksInProgress) {
-                return;
-            }
-
-            m_updateChecksInProgress = false;
-
-            LOGE() << "Update checks timed out...";
-            const Ret ret = network::make_ret(network::Err::Timeout);
-            (void)resolve(ret);
-        });
-
         return muse::async::Promise<Ret>::dummy_result();
     });
 }
@@ -179,7 +162,7 @@ void StartupScenario::registerAudioPlugins()
     //! (Thanks to the splashscreen, but this is not an obvious detail)
     qApp->setQuitLockEnabled(false);
 
-    Ret ret = registerAudioPluginsScenario()->registerNewPlugins();
+    Ret ret = registerAudioPluginsScenario()->updatePluginsRegistry();
     if (!ret) {
         LOGE() << ret.toString();
     }
@@ -215,7 +198,7 @@ void StartupScenario::runAfterSplashScreen()
 
         async::Async::call(this, [this, opened]() {
             muse::async::Channel<Uri> mut = opened;
-            mut.resetOnReceive(this);
+            mut.disconnect(this);
             m_startupCompleted = true;
         });
     });
@@ -228,35 +211,45 @@ bool StartupScenario::startupCompleted() const
     return m_startupCompleted;
 }
 
-QList<QVariantMap> StartupScenario::welcomeDialogData() const
+std::vector<QVariantMap> StartupScenario::welcomeDialogData() const
 {
     QVariantMap item1;
-    item1.insert("title", muse::qtrc("appshell/welcome", "What’s new in MuseScore Studio"));
-    item1.insert("imageUrl", "qrc:/resources/welcomedialog/WhatsNew.png");
+    item1.insert("title", muse::qtrc("appshell/welcome", "Enjoy free cloud storage"));
+    item1.insert("imageUrl", "qrc:/resources/welcomedialog/MuseScoreCom.png");
     item1.insert("description", muse::qtrc("appshell/welcome",
-                                           "Includes a new system for hiding empty staves, a new text editing widget, guitar notation improvements, engraving improvements and more."));
-    item1.insert("buttonText", muse::qtrc("appshell/welcome", "Watch video"));
-    item1.insert("destinationUrl", "https://www.youtube.com/watch?v=-I-InDHIzdQ"); // TODO: Placeholder (4.6 video does not exist yet)
+                                           "Save your scores privately on MuseScore.com to revisit past versions and invite others to view and comment – and when you’re ready, share your music with the world."));
+    item1.insert("buttonText", muse::qtrc("appshell/welcome", "View my scores online"));
+    item1.insert("destinationUrl",
+                 "https://musescore.com/my-scores?utm_source=mss-app-welcome-musescore-com&utm_medium=mss-app-welcome-musescore-com&utm_campaign=mss-app-welcome-musescore-com");
 
     QVariantMap item2;
-    item2.insert("title", muse::qtrc("appshell/welcome", "Install our free MuseSounds libraries"));
-    item2.insert("imageUrl", "qrc:/resources/welcomedialog/MuseSounds.png");
+    item2.insert("title", muse::qtrc("appshell/welcome", "What’s new in MuseScore Studio"));
+    item2.insert("imageUrl", "qrc:/resources/welcomedialog/WhatsNew.png");
     item2.insert("description", muse::qtrc("appshell/welcome",
-                                           "Explore our collection of realistic sample libraries, including solo instruments, marching percussion, and full orchestra - available for free on MuseHub."));
-    item2.insert("buttonText", muse::qtrc("appshell/welcome", "Get it on MuseHub"));
+                                           "Includes a new system for hiding empty staves, a new text editing widget, guitar notation improvements, engraving improvements and more."));
+    item2.insert("buttonText", muse::qtrc("appshell/welcome", "Watch video"));
     item2.insert("destinationUrl",
-                 "https://www.musehub.com/free-musesounds?utm_source=mss-app-welcome-free-musesounds&utm_medium=mss-app-welcome-free-musesounds&utm_campaign=mss-app-welcome-free-musesounds&utm_id=mss-app-welcome-free-musesounds");
+                 "https://www.youtube.com/watch?v=J2gY9CbMuoI&utm_source=mss-app-yt-4.6-release&utm_medium=mss-app-yt-4.6-release&utm_campaign=mss-app-yt-4.6-release");
 
     QVariantMap item3;
-    item3.insert("title", muse::qtrc("appshell/welcome", "Explore our tutorials"));
-    item3.insert("imageUrl", "qrc:/resources/welcomedialog/ExploreTutorials.png");
+    item3.insert("title", muse::qtrc("appshell/welcome", "Install our free MuseSounds libraries"));
+    item3.insert("imageUrl", "qrc:/resources/welcomedialog/MuseSounds.png");
     item3.insert("description", muse::qtrc("appshell/welcome",
-                                           "We’ve put together a playlist of tutorials to help both beginners and experienced users get the most out of MuseScore Studio."));
-    item3.insert("buttonText", muse::qtrc("appshell/welcome", "View tutorials"));
+                                           "Explore our collection of realistic sample libraries, including solo instruments, marching percussion, and full orchestra - available for free on MuseHub."));
+    item3.insert("buttonText", muse::qtrc("appshell/welcome", "Get it on MuseHub"));
     item3.insert("destinationUrl",
+                 "https://www.musehub.com/free-musesounds?utm_source=mss-app-welcome-free-musesounds&utm_medium=mss-app-welcome-free-musesounds&utm_campaign=mss-app-welcome-free-musesounds&utm_id=mss-app-welcome-free-musesounds");
+
+    QVariantMap item4;
+    item4.insert("title", muse::qtrc("appshell/welcome", "Explore our tutorials"));
+    item4.insert("imageUrl", "qrc:/resources/welcomedialog/ExploreTutorials.png");
+    item4.insert("description", muse::qtrc("appshell/welcome",
+                                           "We’ve put together a playlist of tutorials to help both beginners and experienced users get the most out of MuseScore Studio."));
+    item4.insert("buttonText", muse::qtrc("appshell/welcome", "View tutorials"));
+    item4.insert("destinationUrl",
                  "https://www.youtube.com/playlist?list=PLTYuWi2LmaPECOZrC6bkPHBkYY9_WEexT&utm_source=mss-app-welcome-tutorials&utm_medium=mss-app-welcome-tutorials&utm_campaign=mss-app-welcome-tutorials&utm_id=mss-app-welcome-tutorials");
 
-    return { item1, item2, item3 };
+    return { item1, item2, item3, item4 };
 }
 
 void StartupScenario::showWelcomeDialog()
@@ -308,34 +301,45 @@ void StartupScenario::onStartupPageOpened(StartupModeType modeType)
     } break;
     }
 
-    if (appUpdateScenario() && appUpdateScenario()->hasUpdate()) {
-        appUpdateScenario()->showUpdate();
-    }
+    const auto showWelcomeDialogAndSamplerUpdateIfNeed = [this, shouldCheckForMuseSamplerUpdate]() {
+        //! NOTE: The welcome dialog should not show if the first launch setup has not been completed, or if we're going
+        //! to show a MuseSounds update dialog (see ProjectActionsController::doFinishOpenProject). MuseSampler's update
+        //! dialog should be shown after the welcome dialog.
 
-    //! NOTE: The welcome dialog should not show if the first launch setup has not been completed, or if we're going
-    //! to show a MuseSounds update dialog (see ProjectActionsController::doFinishOpenProject). MuseSampler's update
-    //! dialog should be shown after the welcome dialog.
+        if (!configuration()->hasCompletedFirstLaunchSetup()) {
+            interactive()->open(FIRST_LAUNCH_SETUP_URI);
+            return;
+        }
 
-    if (!configuration()->hasCompletedFirstLaunchSetup()) {
-        interactive()->open(FIRST_LAUNCH_SETUP_URI);
+        const Version welcomeDialogLastShownVersion(configuration()->welcomeDialogLastShownVersion());
+        const Version currentMuseScoreVersion(configuration()->museScoreVersion());
+        if (welcomeDialogLastShownVersion < currentMuseScoreVersion) {
+            configuration()->setWelcomeDialogShowOnStartup(true); // override user preference
+            configuration()->setWelcomeDialogLastShownIndex(-1); // reset
+        }
+
+        const size_t numInstances = multiInstancesProvider()->instances().size();
+        if (numInstances == 1 && configuration()->welcomeDialogShowOnStartup() && !museSoundsUpdateScenario()->hasUpdate()) {
+            showWelcomeDialog();
+        }
+
+        if (shouldCheckForMuseSamplerUpdate) {
+            checkAndShowMuseSamplerUpdateIfNeed();
+        }
+    };
+
+    if (!appUpdateScenario() || !appUpdateScenario()->hasUpdate()) {
+        showWelcomeDialogAndSamplerUpdateIfNeed();
         return;
     }
 
-    const Version welcomeDialogLastShownVersion(configuration()->welcomeDialogLastShownVersion());
-    const Version currentMuseScoreVersion(configuration()->museScoreVersion());
-    if (welcomeDialogLastShownVersion < currentMuseScoreVersion) {
-        configuration()->setWelcomeDialogShowOnStartup(true); // override user preference
-        configuration()->setWelcomeDialogLastShownIndex(-1); // reset
-    }
-
-    const size_t numInstances = multiInstancesProvider()->instances().size();
-    if (numInstances == 1 && configuration()->welcomeDialogShowOnStartup() && !museSoundsUpdateScenario()->hasUpdate()) {
-        showWelcomeDialog();
-    }
-
-    if (shouldCheckForMuseSamplerUpdate) {
-        checkAndShowMuseSamplerUpdateIfNeed();
-    }
+    auto promise = appUpdateScenario()->showUpdate();
+    promise.onResolve(this, [showWelcomeDialogAndSamplerUpdateIfNeed](const Ret& ret) {
+        if (ret.code() == static_cast<int>(Ret::Code::Ok)) {
+            return; // OK means the user wants to close and complete installation - don't show any more dialogs...
+        }
+        showWelcomeDialogAndSamplerUpdateIfNeed();
+    });
 }
 
 void StartupScenario::checkAndShowMuseSamplerUpdateIfNeed()

@@ -326,7 +326,7 @@ void PlaybackContext::update(const ID partId, const Score* score, bool expandRep
             for (const Segment* segment = measure->first(); segment; segment = segment->next()) {
                 int segmentStartTick = segment->tick().ticks() + tickPositionOffset;
 
-                handleSegmentElements(segment, segmentStartTick, measureRepeats);
+                handleSegmentElements(repeatSegment, segment, segmentStartTick, measureRepeats);
                 handleSegmentAnnotations(partId, segment, segmentStartTick);
             }
         }
@@ -354,6 +354,7 @@ void PlaybackContext::clear()
     m_textArticulationsByTrack.clear();
     m_syllablesByTrack.clear();
     m_currentVerseNumByChordRest.clear();
+    m_multiVerseLyricsPositionMap.clear();
 }
 
 bool PlaybackContext::hasSoundFlags() const
@@ -425,6 +426,9 @@ void PlaybackContext::updateDynamicMap(const Dynamic* dynamic, const Segment* se
 
 void PlaybackContext::updatePlayTechMap(const PlayTechAnnotation* annotation, const int segmentPositionTick)
 {
+    if (!annotation->playPlayTechAnnotation()) {
+        return;
+    }
     const PlayingTechniqueType type = annotation->techniqueType();
     if (type == PlayingTechniqueType::Undefined) {
         return;
@@ -680,11 +684,12 @@ void PlaybackContext::handleSegmentAnnotations(const ID partId, const Segment* s
     }
 }
 
-void PlaybackContext::handleSegmentElements(const Segment* segment, const int segmentPositionTick,
+void PlaybackContext::handleSegmentElements(const RepeatSegment* repeat, const Segment* segment,
+                                            const int segmentPositionTick,
                                             std::vector<const MeasureRepeat*>& foundMeasureRepeats)
 {
     for (track_idx_t track = m_partStartTrack; track < m_partEndTrack; ++track) {
-        const EngravingItem* item = segment->elementAt(track);
+        const EngravingItem* item = segment->element(track);
         if (!item) {
             continue;
         }
@@ -698,24 +703,24 @@ void PlaybackContext::handleSegmentElements(const Segment* segment, const int se
             m_usedVoices.insert(item->voice());
 
             const ChordRest* chordRest = toChordRest(item);
-            const std::vector<Lyrics*>& lyricsList = chordRest->lyrics();
-            if (lyricsList.empty()) {
+            if (chordRest->lyrics().empty()) {
                 continue;
             }
 
-            int verseNum = 0;
+            const Lyrics* lyrics = nullptr;
 
             auto verseNumIt = m_currentVerseNumByChordRest.find(chordRest);
             if (verseNumIt == m_currentVerseNumByChordRest.end()) {
                 m_currentVerseNumByChordRest[chordRest] = 0;
+                lyrics = chordRest->lyrics(0);
+                if (chordRest->lyrics().size() > 1) {
+                    m_multiVerseLyricsPositionMap[track].insert(chordRest->tick().ticks());
+                }
+            } else if (hasOnlyOneLyricsVerse(repeat, track)) {
+                lyrics = chordRest->lyrics(0);
             } else {
                 verseNumIt->second++;
-                verseNum = verseNumIt->second;
-            }
-
-            const Lyrics* lyrics = chordRest->lyrics(verseNum);
-            if (!lyrics) {
-                lyrics = lyricsList.back();
+                lyrics = chordRest->lyrics(verseNumIt->second);
             }
 
             if (lyrics) {
@@ -830,4 +835,23 @@ void PlaybackContext::applyDynamic(const EngravingItem* dynamicItem, const dynam
 bool PlaybackContext::shouldSkipTrack(const track_idx_t trackIdx) const
 {
     return !muse::contains(m_usedVoices, track2voice(trackIdx));
+}
+
+bool PlaybackContext::hasOnlyOneLyricsVerse(const RepeatSegment* repeat, const track_idx_t track) const
+{
+    if (m_multiVerseLyricsPositionMap.empty()) {
+        return true;
+    }
+
+    const auto trackIt = m_multiVerseLyricsPositionMap.find(track);
+    if (trackIt == m_multiVerseLyricsPositionMap.cend()) {
+        return true;
+    }
+
+    const int startTick = repeat->tick;
+    const int endTick = repeat->endTick();
+    const auto start = trackIt->second.lower_bound(startTick);
+    const auto end = trackIt->second.lower_bound(endTick);
+
+    return start == end;
 }

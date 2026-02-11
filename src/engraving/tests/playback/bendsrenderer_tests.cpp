@@ -26,12 +26,11 @@
 
 #include "utils/scorerw.h"
 
-#include "dom/guitarbend.h"
-#include "dom/tempo.h"
-#include "dom/part.h"
+#include "engraving/dom/guitarbend.h"
+#include "engraving/dom/part.h"
 
-#include "playback/renderingcontext.h"
-#include "playback/renderers/bendsrenderer.h"
+#include "engraving/playback/renderingcontext.h"
+#include "engraving/playback/renderers/bendsrenderer.h"
 
 using namespace mu::engraving;
 using namespace muse;
@@ -72,8 +71,8 @@ protected:
     static ArticulationPattern buildTestArticulationPattern()
     {
         ArticulationPatternSegment blankSegment(ArrangementPattern(HUNDRED_PERCENT /*durationFactor*/, 0 /*timestampOffset*/),
-                                                PitchPattern(EXPECTED_SIZE, TEN_PERCENT, 0),
-                                                ExpressionPattern(EXPECTED_SIZE, TEN_PERCENT, 0));
+                                                PitchPattern(ArticulationMap::EXPECTED_SIZE, TEN_PERCENT, 0),
+                                                ExpressionPattern(ArticulationMap::EXPECTED_SIZE, TEN_PERCENT, 0));
 
         ArticulationPattern pattern;
         pattern.emplace(0, std::move(blankSegment));

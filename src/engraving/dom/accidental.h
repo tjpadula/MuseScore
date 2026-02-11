@@ -239,9 +239,6 @@ public:
 
     Note* note() const { return (explicitParent() && explicitParent()->isNote()) ? toNote(explicitParent()) : 0; }
 
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-
     TranslatableString subtypeUserName() const override;
     void setSubtype(const AsciiStringView& s);
     int subtype() const override { return (int)m_accidentalType; }
@@ -266,8 +263,6 @@ public:
 
     bool isEditable() const override { return true; }
     void startEdit(EditData&) override { setGenerated(false); }
-
-    void undoSetSmall(bool val);
 
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;

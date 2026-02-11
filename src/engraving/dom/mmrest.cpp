@@ -22,9 +22,10 @@
 
 #include "mmrest.h"
 
+#include "../editing/addremoveelement.h"
+#include "part.h"
 #include "score.h"
 #include "system.h"
-#include "undo.h"
 
 #include "log.h"
 
@@ -53,11 +54,9 @@ MMRest::MMRest(const MMRest& r, bool link)
     m_numberVisible = r.m_numberVisible;
 }
 
-bool MMRest::shouldShowNumber() const
+bool MMRest::shouldShowNumberByDefault() const
 {
-    bool shouldShow = isOldStyle() && ldata()->number == 1
-                      ? m_numberVisible && style().styleB(Sid::singleMeasureMMRestShowNumber)
-                      : m_numberVisible;
+    bool shouldShow = isOldStyle() && ldata()->number == 1 ? style().styleB(Sid::singleMeasureMMRestShowNumber) : true;
 
     const Part* itemPart = part();
     const System* system = measure()->system();
@@ -66,6 +65,11 @@ bool MMRest::shouldShowNumber() const
                                                 && style().styleB(Sid::mmRestBetweenStaves);
 
     return shouldShow && !isTopStaffOfPartAndCenteringIsActive;
+}
+
+bool MMRest::showNumber() const
+{
+    return shouldShowNumberByDefault() && m_numberVisible;
 }
 
 bool MMRest::isOldStyle() const
@@ -90,7 +94,7 @@ PointF MMRest::numberPos() const
 
 double MMRest::yNumberPos() const
 {
-    return ldata()->yNumberPos + spatium() * m_numberOffset;
+    return ldata()->yNumberPos + m_numberOffset.toMM(spatium());
 }
 
 //---------------------------------------------------------
@@ -101,7 +105,7 @@ PropertyValue MMRest::propertyDefault(Pid propertyId) const
 {
     switch (propertyId) {
     case Pid::MMREST_NUMBER_OFFSET:
-        return 0.0;
+        return 0.0_sp;
     case Pid::MMREST_NUMBER_VISIBLE:
         return true;
     default:
@@ -133,7 +137,7 @@ bool MMRest::setProperty(Pid propertyId, const PropertyValue& v)
 {
     switch (propertyId) {
     case Pid::MMREST_NUMBER_OFFSET:
-        m_numberOffset = v.toDouble();
+        m_numberOffset = v.value<Spatium>();
         triggerLayout();
         break;
     case Pid::MMREST_NUMBER_VISIBLE:

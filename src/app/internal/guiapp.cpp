@@ -4,9 +4,11 @@
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
 
-#include "appshell/view/internal/splashscreen/splashscreen.h"
+#include "appshell/widgets/splashscreen/splashscreen.h"
 #include "ui/iuiengine.h"
 #include "ui/graphicsapiprovider.h"
+
+#include "async/processevents.h"
 
 #include "muse_framework_config.h"
 #include "app_config.h"
@@ -206,6 +208,10 @@ void GuiApp::perform()
         if (GraphicsApiProvider::graphicsApi() == GraphicsApi::Software) {
             gApiProvider->destroy();
         } else {
+#if defined(Q_OS_IOS)
+            gApiProvider->setGraphicsApiStatus(required, GraphicsApiProvider::Status::Checked);
+            gApiProvider->destroy();
+#else
             LOGI() << "Detecting problems with graphics api";
             gApiProvider->listen([this, gApiProvider, required](bool res) {
                 if (res) {
@@ -220,6 +226,7 @@ void GuiApp::perform()
                 }
                 gApiProvider->destroy();
             });
+#endif
         }
     }
 #if defined(Q_OS_IOS)
@@ -228,6 +235,9 @@ void GuiApp::perform()
 
     QQmlApplicationEngine* engine = ioc()->resolve<muse::ui::IUiEngine>("app")->qmlAppEngine();
 
+#if 0
+
+    // IOS_CONFIG_BUG
 #ifdef MUE_CONFIGURATION_IS_APPWEB
     const QString mainQmlFile = "/Main.qml";
 #elif defined(Q_OS_MACOS)
@@ -246,6 +256,8 @@ void GuiApp::perform()
     const QUrl url(QStringLiteral("qrc:/qml") + mainQmlFile);
 #endif
 
+#endif
+    
     QObject::connect(engine, &QQmlApplicationEngine::objectCreated, qApp, [](QObject* obj, const QUrl&) {
         QQuickWindow* w = dynamic_cast<QQuickWindow*>(obj);
         //! NOTE It is important that there is a connection to this signal with an error,
@@ -257,11 +269,16 @@ void GuiApp::perform()
     }, Qt::DirectConnection);
 
     QObject::connect(engine, &QQmlApplicationEngine::objectCreated,
+#if 0
+                     // IOS_CONFIG_BUG
                      qApp, [this, url, engine, &aTimer](QObject* obj, const QUrl& objUrl) {
         if (url != objUrl) {
-            return;
+             return;
         }
-
+#else
+        qApp, [&, this](QObject* obj, const QUrl& objUrl) {
+        LOGD() << "Qml loaded: " << objUrl.toString();
+#endif
         if (!obj) {
             LOGE() << "failed Qml load\n";
             QCoreApplication::exit(-1);
@@ -291,15 +308,20 @@ void GuiApp::perform()
 
             // The main window must be shown at this point so KDDockWidgets can read its size correctly
             // and scale all sizes properly. https://github.com/musescore/MuseScore/issues/21148
+            // but before that, let's make the window transparent,
+            // otherwise the empty window frame will be visible
+            // https://github.com/musescore/MuseScore/issues/29630
+            // Transparency will be removed after the page loads.
             QQuickWindow* w = dynamic_cast<QQuickWindow*>(obj);
+            w->setOpacity(0.01);
             w->setVisible(true);
-            
             
             QObject::connect(engine, &QQmlEngine::warnings, [](const QList<QQmlError>& warnings) {
                 for (const QQmlError& e : warnings) {
                     LOGE() << "error: " << e.toString().toStdString() << "\n";
                 }
             });
+
 #if defined(Q_OS_IOS)
             // lambda cpature did not work to get aTimer, it's a stack-based object
             // and is probably deallocated by now.
@@ -319,11 +341,16 @@ void GuiApp::perform()
     // Load Main qml
     // ====================================================
 
-    engine->load(url);
+#if 0
+        engine->load(url);
+#else
+        engine->loadFromModule("MuseScore.AppShell", "Main");
+#endif
+
 #if defined(Q_OS_IOS)
     aTimer.Split(std::string("Done loading qml."));
 #endif
-    
+
 #endif // MUE_BUILD_APPSHELL_MODULE
 }
 
@@ -344,8 +371,7 @@ void GuiApp::finish()
     ioc()->resolve<muse::ui::IUiEngine>("app")->quit();
 
     // Deinit
-
-    m_globalModule.invokeQueuedCalls();
+    async::processMessages();
 
     for (modularity::IModuleSetup* m : m_modules) {
         m->onDeinit();

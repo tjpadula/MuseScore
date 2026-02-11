@@ -32,6 +32,9 @@ public:
     void init() override;
     void reload() override;
 
+    void setSendEventsOnScoreChange(const InstrumentTrackId& trackId, bool send) override;
+    void sendEventsForChangedTracks() override;
+
     muse::async::Channel<InstrumentTrackIdSet> tracksDataChanged() const override;
 
     const engraving::InstrumentTrackId& metronomeTrackId() const override;
@@ -61,6 +64,7 @@ public:
 
     void addLoopBoundary(LoopBoundaryType boundaryType, muse::midi::tick_t tick) override;
     void setLoopBoundariesEnabled(bool enabled) override;
+    bool isLoopEnabled() const override;
     const LoopBoundaries& loopBoundaries() const override;
     muse::async::Notification loopBoundariesChanged() const override;
 

@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -146,18 +146,16 @@ async::Promise<IInteractive::Result> Interactive::openStandardAsync(const std::s
 {
     UriQuery q = makeQuery(type, contentTitle, text, buttons, defBtn, options, dialogTitle);
 
-    async::Promise<Val> promise = provider()->openAsync(q);
-
-    return async::make_promise<Result>([promise, this](auto resolve, auto reject) {
-        async::Promise<Val> mut = promise;
-        mut.onResolve(this, [this, resolve](const Val& val) {
-            (void)resolve(makeResult(val));
-        }).onReject(this, [resolve, reject](int code, const std::string& err) {
-            //! NOTE To simplify writing the handlers
-            (void)resolve(IInteractive::Result((int)IInteractive::Button::Cancel, false));
-            (void)reject(code, err);
-        });
-        return async::Promise<IInteractive::Result>::Result::unchecked();
+    return provider()->openAsync(q)
+           .then<IInteractive::Result>(
+        this,
+        [this](const Val& val, auto resolve, auto /*reject*/) {
+        return resolve(makeResult(val));
+    },
+        [](int code, const std::string& msg, auto resolve, auto reject) {
+        //! NOTE To simplify writing the handlers
+        (void)resolve(IInteractive::Result((int)IInteractive::Button::Cancel, false));
+        return reject(code, msg);
     });
 }
 
@@ -232,7 +230,7 @@ async::Promise<IInteractive::Result> Interactive::error(const std::string& conte
     return openStandardAsync("ERROR", contentTitle, text, buttons, defBtn, options, dialogTitle);
 }
 
-void Interactive::showProgress(const std::string& title, Progress* progress)
+void Interactive::showProgress(const std::string& title, Progress progress)
 {
     Uri uri("muse://interactive/progress");
     QVariantMap params;
@@ -250,7 +248,7 @@ enum class FileDialogMode {
 };
 
 static UriQuery makeSelectFileQuery(FileDialogMode mode, const std::string& title, const io::path_t& current,
-                                    const std::vector<std::string>& filter, bool confirmOverwrite)
+                                    const std::vector<std::string>& filter, const int options = 0)
 {
     UriQuery q("muse://interactive/selectfile");
     q.set("title", title);
@@ -262,15 +260,12 @@ static UriQuery makeSelectFileQuery(FileDialogMode mode, const std::string& titl
 
     q.set("nameFilters", filterList);
     q.set("fileMode", static_cast<int>(mode));
+    q.set("options", options);
     if (mode == FileDialogMode::OpenFile) {
         q.set("selectExisting", true);
         q.set("folder", QUrl::fromLocalFile(current.toQString()).toString().toStdString());
     } else if (mode == FileDialogMode::SaveFile) {
         q.set("currentFile", QUrl::fromLocalFile(current.toQString()).toString().toStdString());
-
-        if (!confirmOverwrite) {
-            q.set("options", QFileDialog::DontConfirmOverwrite);
-        }
     }
 
     return q;
@@ -322,7 +317,7 @@ async::Promise<io::path_t> Interactive::selectOpeningFile(const std::string& tit
 
 #else
 
-    UriQuery q = makeSelectFileQuery(FileDialogMode::OpenFile, title, dir, filter, false);
+    UriQuery q = makeSelectFileQuery(FileDialogMode::OpenFile, title, dir, filter);
 
     async::Promise<Val> promise = provider()->openAsync(q);
 
@@ -338,14 +333,16 @@ async::Promise<io::path_t> Interactive::selectOpeningFile(const std::string& tit
 #endif
 }
 
-io::path_t Interactive::selectOpeningFileSync(const std::string& title, const io::path_t& dir, const std::vector<std::string>& filter)
+io::path_t Interactive::selectOpeningFileSync(const std::string& title, const io::path_t& dir, const std::vector<std::string>& filter,
+                                              const int options)
 {
 #ifndef Q_OS_LINUX
-    QString result = QFileDialog::getOpenFileName(nullptr, QString::fromStdString(title), dir.toQString(), filterToString(filter));
+    const QFileDialog::Options qoptions = QFileDialog::Options::fromInt(options);
+    QString result = QFileDialog::getOpenFileName(nullptr, QString::fromStdString(title), dir.toQString(), filterToString(
+                                                      filter), nullptr, qoptions);
     return result;
 #else
-
-    UriQuery q = makeSelectFileQuery(FileDialogMode::OpenFile, title, dir, filter, false);
+    UriQuery q = makeSelectFileQuery(FileDialogMode::OpenFile, title, dir, filter, options);
 
     RetVal<Val> rv = provider()->openSync(q);
     if (!rv.ret) {
@@ -367,7 +364,8 @@ io::path_t Interactive::selectSavingFileSync(const std::string& title, const io:
     return result;
 #else
 
-    UriQuery q = makeSelectFileQuery(FileDialogMode::SaveFile, title, dir, filter, confirmOverwrite);
+    UriQuery q
+        = makeSelectFileQuery(FileDialogMode::SaveFile, title, dir, filter, !confirmOverwrite ? QFileDialog::DontConfirmOverwrite : 0);
 
     RetVal<Val> rv = provider()->openSync(q);
     if (!rv.ret) {
@@ -413,9 +411,9 @@ io::paths_t Interactive::selectMultipleDirectories(const std::string& title, con
     return io::pathsFromString(result.val.toString());
 }
 
-async::Promise<Color> Interactive::selectColor(const Color& color, const std::string& title)
+async::Promise<Color> Interactive::selectColor(const Color& color, const std::string& title, bool allowAlpha)
 {
-    return provider()->selectColor(color, title);
+    return provider()->selectColor(color, title, allowAlpha);
 }
 
 bool Interactive::isSelectColorOpened() const

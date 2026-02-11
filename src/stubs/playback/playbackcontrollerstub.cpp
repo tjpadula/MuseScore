@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2025 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -102,13 +102,13 @@ muse::async::Promise<muse::audio::SoundPresetList> PlaybackControllerStub::avail
     });
 }
 
-mu::notation::INotationSoloMuteState::SoloMuteState PlaybackControllerStub::trackSoloMuteState(const engraving::InstrumentTrackId&) const
+const PlaybackControllerStub::SoloMuteState& PlaybackControllerStub::trackSoloMuteState(const engraving::InstrumentTrackId&) const
 {
-    return notation::INotationSoloMuteState::SoloMuteState();
+    static const SoloMuteState state;
+    return state;
 }
 
-void PlaybackControllerStub::setTrackSoloMuteState(const engraving::InstrumentTrackId&,
-                                                   const notation::INotationSoloMuteState::SoloMuteState&)
+void PlaybackControllerStub::setTrackSoloMuteState(const engraving::InstrumentTrackId&, const SoloMuteState&)
 {
 }
 
@@ -129,11 +129,11 @@ void PlaybackControllerStub::triggerControllers(const muse::mpe::ControllerChang
 {
 }
 
-void PlaybackControllerStub::seekElement(const notation::EngravingItem*)
+void PlaybackControllerStub::seekElement(const notation::EngravingItem*, bool)
 {
 }
 
-void PlaybackControllerStub::seekBeat(int, int)
+void PlaybackControllerStub::seekBeat(int, int, bool)
 {
 }
 

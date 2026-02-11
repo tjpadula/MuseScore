@@ -25,7 +25,9 @@
 #include <functional>
 
 #include "types/translatablestring.h"
-#include "types/typesconv.h"
+
+#include "../editing/elementeditdata.h"
+#include "../types/typesconv.h"
 
 #include "chord.h"
 #include "note.h"
@@ -73,22 +75,22 @@ const TranslatableString& ChordLine::chordLineTypeName() const
 }
 
 //---------------------------------------------------------
-//   startEditDrag
+//   startDragGrip
 //---------------------------------------------------------
 
-void ChordLine::startEditDrag(EditData& ed)
+void ChordLine::startDragGrip(EditData& ed)
 {
-    EngravingItem::startEditDrag(ed);
+    EngravingItem::startDragGrip(ed);
     ElementEditDataPtr eed = ed.getData(this);
 
     eed->pushProperty(Pid::PATH);
 }
 
 //---------------------------------------------------------
-//   editDrag
+//   dragGrip
 //---------------------------------------------------------
 
-void ChordLine::editDrag(EditData& ed)
+void ChordLine::dragGrip(EditData& ed)
 {
     const PainterPath& path = mutldata()->path;
 

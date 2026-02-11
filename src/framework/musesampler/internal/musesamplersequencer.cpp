@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2022 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,9 +23,6 @@
 #include "musesamplersequencer.h"
 
 #include "apitypes.h"
-
-#include "global/timer.h"
-#include "audio/common/audioerrors.h"
 
 using namespace muse;
 using namespace muse::musesampler;
@@ -143,45 +140,6 @@ void MuseSamplerSequencer::init(MuseSamplerLibHandlerPtr samplerLib, ms_MuseSamp
     m_defaultPresetCode = std::move(defaultPresetCode);
 }
 
-void MuseSamplerSequencer::deinit()
-{
-    if (m_renderingProgress && m_renderingProgress->isStarted) {
-        m_renderingProgress->finish((int)Ret::Code::Cancel);
-    }
-
-    if (m_pollRenderingProgressTimer) {
-        m_pollRenderingProgressTimer->stop();
-    }
-
-    m_renderingProgress = nullptr;
-}
-
-void MuseSamplerSequencer::setRenderingProgress(audio::InputProcessingProgress* progress)
-{
-    m_renderingProgress = progress;
-}
-
-void MuseSamplerSequencer::setAutoRenderInterval(double secs)
-{
-    IF_ASSERT_FAILED(m_samplerLib && m_sampler) {
-        return;
-    }
-
-    m_autoRenderInterval = secs;
-    m_samplerLib->setAutoRenderInterval(m_sampler, secs);
-}
-
-void MuseSamplerSequencer::triggerRender()
-{
-    IF_ASSERT_FAILED(m_samplerLib && m_sampler) {
-        return;
-    }
-
-    updateMainStream();
-    m_samplerLib->triggerRender(m_sampler);
-    pollRenderingProgress();
-}
-
 void MuseSamplerSequencer::updateOffStreamEvents(const PlaybackEventsMap& events, const DynamicLevelLayers&)
 {
     m_auditionParamsCache.clear();
@@ -213,117 +171,6 @@ void MuseSamplerSequencer::updateMainStreamEvents(const PlaybackEventsMap& event
     loadDynamicEvents(dynamics);
 
     finalizeAllTracks();
-
-    // Poll only if background rendering is enabled
-    if (RealIsEqualOrMore(m_autoRenderInterval, 0.0)) {
-        pollRenderingProgress();
-    }
-}
-
-void MuseSamplerSequencer::pollRenderingProgress()
-{
-    if (!m_renderingProgress) {
-        return;
-    }
-
-    m_renderingInfo.clear();
-
-    if (!m_pollRenderingProgressTimer) {
-        m_pollRenderingProgressTimer = std::make_unique<Timer>(std::chrono::microseconds(500000)); // poll every 500ms
-        m_pollRenderingProgressTimer->onTimeout(this, [this]() {
-            doPollProgress();
-        });
-    }
-
-    m_pollRenderingProgressTimer->start();
-}
-
-void MuseSamplerSequencer::doPollProgress()
-{
-    const bool progressStarted = m_renderingInfo.initialChunksDurationUs > 0;
-
-    int rangeCount = 0;
-    ms_RenderingRangeList ranges = m_samplerLib->getRenderInfo(m_sampler, &rangeCount);
-
-    audio::InputProcessingProgress::ChunkInfoList chunks;
-    chunks.reserve(rangeCount);
-
-    long long chunksDurationUs = 0;
-    bool isRendering = false;
-
-    for (int i = 0; i < rangeCount; ++i) {
-        const ms_RenderRangeInfo info = m_samplerLib->getNextRenderProgressInfo(ranges);
-
-        switch (info._state) {
-        case ms_RenderingState_Rendering:
-            isRendering = true;
-            break;
-        case ms_RenderingState_ErrorNetwork:
-            m_renderingInfo.error = "Network error";
-            break;
-        case ms_RenderingState_ErrorRendering:
-            m_renderingInfo.error = "Rendering error";
-            break;
-        case ms_RenderingState_ErrorFileIO:
-            m_renderingInfo.error = "File IO error";
-            break;
-        case ms_RenderingState_ErrorTimeOut:
-            m_renderingInfo.error = "Timeout";
-            break;
-        }
-
-        // Failed regions remain in the list, but should be excluded when
-        // calculating the total remaining rendering duration
-        if (progressStarted && !m_renderingInfo.error.empty()) {
-            continue;
-        }
-
-        chunksDurationUs += info._end_us - info._start_us;
-        chunks.push_back({ audio::microsecsToSecs(info._start_us), audio::microsecsToSecs(info._end_us) });
-    }
-
-    // Start progress
-    if (!progressStarted) {
-        // Rendering has started on the sampler side, but it is not yet ready to report progress
-        if (chunksDurationUs <= 0 && isRendering) {
-            return;
-        }
-
-        m_renderingInfo.initialChunksDurationUs = chunksDurationUs;
-
-        if (!m_renderingProgress->isStarted) {
-            m_renderingProgress->start();
-        }
-    }
-
-    bool isChanged = false;
-    if (m_renderingInfo.lastReceivedChunks != chunks) {
-        m_renderingInfo.lastReceivedChunks = chunks;
-        isChanged = true;
-    }
-
-    // Update percentage
-    int64_t percentage = 0;
-    if (m_renderingInfo.initialChunksDurationUs != 0) {
-        percentage = std::lround(100.f - (float)chunksDurationUs / (float)m_renderingInfo.initialChunksDurationUs * 100.f);
-    }
-
-    if (percentage != m_renderingInfo.percentage) {
-        m_renderingInfo.percentage = percentage;
-        isChanged = true;
-    }
-
-    if (isChanged) {
-        m_renderingProgress->process(chunks, std::lround(percentage), 100);
-    }
-
-    // Finish progress
-    if (chunksDurationUs <= 0) {
-        const int errcode = !m_renderingInfo.error.empty() ? (int)muse::audio::Err::OnlineSoundsProcessingError : 0;
-        m_pollRenderingProgressTimer->stop();
-        m_renderingProgress->finish(errcode, m_renderingInfo.error);
-        m_renderingInfo.clear();
-    }
 }
 
 void MuseSamplerSequencer::clearAllTracks()
@@ -681,7 +528,7 @@ void MuseSamplerSequencer::addAuditionNoteEvent(const mpe::NoteEvent& noteEvent)
         msEvent._articulation_text_starts_at_note = m_auditionParamsCache.textArticulationStartsAtNote;
         msEvent._syllable_starts_at_note = m_auditionParamsCache.syllableStartsAtNote;
 
-        m_offStreamEvents[arrangementCtx.actualTimestamp].insert(noteOn);
+        m_offStreamEvents[arrangementCtx.actualTimestamp].push_back(noteOn);
     }
 
     if (arrangementCtx.hasEnd()) {
@@ -690,7 +537,7 @@ void MuseSamplerSequencer::addAuditionNoteEvent(const mpe::NoteEvent& noteEvent)
         noteOff.msTrack = track;
 
         timestamp_t timestampTo = arrangementCtx.actualTimestamp + arrangementCtx.actualDuration;
-        m_offStreamEvents[timestampTo].emplace(std::move(noteOff));
+        m_offStreamEvents[timestampTo].emplace_back(std::move(noteOff));
     }
 
     auto pedalIt = articulations.find(mpe::ArticulationType::Pedal);
@@ -707,12 +554,12 @@ void MuseSamplerSequencer::addAuditionPedalEvent(const mpe::ArticulationMeta& me
 
     if (meta.hasStart()) {
         event.value = 1;
-        m_offStreamEvents[meta.timestamp].emplace(event);
+        m_offStreamEvents[meta.timestamp].push_back(event);
     }
 
     if (meta.hasEnd()) {
         event.value = 0;
-        m_offStreamEvents[meta.timestamp + meta.overallDuration].emplace(event);
+        m_offStreamEvents[meta.timestamp + meta.overallDuration].push_back(event);
     }
 }
 
@@ -737,36 +584,18 @@ void MuseSamplerSequencer::addAuditionCCEvent(const mpe::ControllerChangeEvent& 
         return;
     }
 
-    m_offStreamEvents[positionUs].insert(ccEvent);
+    m_offStreamEvents[positionUs].push_back(ccEvent);
 }
 
 void MuseSamplerSequencer::pitchAndTuning(const pitch_level_t nominalPitch, int& pitch, int& centsOffset) const
 {
-    static constexpr pitch_level_t MIN_SUPPORTED_PITCH_LEVEL = pitchLevel(PitchClass::C, 0);
-    static constexpr int MIN_SUPPORTED_NOTE = 12; // equivalent for C0
-    static constexpr pitch_level_t MAX_SUPPORTED_PITCH_LEVEL = pitchLevel(PitchClass::C, 8);
-    static constexpr int MAX_SUPPORTED_NOTE = 108; // equivalent for C8
-
-    pitch = 0;
-    centsOffset = 0;
-
-    if (nominalPitch <= MIN_SUPPORTED_PITCH_LEVEL) {
-        pitch = MIN_SUPPORTED_NOTE;
-        return;
-    }
-
-    if (nominalPitch >= MAX_SUPPORTED_PITCH_LEVEL) {
-        pitch = MAX_SUPPORTED_NOTE;
-        return;
-    }
-
     // Get midi pitch
-    float stepCount = MIN_SUPPORTED_NOTE + ((nominalPitch - MIN_SUPPORTED_PITCH_LEVEL) / static_cast<float>(PITCH_LEVEL_STEP));
+    float stepCount = mpe::ZERO_PITCH_LEVEL_MIDI_EQUIVALENT + nominalPitch / static_cast<float>(mpe::PITCH_LEVEL_STEP);
     pitch = RealRound(stepCount, 0);
 
     // Get tuning offset
-    int semitonesCount = pitch - MIN_SUPPORTED_NOTE;
-    pitch_level_t tuningPitchLevel = nominalPitch - (semitonesCount * PITCH_LEVEL_STEP);
+    int semitonesCount = pitch - mpe::ZERO_PITCH_LEVEL_MIDI_EQUIVALENT;
+    pitch_level_t tuningPitchLevel = nominalPitch - semitonesCount * mpe::PITCH_LEVEL_STEP;
     centsOffset = pitchLevelToCents(tuningPitchLevel);
 }
 
@@ -843,6 +672,10 @@ void MuseSamplerSequencer::parseArticulations(const ArticulationMap& articulatio
         auto art2It = ARTICULATION_TYPES_PART2.find(pair.first);
         if (art2It != ARTICULATION_TYPES_PART2.cend()) {
             arts2 |= art2It->second;
+            continue;
+        }
+
+        if (notehead == ms_NoteHead_Ghost) {
             continue;
         }
 

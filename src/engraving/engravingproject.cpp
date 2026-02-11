@@ -102,12 +102,12 @@ bool EngravingProject::readOnly() const
     return m_masterScore->readOnly();
 }
 
-Ret EngravingProject::setupMasterScore(bool forceMode)
+void EngravingProject::setMasterScore(MasterScore* score)
 {
-    return doSetupMasterScore(forceMode);
+    m_masterScore = score;
 }
 
-Ret EngravingProject::doSetupMasterScore(bool forceMode)
+Ret EngravingProject::setupMasterScore(bool forceMode)
 {
     TRACEFUNC;
 
@@ -150,12 +150,12 @@ Ret EngravingProject::loadMscz(const MscReader& msc, SettingsCompat& settingsCom
     return loader.loadMscz(m_masterScore, msc, settingsCompat, ignoreVersionError);
 }
 
-bool EngravingProject::writeMscz(MscWriter& writer, bool onlySelection, bool createThumbnail)
+bool EngravingProject::writeMscz(MscWriter& writer, bool createThumbnail, const write::WriteContext* ctx)
 {
     TRACEFUNC;
 
     MscSaver saver(iocContext());
-    return saver.writeMscz(m_masterScore, writer, onlySelection, createThumbnail);
+    return saver.writeMscz(m_masterScore, writer, createThumbnail, ctx);
 }
 
 bool EngravingProject::isCorruptedUponLoading() const

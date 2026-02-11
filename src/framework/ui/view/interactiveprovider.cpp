@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,6 +28,7 @@
 #include <QColorDialog>
 #include <QGuiApplication>
 #include <QWindow>
+#include <QWidget>
 
 #include "global/async/async.h"
 #include "diagnostics/diagnosticutils.h"
@@ -79,7 +80,27 @@ void InteractiveProvider::raiseWindowInStack(QObject* newActiveWindow)
     }
 }
 
-async::Promise<Color> InteractiveProvider::selectColor(const Color& color, const std::string& title)
+static std::vector<QColor> getCustomColors()
+{
+    const int customColorCount = QColorDialog::customCount();
+    std::vector<QColor> customColors;
+    customColors.reserve(customColorCount);
+    for (int i = 0; i < customColorCount; ++i) {
+        customColors.push_back(QColorDialog::customColor(i));
+    }
+
+    return customColors;
+}
+
+static void setCustomColors(const std::vector<QColor>& customColors)
+{
+    const int customColorCount = std::min(QColorDialog::customCount(), static_cast<int>(customColors.size()));
+    for (int i = 0; i < customColorCount; ++i) {
+        QColorDialog::setCustomColor(i, customColors[i]);
+    }
+}
+
+async::Promise<Color> InteractiveProvider::selectColor(const Color& color, const std::string& title, bool allowAlpha)
 {
     if (m_isSelectColorOpened) {
         LOGW() << "already opened";
@@ -91,7 +112,9 @@ async::Promise<Color> InteractiveProvider::selectColor(const Color& color, const
 
     m_isSelectColorOpened = true;
 
-    return async::make_promise<Color>([this, color, title](auto resolve, auto reject) {
+    setCustomColors(config()->colorDialogCustomColors());
+
+    return async::make_promise<Color>([this, color, title, allowAlpha](auto resolve, auto reject) {
         //! FIX https://github.com/musescore/MuseScore/issues/23208
         shortcutsRegister()->setActive(false);
 
@@ -100,10 +123,20 @@ async::Promise<Color> InteractiveProvider::selectColor(const Color& color, const
             dlg->setWindowTitle(QString::fromStdString(title));
         }
 
-        dlg->setCurrentColor(color.toQColor());
+        QColor currentColor = color.toQColor();
+
+        // If the color is fully transparent, set alpha to opaque, to avoid "Hm, nothing happened" user confusion
+        if (currentColor.alpha() == 0) {
+            currentColor.setAlpha(255);
+        }
+
+        dlg->setCurrentColor(currentColor);
+        dlg->setOption(QColorDialog::ShowAlphaChannel, allowAlpha);
 
         QObject::connect(dlg, &QColorDialog::finished, [this, dlg, resolve, reject](int result) {
             dlg->deleteLater();
+
+            config()->setColorDialogCustomColors(getCustomColors());
 
             m_isSelectColorOpened = false;
             shortcutsRegister()->setActive(true);
@@ -355,6 +388,7 @@ void InteractiveProvider::fillExtData(QmlLaunchData* data, const UriQuery& q, co
     static Uri VIEWER_URI = Uri("muse://extensions/viewer");
 
     ContainerMeta meta = uriRegister()->meta(VIEWER_URI);
+    data->setValue("module", meta.qmlModule);
     data->setValue("path", meta.qmlPath);
     data->setValue("type", meta.type);
 
@@ -376,6 +410,7 @@ void InteractiveProvider::fillExtData(QmlLaunchData* data, const UriQuery& q, co
 void InteractiveProvider::fillData(QmlLaunchData* data, const Uri& uri, const QVariantMap& params) const
 {
     ContainerMeta meta = uriRegister()->meta(uri);
+    data->setValue("module", meta.qmlModule);
     data->setValue("path", meta.qmlPath);
     data->setValue("type", meta.type);
     data->setValue("uri", QString::fromStdString(uri.toString()));
@@ -455,7 +490,25 @@ QWindow* InteractiveProvider::topWindow() const
         ASSERT_X("Window must have a parent!");
     }
 
-    return qobject_cast<QWindow*>(last.window);
+    if (!last.window->isWidgetType()) {
+        QWindow* qwindow = qobject_cast<QWindow*>(last.window);
+        IF_ASSERT_FAILED(qwindow) {
+            return mainWin;
+        }
+        return qwindow;
+    }
+
+    // QWidget
+    {
+        QWidget* qwidget = qobject_cast<QWidget*>(last.window);
+        QWindow* qwindow = qwidget->windowHandle();
+        IF_ASSERT_FAILED(qwindow) {
+            return mainWin;
+        }
+        return qwindow;
+    }
+
+    return mainWin;
 }
 
 bool InteractiveProvider::topWindowIsWidget() const

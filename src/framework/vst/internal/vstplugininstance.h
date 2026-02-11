@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,13 +40,13 @@
 
 namespace muse::vst {
 class VstPluginProvider;
-class VstPluginInstance : public IVstPluginInstance, public async::Asyncable
+class VstPluginInstance : public IVstPluginInstance, public async::Asyncable, public muse::Injectable
 {
-    muse::GlobalInject<muse::audio::IAudioThreadSecurer> threadSecurer;
-    muse::GlobalInject<IVstModulesRepository> modulesRepo;
+    muse::Inject<muse::audio::IAudioThreadSecurer> threadSecurer = { this };
+    muse::Inject<IVstModulesRepository> modulesRepo = { this };
 
 public:
-    VstPluginInstance(const muse::audio::AudioResourceId& resourceId);
+    VstPluginInstance(const muse::audio::AudioResourceId& resourceId, const modularity::ContextPtr& iocCtx);
     ~VstPluginInstance() override;
 
     const muse::audio::AudioResourceId& resourceId() const override;

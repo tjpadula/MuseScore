@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -44,7 +44,7 @@ struct path_t {
 
     bool empty() const;
     size_t size() const;
-    bool withSuffix(const char* str) const;
+    bool hasSuffix(const char* str) const;
 
     path_t appendingComponent(const path_t& other) const;
     path_t appendingSuffix(const path_t& suffix) const;
@@ -104,6 +104,7 @@ path_t filename(const path_t& path, bool includingExtension = true);
 path_t basename(const path_t& path);
 path_t completeBasename(const path_t& path);
 path_t absolutePath(const path_t& path);
+path_t absoluteFilePath(const path_t& path);
 //path_t dirname(const path_t& path);
 path_t dirpath(const path_t& path);
 path_t absoluteDirpath(const path_t& path);

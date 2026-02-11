@@ -44,7 +44,7 @@ Writer::Writer(const muse::modularity::ContextPtr& iocCtx)
 {
 }
 
-bool Writer::writeScore(Score* score, io::IODevice* device, bool onlySelection, rw::WriteInOutData* inout)
+bool Writer::writeScore(Score* score, io::IODevice* device, rw::WriteInOutData* inout)
 {
     TRACEFUNC;
 
@@ -64,11 +64,12 @@ bool Writer::writeScore(Score* score, io::IODevice* device, bool onlySelection, 
     }
 
     compat::WriteScoreHook hook;
-    write(score, xml, ctx, onlySelection, hook);
+    write(score, xml, ctx, hook);
 
     xml.endElement();
+    xml.flush();
 
-    if (!onlySelection) {
+    if (!inout || !inout->ctx.shouldWriteRange()) {
         //update version values for i.e. plugin access
         score->m_mscoreVersion = application()->version().toString();
         score->m_mscoreRevision = application()->revision().toInt(nullptr, 16);
@@ -82,7 +83,7 @@ bool Writer::writeScore(Score* score, io::IODevice* device, bool onlySelection, 
     return true;
 }
 
-void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selectionOnly, compat::WriteScoreHook& hook)
+void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, compat::WriteScoreHook& hook)
 {
     TRACEFUNC;
 
@@ -90,7 +91,7 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
     // then some layout information is missing:
     // relayout with all parts set visible (but rollback at end)
 
-    std::list<Part*> hiddenParts;
+    std::vector<Part*> hiddenParts;
     bool unhide = false;
     if (score->style().styleB(Sid::createMultiMeasureRests)) {
         for (Part* part : score->m_parts) {
@@ -183,63 +184,71 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
         order.write(xml);
     }
 
+    staff_idx_t staffStart = 0;
+    staff_idx_t staffEnd = 0;
+    MeasureBase* measureStart = nullptr;
+    MeasureBase* measureEnd = nullptr;
+
+    if (ctx.shouldWriteRange()) {
+        const WriteRange& r = ctx.range().value();
+        staffStart = r.startStaffIdx;
+        staffEnd = r.endStaffIdx;
+        measureStart = r.startMeasure;
+        measureEnd = r.endMeasure;
+    } else {
+        staffEnd     = score->nstaves();
+        measureStart = score->first();
+    }
+
     if (!score->m_systemObjectStaves.empty()) {
         bool saveSysObjStaves = false;
-        for (Staff* s : score->m_systemObjectStaves) {
+        for (const Staff* s : score->m_systemObjectStaves) {
             IF_ASSERT_FAILED(s->idx() != muse::nidx) {
                 continue;
             }
             saveSysObjStaves = true;
             break;
         }
+
         if (saveSysObjStaves) {
             xml.startElement("SystemObjects");
-            for (Staff* s : score->m_systemObjectStaves) {
-                IF_ASSERT_FAILED(s->idx() != muse::nidx) {
+            for (const Staff* s : score->m_systemObjectStaves) {
+                const staff_idx_t idx = s->idx();
+                IF_ASSERT_FAILED(idx != muse::nidx) {
                     continue;
                 }
-                xml.tag("Instance", { { "staffId", s->idx() + 1 } });
+
+                if (ctx.shouldWriteRange()) {
+                    if (idx < staffStart || idx >= staffEnd) {
+                        continue;
+                    }
+                }
+
+                xml.tag("Instance", { { "staffId", idx + 1 } });
             }
             xml.endElement();
         }
     }
 
     ctx.setCurTrack(0);
-    staff_idx_t staffStart;
-    staff_idx_t staffEnd;
-    MeasureBase* measureStart;
-    MeasureBase* measureEnd;
-
-    if (selectionOnly) {
-        staffStart   = score->m_selection.staffStart();
-        staffEnd     = score->m_selection.staffEnd();
-        // make sure we select full parts
-        Staff* sStaff = score->staff(staffStart);
-        Part* sPart = sStaff->part();
-        Staff* eStaff = score->staff(staffEnd - 1);
-        Part* ePart = eStaff->part();
-        staffStart = score->staffIdx(sPart);
-        staffEnd = score->staffIdx(ePart) + ePart->nstaves();
-        measureStart = score->m_selection.startSegment()->measure();
-        if (measureStart->isMeasure() && toMeasure(measureStart)->isMMRest()) {
-            measureStart = toMeasure(measureStart)->mmRestFirst();
-        }
-        if (score->m_selection.endSegment()) {
-            measureEnd   = score->m_selection.endSegment()->measure()->next();
-        } else {
-            measureEnd   = 0;
-        }
-    } else {
-        staffStart   = 0;
-        staffEnd     = score->nstaves();
-        measureStart = score->first();
-        measureEnd   = 0;
-    }
 
     // Let's decide: write midi mapping to a file or not
     score->masterScore()->checkMidiMapping();
+
+    auto shouldWritePart = [&ctx, score, staffStart, staffEnd](const Part* part) {
+        if (!ctx.shouldWriteRange()) {
+            return true;
+        }
+
+        const staff_idx_t firstStaffIdx = score->staffIdx(part);
+        const staff_idx_t lastStaffIdx = firstStaffIdx + part->nstaves() - 1;
+
+        return (firstStaffIdx >= staffStart && firstStaffIdx < staffEnd)
+               || (lastStaffIdx >= staffStart && lastStaffIdx < staffEnd);
+    };
+
     for (const Part* part : score->m_parts) {
-        if (!selectionOnly || ((score->staffIdx(part) >= staffStart) && (staffEnd >= score->staffIdx(part) + part->nstaves()))) {
+        if (shouldWritePart(part)) {
             TWrite::write(part, xml, ctx);
         }
     }
@@ -249,14 +258,15 @@ void Writer::write(Score* score, XmlWriter& xml, WriteContext& ctx, bool selecti
     if (measureStart) {
         for (staff_idx_t staffIdx = staffStart; staffIdx < staffEnd; ++staffIdx) {
             const Staff* st = score->staff(staffIdx);
-            StaffWrite::writeStaff(st, xml, ctx, measureStart, measureEnd, staffStart, staffIdx, selectionOnly);
+            StaffWrite::writeStaff(st, xml, ctx, measureStart, measureEnd, staffStart, staffIdx);
         }
     }
     ctx.setCurTrack(muse::nidx);
 
-    hook.onWriteExcerpts302(score, xml, ctx, selectionOnly);
+    hook.onWriteExcerpts302(score, xml, ctx);
 
     TWrite::writeSystemLocks(score, xml);
+    TWrite::writeSystemDividers(score, xml, ctx);
 
     xml.endElement(); // score
 

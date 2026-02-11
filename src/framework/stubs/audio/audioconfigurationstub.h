@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_AUDIO_AUDIOCONFIGURATIONSTUB_H
-#define MU_AUDIO_AUDIOCONFIGURATIONSTUB_H
+#pragma once
 
 #include "audio/main/iaudioconfiguration.h"
 
@@ -28,12 +27,12 @@ namespace muse::audio {
 class AudioConfigurationStub : public IAudioConfiguration
 {
 public:
-    AudioWorkerConfig workerConfig() const override;
+    AudioEngineConfig engineConfig() const override;
 
-    std::vector<std::string> availableAudioApiList() const override;
-
+    std::string defaultAudioApi() const override;
     std::string currentAudioApi() const override;
     void setCurrentAudioApi(const std::string& name) override;
+    async::Notification currentAudioApiChanged() const override;
 
     std::string audioOutputDeviceId() const override;
     void setAudioOutputDeviceId(const std::string& deviceId) override;
@@ -44,9 +43,6 @@ public:
     unsigned int driverBufferSize() const override; // samples
     void setDriverBufferSize(unsigned int size) override;
     async::Notification driverBufferSizeChanged() const override;
-
-    samples_t samplesToPreallocate() const override;
-    async::Channel<samples_t> samplesToPreallocateChanged() const override;
 
     unsigned int sampleRate() const override;
     void setSampleRate(unsigned int sampleRate) override;
@@ -66,5 +62,3 @@ public:
     bool shouldMeasureInputLag() const override;
 };
 }
-
-#endif // MU_AUDIO_AUDIOCONFIGURATIONSTUB_H

@@ -11,8 +11,9 @@ set(MU_ROOT ${CMAKE_CURRENT_LIST_DIR}/../..)
 set(PROJECT_ROOT_DIR ${MU_ROOT})
 
 set(CMAKE_MODULE_PATH
-    ${MU_ROOT}/build
-    ${MU_ROOT}/build/cmake
+    ${MU_ROOT}/buildscripts
+    ${MU_ROOT}/buildscripts/cmake
+    ${MU_ROOT}/src/framework/cmake
     ${CMAKE_MODULE_PATH}
 )
 
@@ -30,8 +31,9 @@ include_directories(
 
 set(THIRDPARTY_DIR ${MU_ROOT}/thirdparty)
 
+message(FATAL "We are calling add_compile_definitions with NO_QT_SUPPORT here.")
 add_compile_definitions(
-    NO_QT_SUPPORT
+#    NO_QT_SUPPORT
     NO_ENGRAVING_INTERACTIVE
     NO_ENGRAVING_QSVGRENDER
 )

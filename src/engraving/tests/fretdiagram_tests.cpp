@@ -22,9 +22,10 @@
 
 #include <gtest/gtest.h>
 
-#include "dom/factory.h"
-#include "dom/fret.h"
-#include "dom/harmony.h"
+#include "engraving/dom/factory.h"
+#include "engraving/dom/fret.h"
+#include "engraving/dom/harmony.h"
+
 #include "utils/scorerw.h"
 
 using namespace mu::engraving;
@@ -54,7 +55,7 @@ void Engraving_FretDiagramTests::testChordSymToFretDiagram(MasterScore* score)
         FretDiagram* diagram = Factory::createFretDiagram(score->dummy()->segment());
         EXPECT_TRUE(diagram);
         diagram->updateDiagram(harmony->harmonyName());
-        String pattern = FretDiagram::patternFromDiagram(diagram);
+        String pattern = diagram->patternFromDiagram();
         EXPECT_EQ(pattern, FRET_PATTERN_REF);
         measure = measure->nextMeasure();
         delete diagram;

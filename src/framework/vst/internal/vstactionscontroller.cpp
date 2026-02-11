@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,7 +22,7 @@
 
 #include "vstactionscontroller.h"
 
-#include "../view/vstviewdialog_qwidget.h"
+#include "../widgets/vstviewdialog_qwidget.h"
 
 #include "log.h"
 
@@ -138,7 +138,7 @@ void VstActionsController::useView(bool isNew)
 
     if (isNew) {
         configuration()->setUsedVstView("newview");
-        interactiveUriRegister()->registerQmlUri(Uri("muse://vst/editor"), "Muse/Vst/VstEditorDialog.qml");
+        interactiveUriRegister()->registerQmlUri(Uri("muse://vst/editor"), "Muse.Vst", "VstEditorDialog");
     } else {
         configuration()->setUsedVstView("oldview");
         interactiveUriRegister()->registerWidgetUri<VstViewDialog>(Uri("muse://vst/editor"));

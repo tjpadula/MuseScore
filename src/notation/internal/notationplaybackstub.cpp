@@ -40,6 +40,14 @@ void NotationPlaybackStub::reload()
 {
 }
 
+void NotationPlaybackStub::setSendEventsOnScoreChange(const InstrumentTrackId&, bool)
+{
+}
+
+void NotationPlaybackStub::sendEventsForChangedTracks()
+{
+}
+
 muse::async::Channel<InstrumentTrackIdSet> NotationPlaybackStub::tracksDataChanged() const
 {
     return {};
@@ -139,6 +147,11 @@ void NotationPlaybackStub::addLoopBoundary(LoopBoundaryType, tick_t)
 
 void NotationPlaybackStub::setLoopBoundariesEnabled(bool)
 {
+}
+
+bool NotationPlaybackStub::isLoopEnabled() const
+{
+    return false;
 }
 
 const LoopBoundaries& NotationPlaybackStub::loopBoundaries() const

@@ -35,8 +35,6 @@
 #include "engraving/dom/drumset.h"
 #include "engraving/dom/utils.h"
 
-#include "mscoreerrorscontroller.h"
-
 #include "log.h"
 
 using namespace mu::notation;
@@ -144,8 +142,8 @@ void NotationNoteInput::startNoteInput(NoteInputMethod method, bool focusNotatio
         int strg = 0;                           // assume topmost string as current string
         // if entering note entry with a note selected and the note has a string
         // set InputState::_string to note physical string
-        if (el->type() == ElementType::NOTE) {
-            strg = (static_cast<mu::engraving::Note*>(el))->string();
+        if (el->isNote()) {
+            strg = (toNote(el))->string();
         }
         is.setString(strg);
         break;
@@ -219,12 +217,12 @@ EngravingItem* NotationNoteInput::resolveNoteInputStartPosition() const
                     }
                     ChordRest* cr;
                     if (et == ElementType::NOTE) {
-                        cr = static_cast<ChordRest*>(e->parent());
+                        cr = toChordRest(e->parent());
                         if (!cr) {
                             continue;
                         }
                     } else {
-                        cr = static_cast<ChordRest*>(e);
+                        cr = toChordRest(e);
                     }
                     if (cr == lastSelected) {
                         topLeftChordRest = cr;
@@ -277,8 +275,7 @@ EngravingItem* NotationNoteInput::resolveNoteInputStartPosition() const
         }
     }
 
-    if (el == nullptr
-        || (el->type() != ElementType::CHORD && el->type() != ElementType::REST && el->type() != ElementType::NOTE)) {
+    if (!el || (!el->isChordRest() && !el->isNote())) {
         // if no note/rest is selected, start with voice 0
         engraving::track_idx_t track = is.track() == muse::nidx ? 0 : (is.track() / mu::engraving::VOICES) * mu::engraving::VOICES;
         // try to find an appropriate measure to start in
@@ -293,8 +290,8 @@ EngravingItem* NotationNoteInput::resolveNoteInputStartPosition() const
         return nullptr;
     }
 
-    if (el->type() == ElementType::CHORD) {
-        mu::engraving::Chord* c = static_cast<mu::engraving::Chord*>(el);
+    if (el->isChord()) {
+        mu::engraving::Chord* c = toChord(el);
         mu::engraving::Note* note = c->selectedNote();
         if (note == 0) {
             note = c->upNote();
@@ -464,8 +461,7 @@ void NotationNoteInput::addNote(const NoteInputParams& params, NoteAddingMode ad
     notifyNoteAddedChanged();
     notifyAboutStateChanged();
 
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
-
+    m_interaction->checkAndShowError();
     m_interaction->showItem(state().cr());
 }
 
@@ -479,16 +475,9 @@ void NotationNoteInput::padNote(const Pad& pad)
     score()->padToggle(pad);
     apply();
 
-    if (pad >= Pad::NOTE00 && pad <= Pad::NOTE1024) {
-        const NoteInputState& is = score()->inputState();
-        if (!is.rest() && isNoteInputMode() && is.usingNoteEntryMethod(NoteInputMethod::BY_DURATION)) {
-            score()->toggleAccidental(AccidentalType::NONE);
-        }
-    }
-
     notifyAboutStateChanged();
 
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 Ret NotationNoteInput::putNote(const PointF& pos, bool replace, bool insert)
@@ -508,7 +497,7 @@ Ret NotationNoteInput::putNote(const PointF& pos, bool replace, bool insert)
     notifyNoteAddedChanged();
     notifyAboutStateChanged();
 
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 
     return ret;
 }
@@ -528,7 +517,7 @@ void NotationNoteInput::removeNote(const PointF& pos)
 
     notifyAboutStateChanged();
 
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 void NotationNoteInput::setInputNote(const NoteInputParams& params)
@@ -590,6 +579,8 @@ void NotationNoteInput::moveInputNotes(bool up, PitchMode mode)
         return;
     }
 
+    is.setAccidentalType(AccidentalType::NONE);
+
     const Staff* staff = is.staff();
     const Fraction tick = is.tick();
 
@@ -615,7 +606,7 @@ void NotationNoteInput::moveInputNotes(bool up, PitchMode mode)
             newVal.pitch = val.pitch + (up ? 1 : -1);
             break;
         case PitchMode::DIATONIC: {
-            const int oldLine = mu::engraving::noteValToLine(val, is.staff(), is.tick());
+            const int oldLine = mu::engraving::noteValToLine(val, staff, tick);
             const int newLine = oldLine + (up ? -1 : 1);
             newVal = noteValForLine(newLine);
         } break;
@@ -625,7 +616,7 @@ void NotationNoteInput::moveInputNotes(bool up, PitchMode mode)
             break;
         }
 
-        newVal.pitch = std::clamp(newVal.pitch, 0, 127);
+        newVal.pitch = mu::engraving::clampPitch(newVal.pitch);
         notes.push_back(newVal);
     }
 
@@ -651,7 +642,7 @@ void NotationNoteInput::setAccidental(AccidentalType accidentalType)
 
     notifyAboutStateChanged();
 
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 void NotationNoteInput::setArticulation(SymbolId articulationSymbolId)
@@ -666,7 +657,7 @@ void NotationNoteInput::setArticulation(SymbolId articulationSymbolId)
 
     notifyAboutStateChanged();
 
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 void NotationNoteInput::setDrumNote(int note)
@@ -729,6 +720,31 @@ void NotationNoteInput::addTuplet(const TupletOptions& options)
     notifyAboutStateChanged();
 }
 
+static muse::RectF segmentContentRect(const Segment* segment, track_idx_t track)
+{
+    RectF result;
+
+    const EngravingItem* el = segment->element(track);
+    if (!el) {
+        return result;
+    }
+
+    if (el->isChord()) {
+        const Chord* chord = toChord(el);
+        for (const Note* note: chord->notes()) {
+            result.unite(note->ldata()->bbox().translated(note->pos()));
+        }
+
+        if (Hook* hook = chord->hook()) {
+            result.unite(hook->ldata()->bbox().translated(hook->pos()));
+        }
+    } else if (el->isRest() && !toRest(el)->isFullMeasureRest()) {
+        result.unite(el->ldata()->bbox());
+    }
+
+    return result;
+}
+
 muse::RectF NotationNoteInput::cursorRect() const
 {
     TRACEFUNC;
@@ -743,48 +759,65 @@ muse::RectF NotationNoteInput::cursorRect() const
         return {};
     }
 
-    mu::engraving::System* system = segment->measure()->system();
+    const mu::engraving::System* system = segment->measure()->system();
     if (!system) {
         return {};
     }
 
-    mu::engraving::track_idx_t track = inputState.track() == muse::nidx ? 0 : inputState.track();
-    mu::engraving::staff_idx_t staffIdx = track / mu::engraving::VOICES;
+    const mu::engraving::track_idx_t track = inputState.track() == muse::nidx ? 0 : inputState.track();
+    const mu::engraving::staff_idx_t staffIdx = track / mu::engraving::VOICES;
 
     const Staff* staff = score()->staff(staffIdx);
     if (!staff) {
         return {};
     }
 
-    constexpr int sideMargin = 4;
-    constexpr int skylineMargin = 20;
-
-    RectF segmentContentRect = segment->contentRect();
-    double x = segmentContentRect.translated(segment->pagePos()).x() - sideMargin;
-    double y = system->staffYpage(staffIdx) + system->page()->pos().y();
-    double w = segmentContentRect.width() + 2 * sideMargin;
-    double h = 0.0;
+    const double globalSpatium = score()->style().spatium();
 
     const mu::engraving::StaffType* staffType = staff->staffType(inputState.tick());
-    double spatium = score()->style().spatium();
-    double lineDist = staffType->lineDistance().val() * spatium;
-    int lines = staffType->lines();
-    double yOffset = staffType ? staffType->yoffset().val() * spatium : 0.0;
-    int inputStateStringsCount = inputState.string();
+    const bool isTabStaff = staffType->isTabStaff();
+    const double localSpatium = staffType->spatium();
 
+    const double defaultWidth = score()->noteHeadWidth() * localSpatium / globalSpatium;
+
+    const RectF segmentContentRect = ::segmentContentRect(segment, track);
+    double x = segmentContentRect.x() + segment->pagePos().x();
+    double y = system->staffCanvasYpage(staffIdx);
+    double w = segmentContentRect.width() > 0 ? segmentContentRect.width() : defaultWidth;
+    double h = 0.0;
+
+    if (isTabStaff) {
+        const double minWidth = 2.0 * globalSpatium;
+        const double sideMargin = std::max(0.3 * globalSpatium, 0.5 * (minWidth - w));
+        x -= sideMargin;
+        w += 2 * sideMargin;
+    } else {
+        const double sideMargin = 0.5 * globalSpatium;
+        x -= sideMargin;
+        w += 2 * sideMargin;
+    }
+
+    const double yOffset = staffType->yoffset().val() * localSpatium;
     y += yOffset;
 
-    int instrumentStringsCount = static_cast<int>(staff->part()->instrument()->stringData()->strings());
-    if (staff->isTabStaff(inputState.tick()) && inputStateStringsCount >= 0 && inputStateStringsCount <= instrumentStringsCount) {
+    const int inputStateStringsCount = inputState.string();
+    const int instrumentStringsCount = static_cast<int>(staff->part()->instrument()->stringData()->strings());
+
+    const double lineDist = staffType->lineDistance().val() * localSpatium;
+
+    if (isTabStaff && inputStateStringsCount >= 0 && inputStateStringsCount <= instrumentStringsCount) {
         h = lineDist;
-        y += staffType->physStringToYOffset(inputStateStringsCount) * spatium;
+        y += staffType->physStringToYOffset(inputStateStringsCount) * localSpatium;
         y -= (staffType->onLines() ? lineDist * 0.5 : lineDist);
     } else {
+        const double skylineMargin = 0.75 * localSpatium;
+        const int lines = staffType->lines();
+
         h = (lines - 1) * lineDist + 2 * skylineMargin;
         y -= skylineMargin;
     }
 
-    RectF result = RectF(x, y, w, h);
+    RectF result { x, y, w, h };
 
     if (configuration()->canvasOrientation().val == muse::Orientation::Horizontal) {
         result.translate(system->page()->pos());
@@ -833,8 +866,7 @@ void NotationNoteInput::addTie()
     score()->cmdAddTie();
 
     notifyAboutStateChanged();
-
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 void NotationNoteInput::addLaissezVib()
@@ -845,8 +877,7 @@ void NotationNoteInput::addLaissezVib()
     score()->cmdToggleLaissezVib();
 
     notifyAboutStateChanged();
-
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 Notification NotationNoteInput::noteAdded() const
@@ -928,8 +959,7 @@ void NotationNoteInput::doubleNoteInputDuration()
     apply();
 
     notifyAboutStateChanged();
-
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }
 
 void NotationNoteInput::halveNoteInputDuration()
@@ -941,6 +971,5 @@ void NotationNoteInput::halveNoteInputDuration()
     apply();
 
     notifyAboutStateChanged();
-
-    MScoreErrorsController(iocContext()).checkAndShowMScoreError();
+    m_interaction->checkAndShowError();
 }

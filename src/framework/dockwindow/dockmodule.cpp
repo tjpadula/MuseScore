@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -22,25 +22,12 @@
 
 #include "dockmodule.h"
 
-#include <QQmlEngine>
-
 #include "internal/dropcontroller.h"
 #include "internal/dockseparator.h"
-#include "internal/dockframemodel.h"
 #include "internal/docktabbar.h"
+#include "internal/docktitlebar.h"
 #include "internal/dockwindowactionscontroller.h"
 #include "internal/dockwindowprovider.h"
-
-#include "view/dockwindow.h"
-#include "view/dockpanelview.h"
-#include "view/docktoolbarview.h"
-#include "view/dockstatusbarview.h"
-#include "view/dockingholderview.h"
-#include "view/dockcentralview.h"
-#include "view/dockpageview.h"
-#include "view/docktitlebar.h"
-
-#include "docktypes.h"
 
 #include "thirdparty/KDDockWidgets/src/Config.h"
 #include "thirdparty/KDDockWidgets/src/DockWidgetBase.h"
@@ -84,22 +71,22 @@ public:
 
     QUrl titleBarFilename() const override
     {
-        return QUrl("qrc:/qml/Muse/Dock/DockTitleBar.qml");
+        return QUrl("qrc:/qt/qml/Muse/Dock/DockTitleBar.qml");
     }
 
     QUrl dockwidgetFilename() const override
     {
-        return QUrl("qrc:/qml/Muse/Dock/DockWidget.qml");
+        return QUrl("qrc:/qt/qml/Muse/Dock/DockWidget.qml");
     }
 
     QUrl frameFilename() const override
     {
-        return QUrl("qrc:/qml/Muse/Dock/DockFrame.qml");
+        return QUrl("qrc:/qt/qml/Muse/Dock/DockFrame.qml");
     }
 
     QUrl floatingWindowFilename() const override
     {
-        return QUrl("qrc:/qml/Muse/Dock/DockFloatingWindow.qml");
+        return QUrl("qrc:/qt/qml/Muse/Dock/DockFloatingWindow.qml");
     }
 
 private:
@@ -109,11 +96,6 @@ private:
 
 using namespace muse::dock;
 using namespace muse::modularity;
-
-static void dock_init_qrc()
-{
-    Q_INIT_RESOURCE(dock);
-}
 
 std::string DockModule::moduleName() const
 {
@@ -127,33 +109,8 @@ void DockModule::registerExports()
     ioc()->registerExport<IDockWindowProvider>(moduleName(), new DockWindowProvider());
 }
 
-void DockModule::registerResources()
+void DockModule::onInit(const IApplication::RunMode&)
 {
-    dock_init_qrc();
-}
-
-void DockModule::registerUiTypes()
-{
-    qmlRegisterType<DockWindow>("Muse.Dock", 1, 0, "DockWindow");
-    qmlRegisterType<DockPanelView>("Muse.Dock", 1, 0, "DockPanelView");
-    qmlRegisterType<DockStatusBarView>("Muse.Dock", 1, 0, "DockStatusBar");
-    qmlRegisterType<DockToolBarView>("Muse.Dock", 1, 0, "DockToolBarView");
-    qmlRegisterType<DockingHolderView>("Muse.Dock", 1, 0, "DockingHolderView");
-    qmlRegisterType<DockCentralView>("Muse.Dock", 1, 0, "DockCentralView");
-    qmlRegisterType<DockPageView>("Muse.Dock", 1, 0, "DockPageView");
-    qmlRegisterType<DockFrameModel>("Muse.Dock", 1, 0, "DockFrameModel");
-
-    qmlRegisterUncreatableType<DockTabsModel>("Muse.Dock", 1, 0, "DockTabsModel", "Not creatable from QML");
-    qmlRegisterUncreatableType<DockToolBarAlignment>("Muse.Dock", 1, 0, "DockToolBarAlignment", "Not creatable from QML");
-    qmlRegisterUncreatableType<DockLocation>("Muse.Dock", 1, 0, "Location", "Not creatable from QML");
-}
-
-void DockModule::onInit(const IApplication::RunMode& mode)
-{
-    if (mode != IApplication::RunMode::GuiApp) {
-        return;
-    }
-
     m_actionsController->init();
 
     // ===================================

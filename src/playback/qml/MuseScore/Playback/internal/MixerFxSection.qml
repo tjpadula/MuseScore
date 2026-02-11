@@ -19,11 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import QtQuick 2.15
 
-import Muse.Ui 1.0
-import Muse.UiComponents 1.0
-import Muse.Audio 1.0
+pragma ComponentBehavior: Bound
+
+import QtQuick
+
+import Muse.Ui
+import Muse.UiComponents
 
 MixerPanelSection {
     id: root
@@ -34,6 +36,8 @@ MixerPanelSection {
 
     Column {
         id: content
+
+        required property MixerChannelItem channelItem
 
         y: 0
 
@@ -46,18 +50,21 @@ MixerPanelSection {
 
         Repeater {
             id: repeater
-            anchors.horizontalCenter: parent.horizontalCenter
 
-            model: channelItem.outputResourceItemList
+            model: content.channelItem.outputResourceItemList
+
             delegate: AudioResourceControl {
                 id: inputResourceControl
 
-                anchors.horizontalCenter: parent.horizontalCenter
+                required property OutputResourceItem modelData
+                required property int index
+
+                anchors.horizontalCenter: content.horizontalCenter
 
                 resourceItemModel: modelData
 
-                navigationPanel: channelItem.panel
-                navigationRowStart: root.navigationRowStart + (model.index * 3) // NOTE: 3 - because AudioResourceControl have 3 controls
+                navigationPanel: content.channelItem.panel
+                navigationRowStart: root.navigationRowStart + index * 3 // NOTE: 3 - because AudioResourceControl have 3 controls
                 navigationName: modelData.id
                 accessibleName: content.accessibleName
 

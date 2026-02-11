@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_APPSHELL_STARTUPSCENARIO_H
-#define MU_APPSHELL_STARTUPSCENARIO_H
+
+#pragma once
 
 #include "istartupscenario.h"
 
@@ -35,22 +35,21 @@
 #include "project/iprojectautosaver.h"
 #include "audioplugins/iregisteraudiopluginsscenario.h"
 
-#include "update/iupdatescenario.h"
+#include "update/iappupdatescenario.h"
 #include "musesounds/imusesoundscheckupdatescenario.h"
 #include "musesounds/imusesamplercheckupdatescenario.h"
 
 namespace mu::appshell {
 class StartupScenario : public IStartupScenario, public muse::Injectable, public muse::async::Asyncable
 {
+    muse::GlobalInject<muse::mi::IMultiInstancesProvider> multiInstancesProvider;
+    muse::GlobalInject<IAppShellConfiguration> configuration;
     muse::Inject<muse::IInteractive> interactive = { this };
     muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
-    muse::Inject<muse::mi::IMultiInstancesProvider> multiInstancesProvider = { this };
-    muse::Inject<IAppShellConfiguration> configuration = { this };
     muse::Inject<ISessionsManager> sessionsManager = { this };
     muse::Inject<project::IProjectAutoSaver> projectAutoSaver = { this };
     muse::Inject<muse::audioplugins::IRegisterAudioPluginsScenario> registerAudioPluginsScenario = { this };
-
-    muse::Inject<muse::update::IUpdateScenario> appUpdateScenario = { this };
+    muse::Inject<muse::update::IAppUpdateScenario> appUpdateScenario = { this };
     muse::Inject<mu::musesounds::IMuseSoundsCheckUpdateScenario> museSoundsUpdateScenario = { this };
     muse::Inject<musesounds::IMuseSamplerCheckUpdateScenario> museSamplerCheckForUpdateScenario = { this };
 
@@ -69,7 +68,7 @@ public:
     void runAfterSplashScreen() override;
     bool startupCompleted() const override;
 
-    QList<QVariantMap> welcomeDialogData() const override;
+    std::vector<QVariantMap> welcomeDialogData() const override;
 
 private:
     void registerAudioPlugins();
@@ -96,5 +95,3 @@ private:
     size_t m_totalChecksReceived = 0;
 };
 }
-
-#endif // MU_APPSHELL_STARTUPSCENARIO_H

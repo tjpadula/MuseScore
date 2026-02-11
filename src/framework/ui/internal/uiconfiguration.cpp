@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -29,11 +29,12 @@
 #include "settings.h"
 #include "themeconverter.h"
 
-#include <QScreen>
 #include <QFontDatabase>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
+#include <QScreen>
+#include <QSettings>
 
 #ifdef Q_OS_WIN
 #include <QOperatingSystemVersion>
@@ -43,12 +44,14 @@
 
 #include "log.h"
 
+using namespace Qt::Literals;
 using namespace muse;
 using namespace muse::ui;
 using namespace muse::async;
 
 static const Settings::Key UI_THEMES_KEY("ui", "ui/application/themes");
 static const Settings::Key UI_CURRENT_THEME_CODE_KEY("ui", "ui/application/currentThemeCode");
+static const Settings::Key UI_CUSTOM_COLORS_KEY("ui", "ui/application/customColors");
 static const Settings::Key UI_FOLLOW_SYSTEM_THEME_KEY("ui", "ui/application/followSystemTheme");
 static const Settings::Key UI_FONT_FAMILY_KEY("ui", "ui/theme/fontFamily");
 static const Settings::Key UI_FONT_SIZE_KEY("ui", "ui/theme/fontSize");
@@ -60,19 +63,34 @@ static const Settings::Key UI_MUSICAL_TEXT_FONT_SIZE_KEY("ui", "ui/theme/musical
 
 static const QString WINDOW_GEOMETRY_KEY("window");
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
 static const int FLICKABLE_MAX_VELOCITY = 4000;
-#else
-static const int FLICKABLE_MAX_VELOCITY = 1500;
-#endif
 
 static const int TOOLTIP_DELAY = 500;
+
+// read custom colors saved by Qt < 6.9
+// see: https://github.com/qt/qtbase/blob/v6.2.4/src/gui/kernel/qplatformdialoghelper.cpp#L292-L302
+static std::vector<Val> readLegacyCustomColors()
+{
+    constexpr size_t customColorCount = 16;
+
+    QSettings settings(QSettings::UserScope, u"QtProject"_s);
+    std::vector<Val> legacyValues(customColorCount, Val(QColorConstants::White));
+    for (size_t i = 0; i < customColorCount; ++i) {
+        const QVariant value = settings.value(u"Qt/customColors/"_s + QString::number(i));
+        if (value.isValid()) {
+            legacyValues[i] = Val(QColor::fromRgb(value.toUInt()));
+        }
+    }
+
+    return legacyValues;
+}
 
 void UiConfiguration::init()
 {
     m_config = ConfigReader::read(":/configs/ui.cfg");
 
     settings()->setDefaultValue(UI_CURRENT_THEME_CODE_KEY, Val(LIGHT_THEME_CODE));
+    settings()->setDefaultValue(UI_CUSTOM_COLORS_KEY, Val(readLegacyCustomColors()));
     settings()->setDefaultValue(UI_FOLLOW_SYSTEM_THEME_KEY, Val(false));
     settings()->setDefaultValue(UI_FONT_FAMILY_KEY, Val(defaultFontFamily()));
     settings()->setDefaultValue(UI_FONT_SIZE_KEY, Val(defaultFontSize()));
@@ -118,6 +136,10 @@ void UiConfiguration::init()
         m_musicalFontChanged.notify();
     });
 
+    platformTheme()->platformThemeChanged().onNotify(this, [this]() {
+        synchThemeWithSystemIfNecessary();
+    });
+
     m_uiArrangement.stateChanged(WINDOW_GEOMETRY_KEY).onNotify(this, [this]() {
         m_windowGeometryChanged.notify();
     });
@@ -146,10 +168,6 @@ void UiConfiguration::deinit()
 void UiConfiguration::initThemes()
 {
     m_isFollowSystemTheme.val = settings()->value(UI_FOLLOW_SYSTEM_THEME_KEY).toBool();
-
-    platformTheme()->platformThemeChanged().onNotify(this, [this]() {
-        synchThemeWithSystemIfNecessary();
-    });
 
     updateSystemThemeListeningStatus();
 
@@ -916,4 +934,28 @@ int UiConfiguration::flickableMaxVelocity() const
 int UiConfiguration::tooltipDelay() const
 {
     return TOOLTIP_DELAY;
+}
+
+std::vector<QColor> UiConfiguration::colorDialogCustomColors() const
+{
+    const ValList colorVals = settings()->value(UI_CUSTOM_COLORS_KEY).toList();
+
+    std::vector<QColor> customColors;
+    customColors.reserve(colorVals.size());
+    for (const auto& colorVal : colorVals) {
+        customColors.push_back(colorVal.toQColor());
+    }
+
+    return customColors;
+}
+
+void UiConfiguration::setColorDialogCustomColors(const std::vector<QColor>& customColors)
+{
+    ValList colorVals;
+    colorVals.reserve(customColors.size());
+    for (const auto& color: customColors) {
+        colorVals.emplace_back(color);
+    }
+
+    settings()->setLocalValue(UI_CUSTOM_COLORS_KEY, Val(colorVals));
 }

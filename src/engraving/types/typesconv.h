@@ -24,6 +24,8 @@
 
 #include "types.h"
 
+#include "engraving/dom/tremolobar.h"
+
 namespace mu::engraving {
 class TConv
 {
@@ -119,7 +121,7 @@ public:
     static String toXml(AccidentalRole v);
     static AccidentalRole fromXml(const AsciiStringView& tag, AccidentalRole def);
 
-    static String toXml(BeatsPerSecond v);
+    static String toXml(BeatsPerSecond v, int precision);
     static BeatsPerSecond fromXml(const AsciiStringView& tag, BeatsPerSecond def);
 
     static String translatedUserName(DurationType v);
@@ -171,6 +173,9 @@ public:
     static const TranslatableString& userName(TremoloType v);
     static AsciiStringView toXml(TremoloType v);
     static TremoloType fromXml(const AsciiStringView& str, TremoloType def);
+
+    static AsciiStringView toXml(TremoloBarType v);
+    static TremoloBarType fromXml(const AsciiStringView& str, TremoloBarType def);
 
     static const TranslatableString& userName(BracketType v);
     static String translatedUserName(BracketType v);
@@ -245,6 +250,9 @@ public:
 
     static AsciiStringView toXml(AutoOnOff autoOnOff);
     static AutoOnOff fromXml(const AsciiStringView& str, AutoOnOff def);
+
+    static AsciiStringView toXml(CapoParams::TransposeMode autoOnOff);
+    static CapoParams::TransposeMode fromXml(const AsciiStringView& str, CapoParams::TransposeMode def);
 
     static AsciiStringView toXml(PartialSpannerDirection v);
     static PartialSpannerDirection fromXml(const AsciiStringView& str, PartialSpannerDirection def);

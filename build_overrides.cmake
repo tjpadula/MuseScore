@@ -46,9 +46,12 @@ if (GIVEN_CMAKE_OSX_SYSROOT MATCHES "iphoneos")
     set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-ios-device-arm64/qtbase")
 elseif(GIVEN_CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
     set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-ios-simulator-${UNAME_MACHINE}/qtbase")
+elseif(GIVEN_CMAKE_OSX_SYSROOT MATCHES "macosx")
+    set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-mac-${UNAME_MACHINE}-nonstatic/qtbase")
+#    set(ENV{QTDIR} "${GIVEN_QT_HOST_PATH}/../../qt6-build-mac-${UNAME_MACHINE}/qtbase")
 else()
 # fixme: Make sure we can use the mac dir for mac builds.
-    message(FATAL_ERROR "Unknown CMAKE_OSX_SYSROOT: ${ARG}")
+    message(FATAL_ERROR "build_overrides.cmake is not set up for this sysroot. Unknown CMAKE_OSX_SYSROOT: ${ARG}")
 endif()
 
 if ( NOT DEFINED ENV{QTDIR} OR ENV{QTDIR} STREQUAL "" )

@@ -21,23 +21,22 @@
  */
 #include "slur.h"
 
-#include <cmath>
-
-#include "draw/types/transform.h"
+#include "../editing/editspanner.h"
+#include "../editing/mscoreview.h"
 
 #include "arpeggio.h"
 #include "beam.h"
 #include "chord.h"
 #include "measure.h"
-#include "mscoreview.h"
 #include "navigate.h"
+#include "note.h"
 #include "part.h"
 #include "score.h"
+#include "staff.h"
+#include "stafftype.h"
 #include "stem.h"
 #include "system.h"
-#include "tie.h"
 #include "tremolotwochord.h"
-#include "undo.h"
 
 #include "log.h"
 
@@ -135,6 +134,7 @@ bool SlurSegment::edit(EditData& ed)
 
     const bool altMod = ed.modifiers & AltModifier;
     const bool shiftMod = ed.modifiers & ShiftModifier;
+    const bool ctrlMod = ed.modifiers & ControlModifier;
     const bool extendToBarLine = shiftMod && altMod;
     const bool isPartialSlur = sl->isIncoming() || sl->isOutgoing();
 
@@ -154,13 +154,17 @@ bool SlurSegment::edit(EditData& ed)
                 sl->undoSetOutgoing(false);
             }
         } else {
-            if (start && sl->isIncoming()) {
-                sl->undoSetIncoming(false);
-                cr = prevChordRest(e, options);
-            } else if (!start && sl->isOutgoing()) {
+            if (!start && sl->isOutgoing()) {
                 sl->undoSetOutgoing(false);
             } else {
-                cr = prevChordRest(e, options);
+                if (start && sl->isIncoming()) {
+                    sl->undoSetIncoming(false);
+                }
+                if (ctrlMod) {
+                    cr = score()->prevMeasure(cr, true);
+                } else {
+                    cr = prevChordRest(e, options);
+                }
             }
         }
     } else if (ed.key == Key_Right) {
@@ -178,22 +182,24 @@ bool SlurSegment::edit(EditData& ed)
         } else {
             if (start && sl->isIncoming()) {
                 sl->undoSetIncoming(false);
-            } else if (!start && sl->isOutgoing()) {
-                sl->undoSetOutgoing(false);
-                cr = nextChordRest(e, options);
             } else {
-                cr = nextChordRest(e, options);
+                if (!start && sl->isOutgoing()) {
+                    sl->undoSetOutgoing(false);
+                }
+                if (ctrlMod) {
+                    cr = score()->nextMeasure(cr, false, true);
+                } else {
+                    cr = nextChordRest(e, options);
+                }
             }
         }
     } else if (ed.key == Key_Up) {
-        Part* part     = e->part();
-        track_idx_t startTrack = part->startTrack();
+        track_idx_t startTrack = e->part()->startTrack();
         track_idx_t endTrack   = e->track();
         cr = searchCR(e->segment(), endTrack, startTrack);
     } else if (ed.key == Key_Down) {
         track_idx_t startTrack = e->track() + 1;
-        Part* part     = e->part();
-        track_idx_t endTrack   = part->endTrack();
+        track_idx_t endTrack   = e->part()->endTrack();
         cr = searchCR(e->segment(), startTrack, endTrack);
     } else {
         return false;
@@ -265,20 +271,14 @@ void SlurSegment::changeAnchor(EditData& ed, EngravingItem* element)
     }
 }
 
-void SlurSegment::editDrag(EditData& ed)
+void SlurSegment::dragGrip(EditData& ed)
 {
     Grip g = ed.curGrip;
-    if (g == Grip::NO_GRIP) {
-        return;
-    }
-
-    ups(g).off += ed.delta;
-
-    PointF delta;
 
     switch (g) {
     case Grip::START:
     case Grip::END:
+        ups(g).off += ed.delta;
         //
         // move anchor for slurs/ties
         //
@@ -302,25 +302,26 @@ void SlurSegment::editDrag(EditData& ed)
                 ed.view()->setDropTarget(0);
             }
         }
+        renderer()->computeBezier(this);
         break;
     case Grip::BEZIER1:
-        break;
     case Grip::BEZIER2:
+        ups(g).off += ed.delta;
+        renderer()->computeBezier(this);
         break;
     case Grip::SHOULDER:
         ups(g).off = PointF();
-        delta = ed.delta;
+        renderer()->computeBezier(this, ed.delta);
         break;
     case Grip::DRAG:
-        ups(g).off = PointF();
-        setOffset(offset() + ed.delta);
+        ups(Grip::DRAG).off = PointF();
+        roffset() += ed.delta;
         break;
-    case Grip::NO_GRIP:
-    case Grip::GRIPS:
-        break;
+    default:
+        UNREACHABLE;
+        return;
     }
 
-    renderer()->computeBezier(this, delta);
     triggerLayout();
 }
 
@@ -358,9 +359,9 @@ double SlurSegment::dottedWidth() const
     return style().styleMM(Sid::slurDottedWidth);
 }
 
-Color SlurSegment::curColor() const
+Color SlurSegment::curColor(const rendering::PaintOptions& opt) const
 {
-    return EngravingItem::curColor(getProperty(Pid::VISIBLE).toBool(), getProperty(Pid::COLOR).value<Color>());
+    return EngravingItem::curColor(getProperty(Pid::VISIBLE).toBool(), getProperty(Pid::COLOR).value<Color>(), opt);
 }
 
 Slur::Slur(const Slur& s)
@@ -485,7 +486,7 @@ bool Slur::isOutgoing() const
 void Slur::undoChangeStartEndElements(ChordRest* scr, ChordRest* ecr)
 {
     for (EngravingObject* lsp : linkList()) {
-        Spanner* sp = static_cast<Spanner*>(lsp);
+        Spanner* sp = toSpanner(lsp);
         if (sp == this) {
             score()->undo(new ChangeSpannerElements(this, scr, ecr));
         } else {
@@ -536,6 +537,11 @@ bool Slur::isCrossStaff()
     return startCR() && endCR()
            && (startCR()->staffMove() != 0 || endCR()->staffMove() != 0
                || startCR()->vStaffIdx() != endCR()->vStaffIdx());
+}
+
+bool Slur::hasCrossBeams()
+{
+    return (startCR() && startCR()->beam() && startCR()->beam()->cross()) || (endCR() && endCR()->beam() && endCR()->beam()->cross());
 }
 
 PropertyValue Slur::getProperty(Pid propertyId) const

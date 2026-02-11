@@ -24,8 +24,13 @@
 
 #include <cmath>
 
+#include "../editing/elementeditdata.h"
+#include "../editing/undo.h"
+#include "../editing/editfretboarddiagram.h"
+
 #include "actionicon.h"
 #include "factory.h"
+#include "fret.h"
 #include "harmony.h"
 #include "layoutbreak.h"
 #include "masterscore.h"
@@ -34,9 +39,7 @@
 #include "stafftext.h"
 #include "system.h"
 #include "text.h"
-#include "undo.h"
 
-#include "defer.h"
 #include "log.h"
 
 using namespace mu;
@@ -85,10 +88,10 @@ bool Box::edit(EditData&)
 }
 
 //---------------------------------------------------------
-//   startEditDrag
+//   startDragGrip
 //---------------------------------------------------------
 
-void Box::startEditDrag(EditData& ed)
+void Box::startDragGrip(EditData& ed)
 {
     ElementEditDataPtr eed = ed.getData(this);
     if (isHBox()) {
@@ -98,7 +101,7 @@ void Box::startEditDrag(EditData& ed)
     }
 }
 
-void Box::editDrag(EditData& ed)
+void Box::dragGrip(EditData& ed)
 {
     const double sp = sizeIsSpatiumDependent() ? spatium() : style().defaultSpatium();
     if (isVBox()) {
@@ -247,12 +250,12 @@ PropertyValue Box::propertyDefault(Pid id) const
     switch (id) {
     case Pid::BOX_HEIGHT:
     case Pid::BOX_WIDTH:
-        return Spatium(0.0);
+        return 0.0_sp;
 
     case Pid::TOP_GAP:
-        return isHBox() ? Spatium(0.0) : style().styleS(Sid::systemFrameDistance);
+        return isHBox() ? 0.0_sp : style().styleS(Sid::systemFrameDistance);
     case Pid::BOTTOM_GAP:
-        return isHBox() ? Spatium(0.0) : style().styleS(Sid::frameSystemDistance);
+        return isHBox() ? 0.0_sp : style().styleS(Sid::frameSystemDistance);
 
     case Pid::LEFT_MARGIN:
     case Pid::RIGHT_MARGIN:
@@ -270,7 +273,7 @@ PropertyValue Box::propertyDefault(Pid id) const
 
 bool Box::isTitleFrame() const
 {
-    return this == score()->first() && type() == ElementType::VBOX;
+    return this == score()->first() && isVBox();
 }
 
 //---------------------------------------------------------
@@ -374,7 +377,7 @@ EngravingItem* Box::drop(EditData& data)
                 break;
             }
             for (EngravingItem* elem : el()) {
-                if (elem->type() == ElementType::LAYOUT_BREAK) {
+                if (elem->isLayoutBreak()) {
                     score()->undoChangeElement(elem, e);
                     break;
                 }
@@ -497,8 +500,7 @@ void Box::manageExclusionFromParts(bool exclude)
 
             if (isTBox()) {
                 Text* thisText = toTBox(this)->text();
-                Text* newText = toText(thisText->linkedClone());
-                toTBox(newFrame)->resetText(newText);
+                toTBox(newFrame)->add(thisText->linkedClone());
             }
 
             if (!score->isMaster() && titleFrame) {
@@ -524,10 +526,13 @@ void Box::manageExclusionFromParts(bool exclude)
 
 RectF HBox::drag(EditData& data)
 {
+    if (!isMovable()) {
+        return RectF();
+    }
     RectF r(canvasBoundingRect());
     double diff = data.evtDelta.x();
     double x1   = offset().x() + diff;
-    if (explicitParent()->type() == ElementType::VBOX) {
+    if (explicitParent()->isVBox()) {
         VBox* vb = toVBox(explicitParent());
         double x2 = parentItem()->width() - width() - (vb->leftMargin() + vb->rightMargin()) * DPMM;
         if (x1 < 0.0) {
@@ -591,7 +596,7 @@ PropertyValue HBox::propertyDefault(Pid id) const
     case Pid::CREATE_SYSTEM_HEADER:
         return true;
     case Pid::BOX_WIDTH:
-        return Spatium(5.0);
+        return 5.0_sp;
     default:
         return Box::propertyDefault(id);
     }
@@ -618,12 +623,12 @@ VBox::VBox(System* parent)
 
 double VBox::minHeight() const
 {
-    return absoluteFromSpatium(Spatium(10));
+    return absoluteFromSpatium(10_sp);
 }
 
 double VBox::maxHeight() const
 {
-    return absoluteFromSpatium(Spatium(30));
+    return absoluteFromSpatium(30_sp);
 }
 
 PropertyValue VBox::getProperty(Pid propertyId) const
@@ -648,7 +653,7 @@ PropertyValue VBox::propertyDefault(Pid id) const
 {
     switch (id) {
     case Pid::BOX_HEIGHT:
-        return Spatium(10.0);
+        return 10.0_sp;
     default:
         return Box::propertyDefault(id);
     }
@@ -672,17 +677,17 @@ bool VBox::setProperty(Pid propertyId, const PropertyValue& v)
 }
 
 //---------------------------------------------------------
-//   startEditDrag
+//   startDragGrip
 //---------------------------------------------------------
 
-void VBox::startEditDrag(EditData& ed)
+void VBox::startDragGrip(EditData& ed)
 {
     const double sp = sizeIsSpatiumDependent() ? spatium() : style().defaultSpatium();
     if (isAutoSizeEnabled()) {
         setAutoSizeEnabled(false);
         setBoxHeight(Spatium(height() / sp));
     }
-    Box::startEditDrag(ed);
+    Box::startDragGrip(ed);
 }
 
 //---------------------------------------------------------
@@ -713,14 +718,12 @@ FBox::FBox(System* parent)
 
 void FBox::init()
 {
-    LOGDA() << "============= init";
-
     StringList oldDiagramsNames;
     std::vector<FretDiagram*> oldDiagrams;
     for (EngravingItem* element : el()) {
         FretDiagram* diagram = toFretDiagram(element);
         oldDiagrams.push_back(diagram);
-        oldDiagramsNames.push_back(diagram->harmonyText().toLower());
+        oldDiagramsNames.push_back(diagram->harmonyDisplayText());
     }
 
     StringList diagramsNamesInScore;
@@ -740,8 +743,8 @@ void FBox::init()
                 continue;
             }
 
-            String harmonyName = item->isHarmony() ? toHarmony(item)->plainText().toLower()
-                                 : item->isFretDiagram() ? toFretDiagram(item)->harmonyText().toLower()
+            String harmonyName = item->isHarmony() ? toHarmony(item)->displayText()
+                                 : item->isFretDiagram() ? toFretDiagram(item)->harmonyDisplayText()
                                  : String();
             if (harmonyName.empty() || muse::contains(diagramsNamesInScore, harmonyName)) {
                 continue;
@@ -812,7 +815,7 @@ size_t FBox::computeInsertionIdx(const String& nameOfDiagramBeforeThis)
 
     for (size_t i = 0; i < m_el.size(); ++i) {
         FretDiagram* fretDiagram = toFretDiagram(m_el[i]);
-        if (fretDiagram->harmonyText().toLower() == nameOfDiagramBeforeThis.toLower()) {
+        if (fretDiagram->harmonyPlainText().toLower() == nameOfDiagramBeforeThis.toLower()) {
             return i + 1;
         }
     }
@@ -888,7 +891,7 @@ PropertyValue FBox::propertyDefault(Pid propertyId) const
         return 1.0;
     case Pid::FRET_FRAME_COLUMN_GAP:
     case Pid::FRET_FRAME_ROW_GAP:
-        return Spatium(3.0);
+        return 3.0_sp;
     case Pid::FRET_FRAME_CHORDS_PER_ROW:
         return 8;
     case Pid::FRET_FRAME_H_ALIGN:
@@ -939,8 +942,8 @@ void FBox::undoReorderElements(const StringList& newOrder)
 void FBox::reorderElements(const StringList& newOrder)
 {
     std::sort(m_el.begin(), m_el.end(), [&](EngravingItem* a, EngravingItem* b) {
-        String nameA = toFretDiagram(a)->harmonyText().toLower();
-        String nameB = toFretDiagram(b)->harmonyText().toLower();
+        String nameA = toFretDiagram(a)->harmonyPlainText().toLower();
+        String nameB = toFretDiagram(b)->harmonyPlainText().toLower();
         auto iterA = std::find(newOrder.begin(), newOrder.end(), nameA);
         auto iterB = std::find(newOrder.begin(), newOrder.end(), nameB);
         return iterA < iterB;
@@ -951,7 +954,7 @@ StringList FBox::diagramsOrder() const
 {
     StringList result;
     for (EngravingItem* item : m_el) {
-        result.push_back(toFretDiagram(item)->harmonyText().toLower());
+        result.push_back(toFretDiagram(item)->harmonyPlainText().toLower());
     }
 
     return result;
@@ -973,7 +976,9 @@ TBox::TBox(System* parent)
 TBox::TBox(const TBox& tbox)
     : VBox(tbox)
 {
-    m_text = Factory::copyText(*(tbox.m_text));
+    if (tbox.m_text) {
+        add(Factory::copyText(*(tbox.m_text)));
+    }
 }
 
 TBox::~TBox()
@@ -981,13 +986,10 @@ TBox::~TBox()
     delete m_text;
 }
 
-void TBox::resetText(Text* text)
+void TBox::scanElements(std::function<void(EngravingItem*)> func)
 {
-    if (m_text) {
-        delete m_text;
-    }
-    m_text = text;
-    text->setParent(this);
+    m_text->scanElements(func);
+    Box::scanElements(func);
 }
 
 //---------------------------------------------------------
@@ -1015,8 +1017,11 @@ EngravingItem* TBox::drop(EditData& data)
 void TBox::add(EngravingItem* e)
 {
     if (e->isText()) {
-        // does not normally happen, since drop() handles this directly
-        m_text->undoChangeProperty(Pid::TEXT, toText(e)->xmlText());
+        if (m_text) {
+            delete m_text;
+        }
+        m_text = toText(e);
+        m_text->setLayoutToParentWidth(true);
         e->setParent(this);
         e->added();
     } else {
@@ -1053,7 +1058,7 @@ PropertyValue TBox::propertyDefault(Pid id) const
 {
     switch (id) {
     case Pid::BOX_HEIGHT:
-        return Spatium(1);
+        return 1_sp;
     default:
         return VBox::propertyDefault(id);
     }

@@ -24,6 +24,8 @@
 #include "notation/inotation.h"
 #include "notation/notationtypes.h"
 
+#include "convertertypes.h"
+
 namespace mu::converter {
 class ConverterUtils
 {
@@ -31,7 +33,10 @@ public:
     static muse::RetVal<notation::TransposeOptions> parseTransposeOptions(const std::string& optionsJson);
     static muse::RetVal<notation::TransposeOptions> parseTransposeOptions(const QJsonObject& optionsObj);
 
+    static muse::RetVal<ConvertRegion> parseRegion(const std::string& regionJson);
+
     static muse::Ret applyTranspose(const notation::INotationPtr notation, const std::string& optionsJson);
     static muse::Ret applyTranspose(const notation::INotationPtr notation, const notation::TransposeOptions& options);
+    static void setVisibleParts(const notation::INotationPtr notation, const std::vector<size_t>& visibleParts);
 };
 }

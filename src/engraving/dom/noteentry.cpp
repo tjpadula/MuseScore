@@ -20,7 +20,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <tuple>
+
 #include "translation.h"
+
+#include "../editing/editmeasures.h"
+#include "../editing/inserttime.h"
+#include "../editing/transpose.h"
 #include "infrastructure/messagebox.h"
 
 #include "accidental.h"
@@ -33,6 +39,7 @@
 #include "measure.h"
 #include "measurerepeat.h"
 #include "navigate.h"
+#include "note.h"
 #include "part.h"
 #include "range.h"
 #include "score.h"
@@ -40,8 +47,8 @@
 #include "staff.h"
 #include "stringdata.h"
 #include "tie.h"
+#include "tremolotwochord.h"
 #include "tuplet.h"
-#include "undo.h"
 #include "utils.h"
 
 #include "log.h"
@@ -66,12 +73,16 @@ NoteVal Score::noteValForPosition(Position pos, AccidentalType at, bool& error)
     ClefType clef   = st->clef(tick);
     const Instrument* instr = st->part()->instrument(s->tick());
     NoteVal nval;
-    const StringData* stringData = 0;
+    const StringData* stringData = nullptr;
 
     // pitched/unpitched note entry depends on instrument (override StaffGroup)
     StaffGroup staffGroup = st->staffType(tick)->group();
     if (staffGroup != StaffGroup::TAB) {
         staffGroup = instr->useDrumset() ? StaffGroup::PERCUSSION : StaffGroup::STANDARD;
+    }
+
+    if (staffGroup != StaffGroup::PERCUSSION) {
+        stringData = st->part()->stringData(s->tick(), st->idx());
     }
 
     switch (staffGroup) {
@@ -103,7 +114,6 @@ NoteVal Score::noteValForPosition(Position pos, AccidentalType at, bool& error)
         if (m_is.rest()) {
             return nval;
         }
-        stringData = st->part()->stringData(s->tick(), st->idx());
         line = st->staffType(tick)->visualStringToPhys(line);
         if (line < 0 || line >= static_cast<int>(stringData->strings())) {
             error = true;
@@ -123,10 +133,10 @@ NoteVal Score::noteValForPosition(Position pos, AccidentalType at, bool& error)
         }
         // for open strings, only accepts fret 0 (strings in StringData are from bottom to top)
         size_t strgDataIdx = stringData->strings() - line - 1;
-        if (nval.fret > 0 && stringData->stringList().at(strgDataIdx).open == true) {
+        if (nval.fret > 0 && stringData->stringList().at(strgDataIdx).open) {
             nval.fret = 0;
         }
-        nval.pitch = stringData->getPitch(line, nval.fret, st);
+        nval.pitch = stringData->getPitch(line, nval.fret, st, pos.segment->tick());
         break;
     }
 
@@ -148,9 +158,10 @@ NoteVal Score::noteValForPosition(Position pos, AccidentalType at, bool& error)
             if (v.isZero()) {
                 nval.tpc1 = nval.tpc2;
             } else {
-                nval.tpc1 = mu::engraving::transposeTpc(nval.tpc2, v, true);
+                nval.tpc1 = Transpose::transposeTpc(nval.tpc2, v, true);
             }
         }
+        stringData->convertPitch(nval.pitch, st, pos.segment->tick(), &nval.string, &nval.fret);
     }
     break;
     }
@@ -199,9 +210,7 @@ Note* Score::addPitch(NoteVal& nval, bool addFlag, InputState* externalInputStat
         deleteItem(mr); // resets any measures related to mr
     }
     Fraction duration;
-    if (is.usingNoteEntryMethod(NoteEntryMethod::REPITCH)) {
-        duration = is.cr()->ticks();
-    } else if (is.usingNoteEntryMethod(NoteEntryMethod::REALTIME_AUTO) || is.usingNoteEntryMethod(NoteEntryMethod::REALTIME_MANUAL)) {
+    if (is.usingNoteEntryMethod(NoteEntryMethod::REALTIME_AUTO) || is.usingNoteEntryMethod(NoteEntryMethod::REALTIME_MANUAL)) {
         // FIXME: truncate duration at barline in real-time modes.
         //   The user might try to enter a duration that is too long to fit in the remaining space in the measure.
         //   We could split the duration at the barline and continue into the next bar, but this would create extra
@@ -211,74 +220,11 @@ Note* Score::addPitch(NoteVal& nval, bool addFlag, InputState* externalInputStat
     } else {
         duration = is.duration().fraction();
     }
-    Note* note = 0;
-    Note* firstTiedNote = 0;
-    Note* lastTiedNote = 0;
+    Note* note = nullptr;
+    Note* lastTiedNote = nullptr;
     if (is.usingNoteEntryMethod(NoteEntryMethod::REPITCH) && is.cr()->isChord()) {
-        // repitch mode for MIDI input (where we are given a pitch) is handled here
-        // for keyboard input (where we are given a staff position), there is a separate function Score::repitchNote()
-        // the code is similar enough that it could possibly be refactored
         Chord* chord = toChord(is.cr());
-        note = Factory::createNote(chord);
-        note->setParent(chord);
-        note->setTrack(chord->track());
-        note->setNval(nval);
-        lastTiedNote = note;
-        if (!addFlag) {
-            std::vector<Note*> notes = chord->notes();
-            // break all ties into current chord
-            // these will exist only if user explicitly moved cursor to a tied-into note
-            // in ordinary use, cursor will automatically skip past these during note entry
-            for (Note* n : notes) {
-                if (n->tieBack()) {
-                    undoRemoveElement(n->tieBack());
-                }
-            }
-            // for single note chords only, preserve ties by changing pitch of all forward notes
-            // the tie forward itself will be added later
-            // multi-note chords get reduced to single note chords anyhow since we remove the old notes below
-            // so there will be no way to preserve those ties
-            if (notes.size() == 1 && notes.front()->tieFor()) {
-                Note* tn = notes.front()->tieFor()->endNote();
-                while (tn) {
-                    Chord* tc = tn->chord();
-                    if (tc->notes().size() != 1) {
-                        undoRemoveElement(tn->tieBack());
-                        break;
-                    }
-                    if (!firstTiedNote) {
-                        firstTiedNote = tn;
-                    }
-                    lastTiedNote = tn;
-                    undoChangePitch(tn, note->pitch(), note->tpc1(), note->tpc2());
-                    if (tn->tieFor()) {
-                        tn = tn->tieFor()->endNote();
-                    } else {
-                        break;
-                    }
-                }
-            }
-            // remove all notes from chord
-            // the new note will be added below
-            while (!chord->notes().empty()) {
-                undoRemoveElement(chord->notes().front());
-            }
-        }
-        // add new note to chord
-        undoAddElement(note);
-        setPlayNote(true);
-        // recreate tie forward if there is a note to tie to
-        // one-sided ties will not be recreated
-        if (firstTiedNote) {
-            Tie* tie = Factory::createTie(note);
-            tie->setStartNote(note);
-            tie->setEndNote(firstTiedNote);
-            tie->setTick(tie->startNote()->tick());
-            tie->setTick2(tie->endNote()->tick());
-            tie->setTrack(note->track());
-            undoAddElement(tie);
-        }
-        select(lastTiedNote);
+        std::tie(note, lastTiedNote) = repitchReplaceNote(chord, nval);  // the add (not replace) case was handled above
     } else if (!is.usingNoteEntryMethod(NoteEntryMethod::REPITCH)) {
         Segment* seg = setNoteRest(
             is.segment(), track, nval, duration, stemDirection, /* forceAccidental */ false, is.articulationIds(), /* rhythmic */ false,
@@ -330,7 +276,7 @@ Note* Score::addPitch(NoteVal& nval, bool addFlag, InputState* externalInputStat
     return note;
 }
 
-Note* Score::addPitchToChord(NoteVal& nval, Chord* chord, InputState* externalInputState)
+Note* Score::addPitchToChord(NoteVal& nval, Chord* chord, InputState* externalInputState, bool forceAccidental)
 {
     IF_ASSERT_FAILED(chord) {
         return nullptr;
@@ -348,15 +294,24 @@ Note* Score::addPitchToChord(NoteVal& nval, Chord* chord, InputState* externalIn
 
     Note* note = nullptr;
     if (isTied(chord)) {
-        note = addNoteToTiedChord(chord, nval, /* forceAccidental */ false);
+        note = addNoteToTiedChord(chord, nval, forceAccidental);
         if (!note) {
-            note = addNote(chord, nval, /* forceAccidental */ false, /* articulationIds */ {}, externalInputState);
+            note = addNote(chord, nval, forceAccidental, /* articulationIds */ {}, externalInputState);
         }
     } else {
-        note = addNote(chord, nval, /* forceAccidental */ false, is.articulationIds(), externalInputState);
+        note = addNote(chord, nval, forceAccidental, /* articulationIds */ {}, externalInputState);
     }
 
-    if (is.lastSegment() == is.segment()) {
+    if (is.usingNoteEntryMethod(NoteEntryMethod::REPITCH)) {
+        // move cursor to next note
+        ChordRest* next = nextChordRest(note->chord());
+        while (next && !next->isChord()) {
+            next = nextChordRest(next);
+        }
+        if (next) {
+            is.moveInputPos(next->segment());
+        }
+    } else if (is.lastSegment() == is.segment()) {
         NoteEntryMethod entryMethod = is.noteEntryMethod();
         if (entryMethod != NoteEntryMethod::REALTIME_AUTO && entryMethod != NoteEntryMethod::REALTIME_MANUAL) {
             is.moveToNextInputPos();
@@ -668,62 +623,98 @@ Ret Score::repitchNote(const Position& p, bool replace)
     } else {
         chord = toChord(cr);
     }
+
+    bool forceAccidental = false;
+    if (m_is.accidentalType() != AccidentalType::NONE) {
+        NoteVal nval2 = noteValForPosition(p, AccidentalType::NONE, error);
+        forceAccidental = (nval.pitch == nval2.pitch);
+    }
+
+    // Note: not sure this is ever called with replace == false, since add (not replace) case is handled already in cmdAddPitch
+    if (!replace) {
+        return addPitchToChord(nval, chord, /* externalInputState */ nullptr, forceAccidental);
+    }
+
+    auto [note, lastTiedNote] = repitchReplaceNote(chord, nval, forceAccidental);
+    setPlayChord(true);
+
+    // move to next Chord
+    ChordRest* next = nextChordRest(lastTiedNote->chord());
+    while (next && !next->isChord()) {
+        next = nextChordRest(next);
+    }
+    if (next) {
+        m_is.moveInputPos(next->segment());
+    }
+
+    return muse::make_ok();
+}
+
+std::pair<Note*, Note*> Score::repitchReplaceNote(Chord* chord, const NoteVal& nval, bool forceAccidental)
+{
     Note* note = Factory::createNote(chord);
     note->setParent(chord);
     note->setTrack(chord->track());
     note->setNval(nval);
 
-    Note* firstTiedNote = 0;
+    Note* firstTiedNote = nullptr;
     Note* lastTiedNote = note;
     ChordLine* chordLine = nullptr;
-    if (replace) {
-        std::vector<Note*> notes = chord->notes();
-        // break all ties into current chord
-        // these will exist only if user explicitly moved cursor to a tied-into note
-        // in ordinary use, cursor will automatically skip past these during note entry
-        for (Note* n : notes) {
-            if (n->tieBack()) {
-                undoRemoveElement(n->tieBack());
-            }
-        }
-        // Keep first chordline only
-        chordLine = chord->chordLine() ? chord->chordLine()->clone() : nullptr;
-        std::vector<EngravingItem*> chordEls = chord->el();
-        for (EngravingItem* e : chordEls) {
-            if (e->isChordLine()) {
-                undoRemoveElement(e);
-            }
-        }
-        // for single note chords only, preserve ties by changing pitch of all forward notes
-        // the tie forward itself will be added later
-        // multi-note chords get reduced to single note chords anyhow since we remove the old notes below
-        // so there will be no way to preserve those ties
-        if (notes.size() == 1 && notes.front()->tieFor()) {
-            Note* tn = notes.front()->tieFor()->endNote();
-            while (tn) {
-                Chord* tc = tn->chord();
-                if (tc->notes().size() != 1) {
-                    undoRemoveElement(tn->tieBack());
-                    break;
-                }
-                if (!firstTiedNote) {
-                    firstTiedNote = tn;
-                }
-                lastTiedNote = tn;
-                undoChangePitch(tn, note->pitch(), note->tpc1(), note->tpc2());
-                if (tn->tieFor()) {
-                    tn = tn->tieFor()->endNote();
-                } else {
-                    break;
-                }
-            }
-        }
-        // remove all notes from chord
-        // the new note will be added below
-        while (!chord->notes().empty()) {
-            undoRemoveElement(chord->notes().front());
+    std::vector<Note*> notes = chord->notes();
+    // break all ties into current chord
+    // these will exist only if user explicitly moved cursor to a tied-into note
+    // in ordinary use, cursor will automatically skip past these during note entry
+    for (Note* n : notes) {
+        if (n->tieBack()) {
+            undoRemoveElement(n->tieBack());
         }
     }
+    // Keep first chordline only
+    chordLine = chord->chordLine() ? chord->chordLine()->clone() : nullptr;
+    std::vector<EngravingItem*> chordEls = chord->el();
+    for (EngravingItem* e : chordEls) {
+        if (e->isChordLine()) {
+            undoRemoveElement(e);
+        }
+    }
+    // for the first note of the chord only, preserve ties by changing pitch of all forward notes
+    // the tie forward itself will be added later
+    // multi-note chords get reduced to single note chords anyhow since we remove the old notes below
+    if (notes.front()->tieFor()) {
+        Note* tn = notes.front()->tieFor()->endNote();
+        while (tn) {
+            Chord* tc = tn->chord();
+            if (tc->notes().size() != 1) {
+                std::vector<Note*> notesToRemove;
+                for (Note* n : tc->notes()) {
+                    if (n != tn) {
+                        notesToRemove.push_back(n);
+                    }
+                }
+                for (Note* n : notesToRemove) {
+                    undoRemoveElement(n);
+                }
+                assert(tc->notes().size() == 1 && tc->notes().front() == tn);
+            }
+            if (!firstTiedNote) {
+                firstTiedNote = tn;
+            }
+            lastTiedNote = tn;
+            undoChangePitch(tn, note->pitch(), note->tpc1(), note->tpc2());
+            if (tn->tieFor()) {
+                tn = tn->tieFor()->endNote();
+            } else {
+                break;
+            }
+        }
+    }
+    // remove all notes from chord
+    // the new note will be added below
+    while (!chord->notes().empty()) {
+        undoRemoveElement(chord->notes().front());
+    }
+    notes.clear();  // get rid of vector full of dangling pointers!
+
     // add new note to chord
     undoAddElement(note);
 
@@ -732,15 +723,10 @@ Ret Score::repitchNote(const Position& p, bool replace)
         undoAddElement(chordLine);
     }
 
-    bool forceAccidental = false;
-    if (m_is.accidentalType() != AccidentalType::NONE) {
-        NoteVal nval2 = noteValForPosition(p, AccidentalType::NONE, error);
-        forceAccidental = (nval.pitch == nval2.pitch);
-    }
     if (forceAccidental) {
         int tpc = style().styleB(Sid::concertPitch) ? nval.tpc1 : nval.tpc2;
         AccidentalVal alter = tpc2alter(tpc);
-        at = Accidental::value2subtype(alter);
+        AccidentalType at = Accidental::value2subtype(alter);
         Accidental* a = Factory::createAccidental(note);
         a->setAccidentalType(at);
         a->setRole(AccidentalRole::USER);
@@ -748,7 +734,6 @@ Ret Score::repitchNote(const Position& p, bool replace)
         undoAddElement(a);
     }
     setPlayNote(true);
-    setPlayChord(true);
     // recreate tie forward if there is a note to tie to
     // one-sided ties will not be recreated
     if (firstTiedNote) {
@@ -761,16 +746,8 @@ Ret Score::repitchNote(const Position& p, bool replace)
         undoAddElement(tie);
     }
     select(lastTiedNote);
-    // move to next Chord
-    ChordRest* next = nextChordRest(lastTiedNote->chord());
-    while (next && !next->isChord()) {
-        next = nextChordRest(next);
-    }
-    if (next) {
-        m_is.moveInputPos(next->segment());
-    }
 
-    return muse::make_ok();
+    return { note, lastTiedNote };
 }
 
 //---------------------------------------------------------
@@ -857,7 +834,7 @@ Ret Score::insertChordByInsertingTime(const Position& pos)
         // II. Make chord or rest in other track longer if it crosses the insert area
         if (!measureIsFull) {
             ChordRest* cr = ms->findCR(tick, track);
-            if (cr && cr->tick() < tick && (cr->tick() + cr->actualTicks()) > tick) {
+            if (cr && cr->tick() < tick && cr->endTick() > tick) {
                 if (cr->isRest()) {
                     const Fraction fillLen = cr->ticks() + fraction;
                     ms->undoRemoveElement(cr);

@@ -36,6 +36,13 @@ namespace mu::engraving::rendering::score {
 void RestLayout::layoutRest(const Rest* item, Rest::LayoutData* ldata, const LayoutContext& ctx)
 {
     if (item->isGap()) {
+        if (item->debugDrawGap()) {
+            ldata->sym = item->getSymbol(item->durationType().type(), 16, 5);
+            fillShape(item, ldata, ctx.conf());
+            ldata->setPos(PointF(0.0, 10 * item->spatium()));
+        } else {
+            ldata->reset();
+        }
         return;
     }
 
@@ -151,7 +158,7 @@ void RestLayout::fillShape(const Rest* item, Rest::LayoutData* ldata, const Layo
 {
     switch (item->type()) {
     case ElementType::REST:
-        fillShape(static_cast<const Rest*>(item), static_cast<Rest::LayoutData*>(ldata));
+        fillShape(toRest(item), static_cast<Rest::LayoutData*>(ldata));
         break;
     case ElementType::MMREST:
         fillShape(static_cast<const MMRest*>(item), static_cast<MMRest::LayoutData*>(ldata), conf);
@@ -493,14 +500,23 @@ InterruptionPoints RestLayout::computeInterruptionPoints(const Measure* measure,
     track_idx_t sTrack = staffIdx * VOICES;
     track_idx_t eTrack = sTrack + VOICES;
 
-    // Gap rests interrupt all voices
+    // Compute all-voices interruptions
     for (const Segment* segment = measure->first(SegmentType::ChordRest); segment; segment = segment->next(SegmentType::ChordRest)) {
         for (track_idx_t track = sTrack; track < eTrack; ++track) {
             EngravingItem* item = segment->element(track);
-            if (item && item->isRest() && toRest(item)->isGap()) {
+            if (!item) {
+                continue;
+            }
+            const bool gapRest = item->isRest() && toRest(item)->isGap();
+            // TODO: The fact that "merged" rests exists in both voices and are just graphically overlapped is a messy way of
+            // doing it and way too fragile, because it means that any logic that may move one rest can break the "merging".
+            // A more solid way of merging rests would be to *delete* the second voice rests, i.e. turn them into gap rests [M.S.].
+            const bool hasMergedRest = item->isRest() && !toRest(item)->ldata()->mergedRests.empty();
+            const bool invisible = item->isChord() ? toChord(item)->allElementsInvisible() : !item->visible();
+            if (gapRest || hasMergedRest || invisible) {
                 for (voice_idx_t voice = 0; voice < VOICES; ++voice) {
                     interruptionPointSets[voice].insert(segment->rtick());
-                    interruptionPointSets[voice].insert(segment->rtick() + segment->ticks());
+                    interruptionPointSets[voice].insert(segment->rtick() + toChordRest(item)->actualTicks());
                 }
                 break;
             }
@@ -513,7 +529,7 @@ InterruptionPoints RestLayout::computeInterruptionPoints(const Measure* measure,
             return true;
         }
 
-        BeamMode beamModeChordRest = Groups::endBeam(chordRest);
+        BeamMode beamModeChordRest = Groups::baseBeamMode(chordRest);
         switch (beamModeChordRest) {
         case BeamMode::BEGIN:
             // Beam certainly starts here
@@ -593,17 +609,25 @@ void RestLayout::checkFullMeasureRestCollisions(const System* system, LayoutCont
             }
 
             double xRest = fullMeasureRest->pagePos().x() - system->pagePos().x();
-            Shape restShape = fullMeasureRest->shape().translate(PointF(xRest, fullMeasureRest->y()));
+            Shape restShape = fullMeasureRest->shape().translate(PointF(xRest, fullMeasureRest->ldata()->pos().y()));
 
             Shape measureShape;
             for (const Segment& segment : measure->segments()) {
+                if (!segment.isActive()) {
+                    continue;
+                }
                 double xSegment = segment.pagePos().x() - system->pagePos().x();
                 measureShape.add(segment.staffShape(staffIdx).translated(PointF(xSegment, 0.0)));
             }
-            measureShape.remove_if([fullMeasureRest] (const ShapeElement& shapeEl) {
+            measureShape.remove_if([] (const ShapeElement& shapeEl) {
                 const EngravingItem* shapeItem = shapeEl.item();
-                return shapeItem && (shapeItem == fullMeasureRest || shapeItem->isBarLine() || shapeItem->isAccidental());
+                return shapeItem && ((shapeItem->isRest() && toRest(shapeItem)->isFullMeasureRest())
+                                     || shapeItem->isBarLine() || shapeItem->isAccidental());
             });
+
+            if (measureShape.size() == 0) {
+                continue;
+            }
 
             const double spatium = fullMeasureRest->spatium();
             const double lineDist = fullMeasureRest->staff()->lineDistance(fullMeasureRest->tick()) * spatium;
@@ -629,7 +653,7 @@ void RestLayout::fillShape(const Rest* item, Rest::LayoutData* ldata)
 {
     Shape shape(Shape::Type::Composite);
 
-    if (!item->isGap() && !item->shouldNotBeDrawn()) {
+    if ((!item->isGap() || item->debugDrawGap()) && !item->shouldNotBeDrawn()) {
         shape.add(ChordLayout::chordRestShape(item));
         shape.add(item->symBbox(ldata->sym), item);
         for (const NoteDot* dot : item->dotList()) {
@@ -654,7 +678,7 @@ void RestLayout::fillShape(const MMRest* item, MMRest::LayoutData* ldata, const 
 
     double vStrokeHeight = conf.styleMM(Sid::mmRestHBarVStrokeHeight);
     shape.add(RectF(0.0, -(vStrokeHeight * .5), ldata->restWidth, vStrokeHeight), item);
-    if (item->shouldShowNumber()) {
+    if (item->showNumber()) {
         shape.add(item->numberRect().translated(item->numberPos()), item);
     }
 

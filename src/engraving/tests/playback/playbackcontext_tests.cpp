@@ -29,10 +29,10 @@
 #include "engraving/dom/staff.h"
 #include "engraving/dom/repeatlist.h"
 
-#include "playback/playbackcontext.h"
-#include "playback/utils/arrangementutils.h"
+#include "engraving/playback/playbackcontext.h"
+#include "engraving/playback/utils/arrangementutils.h"
 
-#include "types/typesconv.h"
+#include "engraving/types/typesconv.h"
 
 using namespace mu::engraving;
 using namespace muse::mpe;
@@ -80,7 +80,7 @@ TEST_F(Engraving_PlaybackContextTests, Hairpins_Repeats)
 
     for (const auto& pair : p_to_f_curve) {
         mpe::timestamp_t time = timestampFromTicks(score, pair.first);
-        ASSERT_FALSE(muse::contains(expectedDynamics, time));
+        ASSERT_FALSE(expectedDynamics.contains(time));
         expectedDynamics.emplace(time, p + static_cast<dynamic_level_t>(pair.second));
     }
 
@@ -99,7 +99,7 @@ TEST_F(Engraving_PlaybackContextTests, Hairpins_Repeats)
             mpe::timestamp_t time = timestampFromTicks(score, tick);
 
             if (tick != f_to_fff_startTick) { // f already added by the previous hairpin
-                ASSERT_FALSE(muse::contains(expectedDynamics, time));
+                ASSERT_FALSE(expectedDynamics.contains(time));
             }
 
             expectedDynamics.emplace(time, f + static_cast<dynamic_level_t>(pair.second));
@@ -115,7 +115,7 @@ TEST_F(Engraving_PlaybackContextTests, Hairpins_Repeats)
 
     for (const auto& pair : ppp_to_p_curve) {
         mpe::timestamp_t time = timestampFromTicks(score, ppp_to_p_startTick + pair.first);
-        ASSERT_FALSE(muse::contains(expectedDynamics, time));
+        ASSERT_FALSE(expectedDynamics.contains(time));
         expectedDynamics.emplace(time, ppp + static_cast<dynamic_level_t>(pair.second));
     }
 
@@ -819,6 +819,73 @@ TEST_F(Engraving_PlaybackContextTests, SoundFlags_CancelPlayingTechniques)
 
     actualArticulations = ctx.textArticulations(score);
     EXPECT_EQ(expectedArticulations, actualArticulations);
+
+    delete score;
+}
+
+TEST_F(Engraving_PlaybackContextTests, Lyrics_Multiverses)
+{
+    // Score with two verses
+    Score* score = ScoreRW::readScore(PLAYBACK_CONTEXT_TEST_FILES_DIR + "lyrics_multiverses.mscx");
+    ASSERT_TRUE(score);
+    ASSERT_EQ(score->parts().size(), 1);
+
+    // [GIVEN] Context for parsing lyrics
+    PlaybackContext ctx;
+
+    // [WHEN] Parse lyrics
+    ctx.update(score->parts().front()->id(), score);
+
+    // [THEN] Lyrics have been parsed correctly
+    auto makeSyllable = [](const String& text, bool hyphenedToNext = false) {
+        SyllableEvent e;
+        e.text = text;
+        e.flags.setFlag(SyllableEvent::HyphenedToNext, hyphenedToNext);
+        return e;
+    };
+
+    const std::map<timestamp_t, SyllableEventList> expectedEvents {
+        // 1st verse
+        { 0, { makeSyllable(u"Wal", true) } },
+        { 250000, { makeSyllable(u"king") } },
+        { 500000, { makeSyllable(u"a", true) } },
+        { 750000, { makeSyllable(u"round") } },
+        { 1000000, { makeSyllable(u"in") } },
+        { 1250000, { makeSyllable(u"the") } },
+        { 1500000, { makeSyllable(u"park") } },
+
+        // 2nd verse
+        { 2000000, { makeSyllable(u"Should") } },
+        { 2500000, { makeSyllable(u"feel") } },
+        { 3000000, { makeSyllable(u"like") } },
+        { 3500000, { makeSyllable(u"work") } },
+
+        // 1st verse
+        { 4000000, { makeSyllable(u"Hello") } },
+        { 4500000, { makeSyllable(u"world") } },
+
+        // 1st verse (repeated)
+        { 6000000, { makeSyllable(u"Hello") } },
+        { 6500000, { makeSyllable(u"world") } },
+    };
+
+    const std::map<timestamp_t, SyllableEventList> actualEvents = ctx.syllables(score);
+    EXPECT_EQ(actualEvents.size(), expectedEvents.size());
+
+    for (const auto& pair : actualEvents) {
+        auto expectedIt = expectedEvents.find(pair.first);
+        ASSERT_TRUE(expectedIt != expectedEvents.end());
+        ASSERT_EQ(expectedIt->second.size(), pair.second.size());
+
+        for (size_t i = 0; i < expectedIt->second.size(); ++i) {
+            const SyllableEvent& expectedEvent = expectedIt->second.at(i);
+            const SyllableEvent& actualEvent = pair.second.at(i);
+
+            EXPECT_EQ(actualEvent.text, expectedEvent.text);
+            EXPECT_EQ(actualEvent.layerIdx, expectedEvent.layerIdx);
+            EXPECT_EQ(actualEvent.flags, expectedEvent.flags);
+        }
+    }
 
     delete score;
 }

@@ -28,6 +28,7 @@
 #endif
 
 #include "modularity/ioc.h"
+#include "async/processevents.h"
 
 #include "muse_framework_config.h"
 #include "app_config.h"
@@ -37,6 +38,30 @@
 using namespace muse;
 using namespace mu::app;
 using namespace mu::appshell;
+using namespace mu::converter;
+
+static std::optional<ConvertTarget> parseTarget(const QMap<CmdOptions::ParamKey, QVariant>& params)
+{
+    auto it = params.find(CmdOptions::ParamKey::ScoreRegion);
+    if (it != params.end()) {
+        return it.value().toString().toStdString();
+    }
+
+    it = params.find(CmdOptions::ParamKey::PageNumber);
+    if (it == params.end()) {
+        return std::nullopt;
+    }
+
+    bool ok = true;
+    page_num_t num = it.value().toULongLong(&ok) - 1;
+
+    if (!ok) {
+        LOGE() << "Invalid page, ignoring...";
+        return std::nullopt;
+    }
+
+    return num;
+}
 
 ConsoleApp::ConsoleApp(const CmdOptions& options, const modularity::ContextPtr& ctx)
     : muse::BaseApplication(ctx), m_options(options)
@@ -61,7 +86,6 @@ void ConsoleApp::perform()
     m_globalModule.setApplication(shared_from_this());
     m_globalModule.registerResources();
     m_globalModule.registerExports();
-    m_globalModule.registerUiTypes();
 
     for (modularity::IModuleSetup* m : m_modules) {
         m->setApplication(shared_from_this());
@@ -73,10 +97,12 @@ void ConsoleApp::perform()
     }
 
     m_globalModule.resolveImports();
+    for (modularity::IModuleSetup* m : m_modules) {
+        m->resolveImports();
+    }
+
     m_globalModule.registerApi();
     for (modularity::IModuleSetup* m : m_modules) {
-        m->registerUiTypes();
-        m->resolveImports();
         m->registerApi();
     }
 
@@ -183,8 +209,7 @@ void ConsoleApp::finish()
 #endif
 
     // Deinit
-
-    m_globalModule.invokeQueuedCalls();
+    async::processMessages();
 
     for (modularity::IModuleSetup* m : m_modules) {
         m->onDeinit();
@@ -207,6 +232,14 @@ void ConsoleApp::finish()
 
 void ConsoleApp::applyCommandLineOptions(const CmdOptions& options, IApplication::RunMode runMode)
 {
+    if (options.app.loggerLevel) {
+        m_globalModule.setLoggerLevel(options.app.loggerLevel.value());
+    }
+
+    if (runMode == IApplication::RunMode::AudioPluginRegistration) {
+        return;
+    }
+
     uiConfiguration()->setPhysicalDotsPerInch(options.ui.physicalDotsPerInch);
 
     notationConfiguration()->setTemplateModeEnabled(options.notation.templateModeEnabled);
@@ -238,7 +271,7 @@ void ConsoleApp::applyCommandLineOptions(const CmdOptions& options, IApplication
     imagesExportConfiguration()->setExportPngDpiResolutionOverride(options.exportImage.pngDpiResolution);
 #endif
 
-#ifdef MUE_BUILD_VIDEOEXPORT_MODULE
+#ifdef MUE_BUILD_IMPEXP_VIDEOEXPORT_MODULE
     videoExportConfiguration()->setResolution(options.exportVideo.resolution);
     videoExportConfiguration()->setFps(options.exportVideo.fps);
     videoExportConfiguration()->setLeadingSec(options.exportVideo.leadingSec);
@@ -262,17 +295,11 @@ void ConsoleApp::applyCommandLineOptions(const CmdOptions& options, IApplication
     if (options.app.revertToFactorySettings) {
         appshellConfiguration()->revertToFactorySettings(options.app.revertToFactorySettings.value());
     }
-
-    if (options.app.loggerLevel) {
-        m_globalModule.setLoggerLevel(options.app.loggerLevel.value());
-    }
 }
 
 int ConsoleApp::processConverter(const CmdOptions::ConverterTask& task)
 {
     Ret ret = make_ret(Ret::Code::Ok);
-    muse::io::path_t stylePath = task.params[CmdOptions::ParamKey::StylePath].toString();
-    bool forceMode = task.params[CmdOptions::ParamKey::ForceMode].toBool();
     String soundProfile = task.params[CmdOptions::ParamKey::SoundProfile].toString();
     UriQuery extensionUri = UriQuery(task.params[CmdOptions::ParamKey::ExtensionUri].toString().toStdString());
 
@@ -281,41 +308,50 @@ int ConsoleApp::processConverter(const CmdOptions::ConverterTask& task)
         soundProfile.clear();
     }
 
+    converter::OpenParams openParams;
+    openParams.stylePath = task.params[CmdOptions::ParamKey::StylePath].toString();
+    openParams.forceMode = task.params[CmdOptions::ParamKey::ForceMode].toBool();
+    openParams.unrollRepeats = task.params[CmdOptions::ParamKey::UnrollRepeats].toBool();
+
     switch (task.type) {
     case ConvertType::Batch:
-        ret = converter()->batchConvert(task.inputFile, stylePath, forceMode, soundProfile, extensionUri);
+        ret = converter()->batchConvert(task.inputFile, openParams, soundProfile, extensionUri);
         break;
     case ConvertType::File: {
         std::string transposeOptionsJson = task.params[CmdOptions::ParamKey::ScoreTransposeOptions].toString().toStdString();
-        ret = converter()->fileConvert(task.inputFile, task.outputFile, stylePath, forceMode, soundProfile, extensionUri,
-                                       transposeOptionsJson);
+        std::optional<ConvertTarget> target = parseTarget(task.params);
+        ret = converter()->fileConvert(task.inputFile, task.outputFile, openParams, soundProfile, extensionUri,
+                                       transposeOptionsJson, target);
     } break;
     case ConvertType::ConvertScoreParts:
-        ret = converter()->convertScoreParts(task.inputFile, task.outputFile, stylePath);
+        ret = converter()->convertScoreParts(task.inputFile, task.outputFile, openParams);
         break;
     case ConvertType::ExportScoreMedia: {
         muse::io::path_t highlightConfigPath = task.params[CmdOptions::ParamKey::HighlightConfigPath].toString();
-        ret = converter()->exportScoreMedia(task.inputFile, task.outputFile, highlightConfigPath, stylePath, forceMode);
+        ret = converter()->exportScoreMedia(task.inputFile, task.outputFile, openParams, highlightConfigPath);
     } break;
     case ConvertType::ExportScoreMeta:
-        ret = converter()->exportScoreMeta(task.inputFile, task.outputFile, stylePath, forceMode);
+        ret = converter()->exportScoreMeta(task.inputFile, task.outputFile, openParams);
         break;
     case ConvertType::ExportScoreParts:
-        ret = converter()->exportScoreParts(task.inputFile, task.outputFile, stylePath, forceMode);
+        ret = converter()->exportScoreParts(task.inputFile, task.outputFile, openParams);
         break;
     case ConvertType::ExportScorePartsPdf:
-        ret = converter()->exportScorePartsPdfs(task.inputFile, task.outputFile, stylePath, forceMode);
+        ret = converter()->exportScorePartsPdfs(task.inputFile, task.outputFile, openParams);
         break;
     case ConvertType::ExportScoreTranspose: {
         std::string scoreTranspose = task.params[CmdOptions::ParamKey::ScoreTransposeOptions].toString().toStdString();
-        ret = converter()->exportScoreTranspose(task.inputFile, task.outputFile, scoreTranspose, stylePath, forceMode);
+        ret = converter()->exportScoreTranspose(task.inputFile, task.outputFile, scoreTranspose, openParams);
+    } break;
+    case ConvertType::ExportScoreElements: {
+        ret = converter()->exportScoreElements(task.inputFile, task.outputFile, openParams);
     } break;
     case ConvertType::ExportScoreVideo: {
-        ret = converter()->exportScoreVideo(task.inputFile, task.outputFile);
+        ret = converter()->exportScoreVideo(task.inputFile, task.outputFile, openParams);
     } break;
     case ConvertType::SourceUpdate: {
         std::string scoreSource = task.params[CmdOptions::ParamKey::ScoreSource].toString().toStdString();
-        ret = converter()->updateSource(task.inputFile, scoreSource, forceMode);
+        ret = converter()->updateSource(task.inputFile, scoreSource, openParams.forceMode);
     } break;
     }
 

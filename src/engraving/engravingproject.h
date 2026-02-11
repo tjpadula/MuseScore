@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_ENGRAVINGPROJECT_H
-#define MU_ENGRAVING_ENGRAVINGPROJECT_H
+#pragma once
 
 #include <memory>
 
@@ -43,6 +42,10 @@
 //! we need to strive to ensure that there is work with the project everywhere;
 //! accordingly, only the project should create and load the master score.
 
+namespace mu::engraving::write {
+class WriteContext;
+}
+
 namespace mu::engraving {
 class MasterScore;
 class MStyle;
@@ -50,7 +53,7 @@ class MStyle;
 class EngravingProject : public std::enable_shared_from_this<EngravingProject>, public muse::Injectable
 {
 public:
-    Inject<IEngravingElementsProvider> engravingElementsProvider = { this };
+    muse::Inject<IEngravingElementsProvider> engravingElementsProvider = { this };
 
 public:
     ~EngravingProject();
@@ -67,10 +70,11 @@ public:
     bool readOnly() const;
 
     MasterScore* masterScore() const;
+    void setMasterScore(MasterScore* score);
     muse::Ret setupMasterScore(bool forceMode);
 
     muse::Ret loadMscz(const MscReader& msc, SettingsCompat& settingsCompat, bool ignoreVersionError);
-    bool writeMscz(MscWriter& writer, bool onlySelection, bool createThumbnail);
+    bool writeMscz(MscWriter& writer, bool createThumbnail, const write::WriteContext* ctx = nullptr);
 
     bool isCorruptedUponLoading() const;
     muse::Ret checkCorrupted() const;
@@ -82,8 +86,6 @@ private:
 
     void init(const MStyle& style);
 
-    muse::Ret doSetupMasterScore(bool forceMode);
-
     MasterScore* m_masterScore = nullptr;
 
     bool m_isCorruptedUponLoading = false;
@@ -91,5 +93,3 @@ private:
 
 using EngravingProjectPtr = std::shared_ptr<EngravingProject>;
 }
-
-#endif // MU_ENGRAVING_PROJECT_H

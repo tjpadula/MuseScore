@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -37,6 +37,7 @@ void MuseSamplerCheckUpdateScenario::checkAndShowUpdateIfNeed()
         return;
     }
 
+    LOGI() << "Checking for MuseSampler update...";
     m_alreadyChecked = true;
 
     if (service()->incompatibleLocalVersion()) {
@@ -44,15 +45,10 @@ void MuseSamplerCheckUpdateScenario::checkAndShowUpdateIfNeed()
         return;
     }
 
-    if (configuration()->museSamplerUpdateAvailable()) {
-        showNewVersionNotification();
-        return;
-    }
-
     auto promise = service()->checkForUpdate();
     promise.onResolve(this, [this](const muse::RetVal<bool>& res) {
         if (!res.ret) {
-            LOGE() << res.ret.toString();
+            LOGE() << "Unable to check for MuseSampler update: " << res.ret.toString();
             return;
         }
 
@@ -114,10 +110,7 @@ void MuseSamplerCheckUpdateScenario::showNewVersionNotification()
     interactive()->info(muse::trc("musesounds", "An update for MuseSounds is available"), msg,
                         { notNowBtn, launchBtn }, launchBtn.btn, muse::IInteractive::Option::WithIcon)
     .onResolve(this, [this, launchBtn](const muse::IInteractive::Result& res) {
-        const bool agreesToUpdate = res.isButton(launchBtn.btn);
-        configuration()->setMuseSamplerUpdateAvailable(!agreesToUpdate);
-
-        if (agreesToUpdate) {
+        if (res.isButton(launchBtn.btn)) {
             openMuseHubAndQuit();
         }
     });

@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MUSE_GLOBAL_INTERACTIVE_H
-#define MUSE_GLOBAL_INTERACTIVE_H
+
+#pragma once
 
 #include "async/asyncable.h"
 
@@ -76,12 +76,13 @@ public:
                                  const std::string& dialogTitle = "") override;
 
     // progress
-    void showProgress(const std::string& title, Progress* progress) override;
+    void showProgress(const std::string& title, Progress progress) override;
 
     // files
     async::Promise<io::path_t> selectOpeningFile(const std::string& title, const io::path_t& dir,
                                                  const std::vector<std::string>& filter) override;
-    io::path_t selectOpeningFileSync(const std::string& title, const io::path_t& dir, const std::vector<std::string>& filter) override;
+    io::path_t selectOpeningFileSync(const std::string& title, const io::path_t& dir, const std::vector<std::string>& filter,
+                                     const int options) override;
     io::path_t selectSavingFileSync(const std::string& title, const io::path_t& path, const std::vector<std::string>& filter,
                                     bool confirmOverwrite = true) override;
 
@@ -90,7 +91,7 @@ public:
     io::paths_t selectMultipleDirectories(const std::string& title, const io::path_t& dir, const io::paths_t& selectedDirectories) override;
 
     // color
-    async::Promise<Color> selectColor(const Color& color = Color::WHITE, const std::string& title = "") override;
+    async::Promise<Color> selectColor(const Color& color = Color::WHITE, const std::string& title = {}, bool allowAlpha = false) override;
     bool isSelectColorOpened() const override;
 
     // custom
@@ -133,5 +134,3 @@ private:
                                           const ButtonDatas& buttons, int defBtn, const Options& options, const std::string& dialogTitle);
 };
 }
-
-#endif // MUSE_GLOBAL_UIINTERACTIVE_H

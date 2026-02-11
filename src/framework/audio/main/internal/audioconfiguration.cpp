@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -51,19 +51,19 @@ static const Settings::Key USER_SOUNDFONTS_PATHS("midi", "application/paths/mySo
 
 void AudioConfiguration::init()
 {
-    int defaultBufferSize = 0;
-#if defined(Q_OS_WASM)
-    defaultBufferSize = 8192;
-#else
-    defaultBufferSize = 1024;
-#endif
-    settings()->setDefaultValue(AUDIO_BUFFER_SIZE_KEY, Val(defaultBufferSize));
+    settings()->setDefaultValue(AUDIO_BUFFER_SIZE_KEY, Val(1024));
     settings()->valueChanged(AUDIO_BUFFER_SIZE_KEY).onReceive(nullptr, [this](const Val&) {
         m_driverBufferSizeChanged.notify();
-        updateSamplesToPreallocate();
     });
 
-    settings()->setDefaultValue(AUDIO_API_KEY, Val("Core Audio"));
+#if defined(Q_OS_WIN)
+    settings()->setDefaultValue(AUDIO_API_KEY, Val("WASAPI"));
+#elif defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
+    settings()->setDefaultValue(AUDIO_API_KEY, Val("ALSA"));
+#endif
+    settings()->valueChanged(AUDIO_API_KEY).onReceive(nullptr, [this](const Val&) {
+        m_currentAudioApiChanged.notify();
+    });
 
     settings()->setDefaultValue(AUDIO_OUTPUT_DEVICE_ID_KEY, Val(DEFAULT_DEVICE_ID));
     settings()->valueChanged(AUDIO_OUTPUT_DEVICE_ID_KEY).onReceive(nullptr, [this](const Val&) {
@@ -91,32 +91,23 @@ void AudioConfiguration::init()
     settings()->valueChanged(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND).onReceive(nullptr, [this](const Val& val) {
         m_autoProcessOnlineSoundsInBackgroundChanged.send(val.toBool());
     });
-
-    updateSamplesToPreallocate();
 }
 
-AudioWorkerConfig AudioConfiguration::workerConfig() const
+AudioEngineConfig AudioConfiguration::engineConfig() const
 {
-    AudioWorkerConfig conf;
+    AudioEngineConfig conf;
     conf.autoProcessOnlineSoundsInBackground = this->autoProcessOnlineSoundsInBackground();
     return conf;
 }
 
-void AudioConfiguration::onWorkerConfigChanged()
+void AudioConfiguration::onEngineConfigChanged()
 {
-    rpcChannel()->send(rpc::make_notification(rpc::Method::WorkerConfigChanged, rpc::RpcPacker::pack(workerConfig())));
+    rpcChannel()->send(rpc::make_notification(rpc::Method::EngineConfigChanged, rpc::RpcPacker::pack(engineConfig())));
 }
 
-std::vector<std::string> AudioConfiguration::availableAudioApiList() const
+std::string AudioConfiguration::defaultAudioApi() const
 {
-    std::vector<std::string> names {
-        "Core Audio",
-        "ALSA Audio",
-        "PulseAudio",
-        "JACK Audio Server"
-    };
-
-    return names;
+    return settings()->defaultValue(AUDIO_API_KEY).toString();
 }
 
 std::string AudioConfiguration::currentAudioApi() const
@@ -127,6 +118,11 @@ std::string AudioConfiguration::currentAudioApi() const
 void AudioConfiguration::setCurrentAudioApi(const std::string& name)
 {
     settings()->setSharedValue(AUDIO_API_KEY, Val(name));
+}
+
+async::Notification AudioConfiguration::currentAudioApiChanged() const
+{
+    return m_currentAudioApiChanged;
 }
 
 std::string AudioConfiguration::audioOutputDeviceId() const
@@ -164,16 +160,6 @@ async::Notification AudioConfiguration::driverBufferSizeChanged() const
     return m_driverBufferSizeChanged;
 }
 
-samples_t AudioConfiguration::samplesToPreallocate() const
-{
-    return m_samplesToPreallocate;
-}
-
-async::Channel<samples_t> AudioConfiguration::samplesToPreallocateChanged() const
-{
-    return m_samplesToPreallocateChanged;
-}
-
 unsigned int AudioConfiguration::sampleRate() const
 {
     return settings()->value(AUDIO_SAMPLE_RATE_KEY).toInt();
@@ -189,9 +175,9 @@ async::Notification AudioConfiguration::sampleRateChanged() const
     return m_driverSampleRateChanged;
 }
 
-SoundFontPaths AudioConfiguration::soundFontDirectories() const
+io::paths_t AudioConfiguration::soundFontDirectories() const
 {
-    SoundFontPaths paths = userSoundFontDirectories();
+    io::paths_t paths = userSoundFontDirectories();
     paths.push_back(globalConfiguration()->appDataPath());
 
     return paths;
@@ -222,7 +208,7 @@ void AudioConfiguration::setAutoProcessOnlineSoundsInBackground(bool value)
 {
     settings()->setSharedValue(ONLINE_SOUNDS_PROCESS_IN_BACKGROUND, Val(value));
 
-    onWorkerConfigChanged();
+    onEngineConfigChanged();
 }
 
 async::Channel<bool> AudioConfiguration::autoProcessOnlineSoundsInBackgroundChanged() const
@@ -233,16 +219,4 @@ async::Channel<bool> AudioConfiguration::autoProcessOnlineSoundsInBackgroundChan
 bool AudioConfiguration::shouldMeasureInputLag() const
 {
     return settings()->value(AUDIO_MEASURE_INPUT_LAG).toBool();
-}
-
-void AudioConfiguration::updateSamplesToPreallocate()
-{
-    samples_t minToReserve = minSamplesToReserve(RenderMode::RealTimeMode);
-    samples_t driverBufSize = driverBufferSize();
-    samples_t newValue = std::max(minToReserve, driverBufSize);
-
-    if (m_samplesToPreallocate != newValue) {
-        m_samplesToPreallocate = newValue;
-        m_samplesToPreallocateChanged.send(newValue);
-    }
 }

@@ -70,6 +70,8 @@ See https://github.com/musescore/musescore_devtools/tree/main/include-what-you-u
 
 #ifndef NO_QT_SUPPORT
 
+#warning "NO_QT_SUPPORT is off, as it should be."
+
 // QtCore includes
 #include <QObject> //382+794(qtmetamacros.h)+54(qobjectdefs.h)
 #include <QString> //928
@@ -126,9 +128,6 @@ See https://github.com/musescore/musescore_devtools/tree/main/include-what-you-u
 // QtQuick includes
 #include <QQuickItem> //106
 
-// QtWidgets includes
-#include <QWidget> //62
-#include <QApplication> //50
-#include <QDialog> //42
-
+#else  // NO_QT_SUPPORT
+#error "NO_QT_SUPPORT is on!"
 #endif // NO_QT_SUPPORT

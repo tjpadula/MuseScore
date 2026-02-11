@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,11 +20,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.15
+import QtQuick
 
-import Muse.Ui 1.0
-import Muse.UiComponents 1.0
-import Muse.GraphicalEffects 1.0
+import Muse.Ui
+import Muse.UiComponents
+import Muse.GraphicalEffects
 
 FocusScope {
     id: root
@@ -111,18 +111,18 @@ FocusScope {
 
             color: ui.theme.popupBackgroundColor
             radius: 4
-        }
 
-        Item {
-            id: contentBody
-            x: root.margins
-            y: root.margins
-            width: root.contentWidth
-            height: root.contentHeight
+            Item {
+                id: contentBody
+                x: root.margins
+                y: root.margins
+                width: root.contentWidth
+                height: root.contentHeight
 
-            implicitWidth: root.contentWidth
-            implicitHeight: root.contentHeight
-            
+                implicitWidth: root.contentWidth
+                implicitHeight: root.contentHeight
+            }
+
             layer.enabled: ui.isEffectsAllowed
             layer.effect: RoundedCornersEffect {
                 radius: contentBackground.radius

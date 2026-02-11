@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,16 +31,19 @@
 #include "../ivstconfiguration.h"
 
 namespace muse::vst {
-class VstActionsController : public actions::Actionable
+class VstActionsController : public actions::Actionable, public muse::Injectable
 {
-    muse::Inject<actions::IActionsDispatcher> dispatcher;
-    muse::Inject<IInteractive> interactive;
-    muse::Inject<IVstInstancesRegister> instancesRegister;
-    muse::Inject<ui::IInteractiveUriRegister> interactiveUriRegister;
-    muse::Inject<IVstConfiguration> configuration;
+    muse::GlobalInject<IVstConfiguration> configuration;
+    muse::Inject<actions::IActionsDispatcher> dispatcher = { this };
+    muse::Inject<IInteractive> interactive = { this };
+    muse::Inject<IVstInstancesRegister> instancesRegister = { this };
+    muse::Inject<ui::IInteractiveUriRegister> interactiveUriRegister = { this };
 
 public:
-    VstActionsController() = default;
+    VstActionsController(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx)
+    {
+    }
 
     void init();
 

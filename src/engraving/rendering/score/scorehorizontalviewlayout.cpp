@@ -233,7 +233,7 @@ void ScoreHorizontalViewLayout::layoutLinear(LayoutContext& ctx)
     auto spanners = ctx.dom().spannerMap().findOverlapping(system->tick().ticks(), system->endTick().ticks());
     for (auto interval : spanners) {
         Spanner* sp = interval.value;
-        if (sp->isSlur() && toSlur(sp)->isCrossStaff()) {
+        if (sp->isSlur() && (toSlur(sp)->isCrossStaff() || toSlur(sp)->hasCrossBeams())) {
             SlurTieLayout::layoutSystem(toSlur(sp), system, ctx);
         }
     }
@@ -296,7 +296,7 @@ void ScoreHorizontalViewLayout::collectLinearSystem(LayoutContext& ctx)
     std::set<Measure*> measuresToLayout;
 
     while (ctx.state().curMeasure()) {
-        if (ctx.state().curMeasure()->isVBox() || ctx.state().curMeasure()->isTBox() || ctx.state().curMeasure()->isFBox()) {
+        if (ctx.state().curMeasure()->isVBoxBase()) {
             ctx.mutState().curMeasure()->resetExplicitParent();
             MeasureLayout::getNextMeasure(ctx);
             continue;
@@ -329,8 +329,6 @@ void ScoreHorizontalViewLayout::collectLinearSystem(LayoutContext& ctx)
                 MeasureLayout::removeSystemTrailer(m);
             }
 
-            MeasureLayout::updateGraceNotes(m, ctx);
-
             if (m->tick() >= ctx.state().startTick() && m->tick() <= ctx.state().endTick()) {
                 // for measures in range, do full layout
                 if (ctx.conf().isMode(LayoutMode::HORIZONTAL_FIXED)) {
@@ -344,6 +342,7 @@ void ScoreHorizontalViewLayout::collectLinearSystem(LayoutContext& ctx)
                     MeasureLayout::computePreSpacingItems(m, ctx);
                     MeasureLayout::createEndBarLines(m, false, ctx);
                     MeasureLayout::setRepeatCourtesiesAndParens(m, ctx);
+                    MeasureLayout::updateGraceNotes(m, ctx);
                     curSystemWidth = HorizontalSpacing::updateSpacingForLastAddedMeasure(system, firstMeasureInLayout);
                     measuresToLayout.insert(m);
                     if (firstMeasureInLayout) {
@@ -468,9 +467,9 @@ std::pair<double, double> ScoreHorizontalViewLayout::computeCellWidth(const Segm
         if (cr) {
             width = calculateWidth(cr);
 
-            if (cr->type() == ElementType::REST) {
+            if (cr->isRest()) {
                 //spacing = 0; //!not necessary. It is to more clearly understanding code
-            } else if (cr->type() == ElementType::CHORD) {
+            } else if (cr->isChord()) {
                 Chord* ch = toChord(cr);
 
                 //! check that gracenote exist. If exist add additional spacing

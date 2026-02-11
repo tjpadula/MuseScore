@@ -51,7 +51,7 @@ void MeiModule::resolveImports()
 {
     auto readers = ioc()->resolve<INotationReadersRegister>(moduleName());
     if (readers) {
-        readers->reg({ "mei" }, std::make_shared<MeiReader>());
+        readers->reg({ "mei" }, std::make_shared<MeiReader>(iocContext()));
     }
 
     auto writers = ioc()->resolve<INotationWritersRegister>(moduleName());
@@ -60,11 +60,7 @@ void MeiModule::resolveImports()
     }
 }
 
-void MeiModule::onInit(const IApplication::RunMode& mode)
+void MeiModule::onInit(const IApplication::RunMode&)
 {
-    if (mode == IApplication::RunMode::AudioPluginRegistration) {
-        return;
-    }
-
     m_configuration->init();
 }

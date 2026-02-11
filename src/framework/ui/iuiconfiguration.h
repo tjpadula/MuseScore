@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,6 +24,8 @@
 
 #include <optional>
 
+#include <QColor>
+
 #include "modularity/imoduleinterface.h"
 
 #include "global/types/retval.h"
@@ -37,7 +39,7 @@ class QByteArray;
 class QWindow;
 
 namespace muse::ui {
-class IUiConfiguration : MODULE_EXPORT_INTERFACE
+class IUiConfiguration : MODULE_GLOBAL_EXPORT_INTERFACE
 {
     INTERFACE_ID(IUiConfiguration)
 
@@ -124,5 +126,8 @@ public:
     virtual int flickableMaxVelocity() const = 0;
 
     virtual int tooltipDelay() const = 0;
+
+    virtual std::vector<QColor> colorDialogCustomColors() const = 0;
+    virtual void setColorDialogCustomColors(const std::vector<QColor>&) = 0;
 };
 }

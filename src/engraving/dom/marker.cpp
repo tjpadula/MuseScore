@@ -51,12 +51,14 @@ static const ElementStyle markerStyle {
 Marker::Marker(EngravingItem* parent)
     : Marker(parent, TextStyleType::REPEAT_LEFT)
 {
+    resetProperty(Pid::MUSIC_SYMBOL_SIZE);
 }
 
 Marker::Marker(EngravingItem* parent, TextStyleType tid)
     : TextBase(ElementType::MARKER, parent, tid, ElementFlag::MOVABLE | ElementFlag::ON_STAFF | ElementFlag::SYSTEM)
 {
     initElementStyle(&markerStyle);
+    resetProperty(Pid::MUSIC_SYMBOL_SIZE);
     m_markerType = MarkerType::FINE;
 }
 
@@ -156,24 +158,6 @@ void Marker::styleChanged()
 }
 
 //---------------------------------------------------------
-//   undoSetLabel
-//---------------------------------------------------------
-
-void Marker::undoSetLabel(const String& s)
-{
-    undoChangeProperty(Pid::LABEL, s);
-}
-
-//---------------------------------------------------------
-//   undoSetMarkerType
-//---------------------------------------------------------
-
-void Marker::undoSetMarkerType(MarkerType t)
-{
-    undoChangeProperty(Pid::MARKER_TYPE, int(t));
-}
-
-//---------------------------------------------------------
 //   getProperty
 //---------------------------------------------------------
 
@@ -183,9 +167,7 @@ PropertyValue Marker::getProperty(Pid propertyId) const
     case Pid::LABEL:
         return label();
     case Pid::MARKER_TYPE:
-        return int(markerType());
-    case Pid::MARKER_SYMBOL_SIZE:
-        return symbolSize();
+        return markerType();
     case Pid::MARKER_CENTER_ON_SYMBOL:
         return centerOnSymbol();
     default:
@@ -205,10 +187,7 @@ bool Marker::setProperty(Pid propertyId, const PropertyValue& v)
         setLabel(v.value<String>());
         break;
     case Pid::MARKER_TYPE:
-        setMarkerType(MarkerType(v.toInt()));
-        break;
-    case Pid::MARKER_SYMBOL_SIZE:
-        setSymbolSize(v.toDouble());
+        setMarkerType(v.value<MarkerType>());
         break;
     case Pid::MARKER_CENTER_ON_SYMBOL:
         setCenterOnSymbol(v.toBool());
@@ -233,13 +212,13 @@ PropertyValue Marker::propertyDefault(Pid propertyId) const
     case Pid::LABEL:
         return String();
     case Pid::MARKER_TYPE:
-        return int(MarkerType::FINE);
+        return MarkerType::FINE;
     case Pid::PLACEMENT:
         return PlacementV::ABOVE;
-    case Pid::MARKER_SYMBOL_SIZE:
-        return 18.0;
     case Pid::MARKER_CENTER_ON_SYMBOL:
         return true;
+    case Pid::MUSIC_SYMBOL_SIZE:
+        return 18.0;
     default:
         break;
     }
@@ -304,14 +283,14 @@ std::vector<LineF> Marker::dragAnchorLines() const
 String Marker::symbolString() const
 {
     // Returns the coda/segno symbol if present
-    constexpr static std::array REPEAT_SYMBOL_NAMES {
-        u"<sym>coda</sym>",
-        u"<sym>codaSquare</sym>",
-        u"<sym>codaJapanes</sym>",
-        u"<sym>segno</sym>",
-        u"<sym>segnoSerpent1</sym>",
-        u"<sym>segnoSerpent2</sym>",
-        u"<sym>segnoJapanese</sym>",
+    const static std::array REPEAT_SYMBOL_NAMES {
+        String(u"<sym>coda</sym>"),
+        String(u"<sym>codaSquare</sym>"),
+        String(u"<sym>codaJapanes</sym>"),
+        String(u"<sym>segno</sym>"),
+        String(u"<sym>segnoSerpent1</sym>"),
+        String(u"<sym>segnoSerpent2</sym>"),
+        String(u"<sym>segnoJapanese</sym>"),
     };
 
     for (const String& sym : REPEAT_SYMBOL_NAMES) {

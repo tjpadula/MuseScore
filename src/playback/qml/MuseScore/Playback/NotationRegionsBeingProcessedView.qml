@@ -20,9 +20,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.15
+pragma ComponentBehavior: Bound
 
-import MuseScore.Playback 1.0
+import QtQuick
+
+import MuseScore.Playback
 
 import "internal"
 
@@ -43,16 +45,11 @@ Loader {
         regionsModel.load()
     }
 
-    onLoaded: {
-        item.x = root.notationViewRect.x
-        item.y = root.notationViewRect.y
-        item.height = root.notationViewRect.height
-        item.width = root.notationViewRect.width
-        item.model = regionsModel
-    }
-
     sourceComponent: Item {
-        property alias model: repeater.model
+        x: root.notationViewRect.x
+        y: root.notationViewRect.y
+        width: root.notationViewRect.width
+        height: root.notationViewRect.height
 
         clip: true
 
@@ -61,17 +58,42 @@ Loader {
 
             anchors.fill: parent
 
+            model: regionsModel
+
+            property real progressBackgroundOpacity
+
             delegate: AudioProcessingProgressBar {
                 id: progressBar
 
-                x: model.rect.x
-                y: model.rect.y - model.rect.height
-                width: Math.max(model.rect.width, progressBar.minWidth)
-                height: model.rect.height * 0.7
+                required property rect rect
+                required progress
 
-                progress: model.progress
-                backgroundColor: repeater.model.progressBackgroundColor
+                x: rect.x
+                y: rect.y - rect.height
+                width: Math.max(rect.width, progressBar.minWidth)
+                height: rect.height * 0.7
+
                 textColor: repeater.model.progressTextColor
+                backgroundColor: repeater.model.progressBackgroundColor
+                backgroundOpacity: repeater.progressBackgroundOpacity
+            }
+
+            SequentialAnimation on progressBackgroundOpacity {
+                loops: Animation.Infinite
+
+                NumberAnimation {
+                    from: 0.3
+                    to: 0.6
+                    duration: 1000
+                    easing.type: Easing.InOutQuad
+                }
+
+                NumberAnimation {
+                    from: 0.6
+                    to: 0.3
+                    duration: 1000
+                    easing.type: Easing.InOutQuad
+                }
             }
         }
     }

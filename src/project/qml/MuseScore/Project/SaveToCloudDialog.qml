@@ -19,13 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
+import QtQuick
+import QtQuick.Layouts
 
-import Muse.Ui 1.0
-import Muse.UiComponents 1.0
-import Muse.GraphicalEffects 1.0
-import Muse.Cloud 1.0
+import Muse.Ui
+import Muse.UiComponents
+import Muse.GraphicalEffects
+import Muse.Cloud
 
 StyledDialogView {
     id: root
@@ -114,12 +114,16 @@ StyledDialogView {
                         CloudsModel {
                             id: cloudsModel
 
+                            property bool loaded: false
+
                             Component.onCompleted: {
                                 load()
 
                                 contentItem.cloudInfo = cloudsModel.cloudInfo(root.cloudCode)
                                 contentItem.dialogText = cloudsModel.dialogText(root.cloudCode, existingScoreOrAudioUrl)
                                 contentItem.visibilityModel = cloudsModel.visibilityModel(root.cloudCode)
+
+                                loaded = true
                             }
                         }
                     }
@@ -208,12 +212,12 @@ StyledDialogView {
 
                     visible: root.isPublishShare && Boolean(root.existingScoreOrAudioUrl)
 
-                    model: [
+                    model: cloudsModel.loaded ? [
                         { text: Boolean(contentItem.dialogText) ? contentItem.dialogText.replaceButtonText
                                                                 : qsTrc("project/save", "Replace existing"), value: true },
                         { text: Boolean(contentItem.dialogText) ? contentItem.dialogText.newButtonText
                                                                 : qsTrc("project/save", "Create new"), value: false }
-                    ]
+                    ] : null
 
                     delegate: RoundedRadioButton {
                         checked: modelData.value === root.replaceExisting
@@ -278,4 +282,3 @@ StyledDialogView {
         }
     }
 }
-

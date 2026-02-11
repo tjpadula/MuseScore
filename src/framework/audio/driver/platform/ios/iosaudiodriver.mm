@@ -34,7 +34,8 @@
 
 UInt32 kOutputBufferSizeBytes = 8192;
 
-typedef muse::audio::AudioDeviceID IOSAudioDeviceID;
+//typedef muse::audio::AudioDeviceID IOSAudioDeviceID;
+typedef uint32_t IOSAudioDeviceID;
 
 using namespace muse;
 using namespace muse::audio;
@@ -42,31 +43,31 @@ static constexpr char DEFAULT_DEVICE_ID[] = "Systems default";
 
 struct IOSAudioDriver::Data {
     Spec format;
-    AudioQueueRef audioQueue;
+    AudioQueueRef audioQueue = nullptr;
     Callback callback;
-    void* mUserData;
+//    void* mUserData;    // obs
+    
+    void clear()
+    {
+        *this = Data();
+    }
 };
 
-IOSAudioDriver::IOSAudioDriver()
-    : m_data(nullptr)
+muse::audio::IOSAudioDriver::IOSAudioDriver()
+    : m_data(std::make_shared<Data>())
 {
-    m_data = std::make_shared<Data>();
-    m_data->audioQueue = nullptr;
-
     initDeviceMapListener();
     updateDeviceMap();
 
-    AVAudioSession* aSession = [AVAudioSession sharedInstance];
-    AVAudioSessionRouteDescription* aRoute = [aSession currentRoute];
-    AVAudioSessionPortDescription* aPortDescription = [aRoute.outputs firstObject];
-    m_deviceId = std::string([[aPortDescription portName] cStringUsingEncoding:NSUTF8StringEncoding]);
-
-//    m_deviceId = DEFAULT_DEVICE_ID;
+//    AVAudioSession* aSession = [AVAudioSession sharedInstance];
+//    AVAudioSessionRouteDescription* aRoute = [aSession currentRoute];
+//    AVAudioSessionPortDescription* aPortDescription = [aRoute.outputs firstObject];
+//    m_deviceId = std::string([[aPortDescription portName] cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
 IOSAudioDriver::~IOSAudioDriver()
 {
-    close();
+    doClose();
 }
 
 void IOSAudioDriver::init()
@@ -75,22 +76,29 @@ void IOSAudioDriver::init()
 
 std::string IOSAudioDriver::name() const
 {
-    return "MUAUDIO(IOS)";
+    return "IOS";
+}
+
+muse::audio::AudioDeviceID IOSAudioDriver::defaultDevice() const
+{
+    return DEFAULT_DEVICE_ID;
 }
 
 bool IOSAudioDriver::open(const Spec& spec, Spec* activeSpec)
 {
     if (!m_data) {
-        return 0;
+        return false;
     }
 
     if (isOpened()) {
-        return 0;
+        return false;
     }
 
-    *activeSpec = spec;
-    activeSpec->format = Format::AudioF32;
-    m_data->format = *activeSpec;
+    if (activeSpec) {
+        *activeSpec = spec;
+    }
+//    activeSpec->format = Format::AudioF32;
+//    m_data->format = *activeSpec;
 
     AudioStreamBasicDescription audioFormat;
     audioFormat.mSampleRate = spec.output.sampleRate;
@@ -98,31 +106,34 @@ bool IOSAudioDriver::open(const Spec& spec, Spec* activeSpec)
     audioFormat.mFramesPerPacket = 1;
     audioFormat.mChannelsPerFrame = spec.output.audioChannelCount;
     audioFormat.mReserved = 0;
-    switch (activeSpec->format) {
-    case Format::AudioF32:
+//    switch (activeSpec->format) {
+//    case Format::AudioF32:
         audioFormat.mBitsPerChannel = 32;
         audioFormat.mFormatFlags = kLinearPCMFormatFlagIsFloat;
-        break;
-    case Format::AudioS16:
-        audioFormat.mBitsPerChannel = 16;
-        audioFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
-        break;
-    }
+//        break;
+//    case Format::AudioS16:
+//        audioFormat.mBitsPerChannel = 16;
+//        audioFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
+//        break;
+//    }
     audioFormat.mBytesPerPacket = audioFormat.mBitsPerChannel * spec.output.audioChannelCount / 8;
     audioFormat.mBytesPerFrame = audioFormat.mBytesPerPacket * audioFormat.mFramesPerPacket;
 
+    m_data->format = spec;
     m_data->callback = spec.callback;
-    m_data->mUserData = spec.userdata;
+
+//    m_data->callback = spec.callback;
+//    m_data->mUserData = spec.userdata;
 
     // In CoreAudio, it's always opposite day. An input is how an app plays audio.
     OSStatus result = AudioQueueNewOutput(&audioFormat, OnFillBuffer, m_data.get(), NULL, NULL, 0, &m_data->audioQueue);
-//    OSStatus result = AudioQueueNewInput(&audioFormat, NewBufferRequest, m_data.get(), NULL, NULL, 0, &m_data->audioQueue);
     if (result != noErr) {
-        logError("Failed to create Audio Queue Input, err: ", result);
+        m_data->clear();
+        logError("Failed to create Audio Queue Output, err: ", result);
         return false;
     }
 
-    audioQueueSetDeviceName(outputDevice());
+    audioQueueSetDeviceName(m_data->format.deviceId);
 
 #if 0
     AudioValueRange bufferSizeRange = { 0, 0 };
@@ -162,6 +173,7 @@ bool IOSAudioDriver::open(const Spec& spec, Spec* activeSpec)
         AudioQueueBufferRef buffer;
         result = AudioQueueAllocateBuffer(m_data->audioQueue, spec.output.samplesPerChannel * audioFormat.mBytesPerFrame, &buffer);
         if (result != noErr) {
+            m_data->clear();
             logError("Failed to allocate Audio Buffer, err: ", result);
             return false;
         }
@@ -176,16 +188,26 @@ bool IOSAudioDriver::open(const Spec& spec, Spec* activeSpec)
     // start playback
     result = AudioQueueStart(m_data->audioQueue, NULL);
     if (result != noErr) {
+        m_data->clear();
         logError("Failed to start  Audio Queue, err: ", result);
         return false;
     }
+    
+    m_activeSpecChanged.send(m_data->format);
 
-    LOGI() << "Connected to " << outputDevice() << " with bufferSize " << spec.output.samplesPerChannel * audioFormat.mBytesPerFrame << ", sampleRate " << spec.output.sampleRate;
+    LOGI() << "Connected to " << m_data->format.deviceId <<
+        " with bufferSize " << spec.output.samplesPerChannel * audioFormat.mBytesPerFrame <<
+        ", sampleRate " << spec.output.sampleRate;
 
     return true;
 }
 
 void IOSAudioDriver::close()
+{
+    doClose();
+}
+
+void IOSAudioDriver::doClose()
 {
     if (isOpened()) {
         AudioQueueStop(m_data->audioQueue, true);
@@ -204,17 +226,22 @@ const IOSAudioDriver::Spec& IOSAudioDriver::activeSpec() const
     return m_data->format;
 }
 
+async::Channel<IOSAudioDriver::Spec> IOSAudioDriver::activeSpecChanged() const
+{
+    return m_activeSpecChanged;
+}
+
 AudioDeviceList IOSAudioDriver::availableOutputDevices() const
 {
     std::lock_guard lock(m_devicesMutex);
 
     AudioDeviceList deviceList;
     
-    AudioDevice deviceInfo;
-    deviceInfo.id = QString::number(0).toStdString();
-    deviceInfo.name = m_deviceId;
-
-    deviceList.push_back(deviceInfo);
+//    AudioDevice deviceInfo;
+//    deviceInfo.id = QString::number(0).toStdString();
+//    deviceInfo.name = m_deviceId;
+//
+//    deviceList.push_back(deviceInfo);
     
 #if IOS_AUDIO_IMPLEMENTED
     deviceList.push_back({ DEFAULT_DEVICE_ID, muse::trc("audio", "System default") });
@@ -235,10 +262,12 @@ async::Notification IOSAudioDriver::availableOutputDevicesChanged() const
     return m_availableOutputDevicesChanged;
 }
 
+#if 0
 muse::audio::AudioDeviceID IOSAudioDriver::outputDevice() const
 {
     return m_deviceId;
 }
+#endif
 
 void IOSAudioDriver::updateDeviceMap()
 {
@@ -248,7 +277,7 @@ void IOSAudioDriver::updateDeviceMap()
 
     UInt32 propertySize;
     OSStatus result;
-    std::vector<AudioObjectID> audioObjects = {};
+    std::vector<IOSAudioDeviceID> audioObjects = {};
     m_outputDevices.clear();
     m_inputDevices.clear();
 
@@ -265,7 +294,7 @@ void IOSAudioDriver::updateDeviceMap()
     };
 
     auto getStreamsCount
-        = [](const AudioObjectID& id, const AudioObjectPropertyScope& scope, const std::string& deviceName) -> unsigned int {
+        = [](const IOSAudioDeviceID& id, const AudioObjectPropertyScope& scope, const std::string& deviceName) -> unsigned int {
         AudioObjectPropertyAddress propertyAddress = {
             .mSelector  = kAudioDevicePropertyStreamConfiguration,
             .mScope     = scope,
@@ -328,6 +357,7 @@ void IOSAudioDriver::updateDeviceMap()
 #endif
 }
 
+#if 0
 //unsigned int IOSAudioDriver::outputDeviceBufferSize() const
 //{
 //    if (!isOpened()) {
@@ -363,8 +393,9 @@ async::Notification IOSAudioDriver::outputDeviceBufferSizeChanged() const
 {
     return m_bufferSizeChanged;
 }
+#endif
 
-std::vector<unsigned int> IOSAudioDriver::availableOutputDeviceBufferSizes() const
+std::vector<samples_t> IOSAudioDriver::availableOutputDeviceBufferSizes() const
 {
 #if IOS_AUDIO_IMPLEMENTED
 
@@ -394,7 +425,7 @@ std::vector<unsigned int> IOSAudioDriver::availableOutputDeviceBufferSizes() con
 
     std::sort(result.begin(), result.end());
 #else
-    std::vector<unsigned int> result;
+    std::vector<samples_t> result;
     result.push_back(kOutputBufferSizeBytes);        // WAG for building
 #endif
     return result;
@@ -408,7 +439,7 @@ std::vector<unsigned int> IOSAudioDriver::availableOutputDeviceBufferSizes() con
 //
 //    return m_data->format.output.sampleRate;
 //}
-
+#if 0
 bool IOSAudioDriver::setOutputDeviceSampleRate(unsigned int sampleRate)
 {
     if (m_data->format.output.sampleRate == sampleRate) {
@@ -435,8 +466,8 @@ async::Notification IOSAudioDriver::outputDeviceSampleRateChanged() const
 {
     return m_sampleRateChanged;
 }
-
-std::vector<unsigned int> IOSAudioDriver::availableOutputDeviceSampleRates() const
+#endif
+std::vector<sample_rate_t> IOSAudioDriver::availableOutputDeviceSampleRates() const
 {
     return {
         44100,
@@ -499,14 +530,10 @@ muse::audio::AudioDeviceID IOSAudioDriver::defaultDeviceId() const
 
 UInt32 IOSAudioDriver::IOSDeviceId() const
 {
-    AudioDeviceID deviceId = outputDevice();
-    if (deviceId == DEFAULT_DEVICE_ID) {
-        deviceId = defaultDeviceId();
-    }
-
-    return QString::fromStdString(deviceId).toInt();
+    return QString::fromStdString(defaultDeviceId()).toInt();
 }
 
+#if 0
 bool IOSAudioDriver::selectOutputDevice(const AudioDeviceID& deviceId /*, unsigned int bufferSize*/)
 {
     if (m_deviceId == deviceId) {
@@ -546,6 +573,7 @@ void IOSAudioDriver::resume()
 void IOSAudioDriver::suspend()
 {
 }
+#endif
 
 void IOSAudioDriver::logError(const std::string message, OSStatus error)
 {
@@ -570,7 +598,7 @@ void IOSAudioDriver::logError(const std::string message, OSStatus error)
 
 #if IOS_AUDIO_IMPLEMENTED
 
-static OSStatus onDeviceListChanged(AudioObjectID inObjectID, UInt32 inNumberAddresses, const AudioObjectPropertyAddress* inAddresses,
+static OSStatus onDeviceListChanged(IOSAudioDeviceID inObjectID, UInt32 inNumberAddresses, const AudioObjectPropertyAddress* inAddresses,
                                     void* inClientData)
 {
     UNUSED(inObjectID);
@@ -603,10 +631,11 @@ void IOSAudioDriver::initDeviceMapListener()
 void IOSAudioDriver::OnFillBuffer(void* context, AudioQueueRef, AudioQueueBufferRef buffer)
 {
     Data* pData = (Data*)context;
-    pData->callback(pData->mUserData, (uint8_t*)buffer->mAudioData, buffer->mAudioDataByteSize);
+//    pData->callback(pData->mUserData, (uint8_t*)buffer->mAudioData, buffer->mAudioDataByteSize);
+    pData->callback((uint8_t*)buffer->mAudioData, buffer->mAudioDataByteSize);
     AudioQueueEnqueueBuffer(pData->audioQueue, buffer, 0, NULL);
 }
-
+#if 0
 void IOSAudioDriver::NewBufferRequest(void * __nullable               context,
                                          AudioQueueRef                   /*inAQ*/,
                                          AudioQueueBufferRef             buffer,
@@ -615,7 +644,7 @@ void IOSAudioDriver::NewBufferRequest(void * __nullable               context,
                                          const AudioStreamPacketDescription * __nullable /*inPacketDescs*/)
 {
     IOSAudioDriver::Data* pData = (IOSAudioDriver::Data*)context;
-    pData->callback(pData->mUserData, (uint8_t*)buffer->mAudioData, buffer->mAudioDataByteSize);
+//    pData->callback(pData->mUserData, (uint8_t*)buffer->mAudioData, buffer->mAudioDataByteSize);
     AudioQueueEnqueueBuffer(pData->audioQueue, buffer, 0, NULL);
 }
-
+#endif

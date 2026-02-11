@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -132,8 +132,7 @@
           <StaffText>
             <eid>G_G</eid>
             <style>instrument_change</style>
-            <text>Simplify tied eighth notes to indicate rhythms - Compound Meter
-6/8 N = 1</text>
+            <text>Simplify tied eighth notes to indicate rhythms - Compound Meter<br/>6/8 N = 1</text>
             </StaffText>
           <Chord>
             <eid>H_H</eid>

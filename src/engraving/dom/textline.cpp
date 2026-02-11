@@ -23,9 +23,8 @@
 
 #include "score.h"
 #include "system.h"
-#include "undo.h"
-
-#include "log.h"
+#include "text.h"
+#include "../editing/editproperty.h"
 
 using namespace mu;
 
@@ -53,7 +52,6 @@ static const ElementStyle systemTextLineSegmentStyle {
 //---------------------------------------------------------
 
 static const ElementStyle textLineStyle {
-//       { Sid::textLineSystemFlag,                 Pid::SYSTEM_FLAG             },
     { Sid::textLineFontFace,                   Pid::BEGIN_FONT_FACE },
     { Sid::textLineFontFace,                   Pid::CONTINUE_FONT_FACE },
     { Sid::textLineFontFace,                   Pid::END_FONT_FACE },
@@ -66,6 +64,9 @@ static const ElementStyle textLineStyle {
     { Sid::textLineTextAlign,                  Pid::BEGIN_TEXT_ALIGN },
     { Sid::textLineTextAlign,                  Pid::CONTINUE_TEXT_ALIGN },
     { Sid::textLineTextAlign,                  Pid::END_TEXT_ALIGN },
+    { Sid::textLinePosition,                   Pid::BEGIN_TEXT_POSITION },
+    { Sid::textLinePosition,                   Pid::CONTINUE_TEXT_POSITION },
+    { Sid::textLinePosition,                   Pid::END_TEXT_POSITION },
     { Sid::textLineHookHeight,                 Pid::BEGIN_HOOK_HEIGHT },
     { Sid::textLineHookHeight,                 Pid::END_HOOK_HEIGHT },
     { Sid::textLineLineWidth,                  Pid::LINE_WIDTH },
@@ -75,6 +76,14 @@ static const ElementStyle textLineStyle {
     { Sid::textLineLineStyle,                  Pid::LINE_STYLE },
     { Sid::textLinePosAbove,                   Pid::OFFSET },
     { Sid::textLineFontSpatiumDependent,       Pid::TEXT_SIZE_SPATIUM_DEPENDENT },
+    { Sid::textLineEndLineArrowHeight,         Pid::END_LINE_ARROW_HEIGHT },
+    { Sid::textLineEndLineArrowWidth,          Pid::END_LINE_ARROW_WIDTH },
+    { Sid::textLineBeginLineArrowHeight,       Pid::BEGIN_LINE_ARROW_HEIGHT },
+    { Sid::textLineBeginLineArrowWidth,        Pid::BEGIN_LINE_ARROW_WIDTH },
+    { Sid::textLineEndFilledArrowHeight,         Pid::END_FILLED_ARROW_HEIGHT },
+    { Sid::textLineEndFilledArrowWidth,          Pid::END_FILLED_ARROW_WIDTH },
+    { Sid::textLineBeginFilledArrowHeight,       Pid::BEGIN_FILLED_ARROW_HEIGHT },
+    { Sid::textLineBeginFilledArrowWidth,        Pid::BEGIN_FILLED_ARROW_WIDTH },
 };
 
 //---------------------------------------------------------
@@ -82,7 +91,6 @@ static const ElementStyle textLineStyle {
 //---------------------------------------------------------
 
 static const ElementStyle systemTextLineStyle {
-//       { Sid::systemTextLineSystemFlag,           Pid::SYSTEM_FLAG             },
     { Sid::systemTextLineFontFace,             Pid::BEGIN_FONT_FACE },
     { Sid::systemTextLineFontFace,             Pid::CONTINUE_FONT_FACE },
     { Sid::systemTextLineFontFace,             Pid::END_FONT_FACE },
@@ -114,13 +122,16 @@ TextLineSegment::TextLineSegment(Spanner* sp, System* parent, bool system)
 {
     setSystemFlag(system);
     initStyle();
+
+    m_text->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
+    m_endText->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
 }
 
 //---------------------------------------------------------
 //   propertyDelegate
 //---------------------------------------------------------
 
-EngravingItem* TextLineSegment::propertyDelegate(Pid pid)
+EngravingObject* TextLineSegment::propertyDelegate(Pid pid) const
 {
     if (pid == Pid::SYSTEM_FLAG) {
         return static_cast<TextLine*>(spanner());
@@ -149,9 +160,9 @@ TextLine::TextLine(EngravingItem* parent, bool system)
 
     setBeginHookType(HookType::NONE);
     setEndHookType(HookType::NONE);
-    setBeginHookHeight(Spatium(1.5));
-    setEndHookHeight(Spatium(1.5));
-    setGapBetweenTextAndLine(Spatium(0.5));
+    setBeginHookHeight(1.5_sp);
+    setEndHookHeight(1.5_sp);
+    setGapBetweenTextAndLine(0.5_sp);
 
     resetProperty(Pid::BEGIN_TEXT_PLACE);
     resetProperty(Pid::CONTINUE_TEXT_PLACE);
@@ -238,12 +249,16 @@ Sid TextLineSegment::getPropertyStyle(Pid pid) const
 
 Sid TextLine::getPropertyStyle(Pid pid) const
 {
-    if (pid == Pid::OFFSET) {
+    switch (pid) {
+    case Pid::OFFSET: {
         if (anchor() == Spanner::Anchor::NOTE) {
             return Sid::NOSTYLE;
         } else {
             return getTextLinePos(placeAbove());
         }
+    }
+    default:
+        break;
     }
     return TextLineBase::getPropertyStyle(pid);
 }
@@ -272,6 +287,8 @@ PropertyValue TextLine::propertyDefault(Pid propertyId) const
     case Pid::CONTINUE_TEXT_PLACE:
     case Pid::END_TEXT_PLACE:
         return TextPlace::LEFT;
+    case Pid::TEXT_STYLE:
+        return systemFlag() ? TextStyleType::SYSTEM_TEXTLINE : TextStyleType::TEXTLINE;
     default:
         return TextLineBase::propertyDefault(propertyId);
     }

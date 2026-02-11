@@ -71,7 +71,8 @@ static QString viewModeToString(ViewMode m)
     return "";
 }
 
-NotationViewState::NotationViewState(Notation* notation)
+NotationViewState::NotationViewState(Notation* notation, const modularity::ContextPtr& ctx)
+    : muse::Injectable(ctx)
 {
     notation->openChanged().onNotify(this, [this, notation]() {
         if (!notation->isOpen()) {
@@ -116,7 +117,7 @@ void NotationViewState::setMatrixInited(bool inited)
     m_isMatrixInited = inited;
 }
 
-Transform NotationViewState::matrix() const
+const Transform& NotationViewState::matrix() const
 {
     return m_matrix;
 }

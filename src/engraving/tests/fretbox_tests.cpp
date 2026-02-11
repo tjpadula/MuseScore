@@ -22,16 +22,14 @@
 
 #include <gtest/gtest.h>
 
-#include "dom/box.h"
-#include "dom/masterscore.h"
-#include "dom/fret.h"
-#include "dom/harmony.h"
-#include "dom/factory.h"
+#include "engraving/dom/box.h"
+#include "engraving/dom/factory.h"
+#include "engraving/dom/fret.h"
+#include "engraving/dom/harmony.h"
+#include "engraving/dom/masterscore.h"
 
 #include "utils/scorerw.h"
-#include "utils/scorecomp.h"
 
-using namespace mu;
 using namespace mu::engraving;
 
 static const String FRET_BOX_DATA_DIR(u"fretbox_data/");
@@ -57,7 +55,7 @@ public:
         for (const String& chord : chords) {
             Segment* segment = measure->first(SegmentType::ChordRest);
 
-            engraving::FretDiagram* diagram = engraving::Factory::createFretDiagram(score->dummy()->segment());
+            FretDiagram* diagram = Factory::createFretDiagram(score->dummy()->segment());
 
             diagram->setHarmony(chord);
             diagram->updateDiagram(chord);
@@ -88,7 +86,7 @@ public:
 
         Segment* segment = measure->first(SegmentType::ChordRest);
 
-        engraving::FretDiagram* diagram = engraving::Factory::createFretDiagram(score->dummy()->segment());
+        FretDiagram* diagram = Factory::createFretDiagram(score->dummy()->segment());
 
         diagram->setHarmony(chord);
         diagram->updateDiagram(chord);
@@ -156,7 +154,7 @@ public:
     void checkFretBox(MasterScore* score, const StringList& chords)
     {
         ASSERT_TRUE(!score->measures()->empty());
-        ASSERT_TRUE(score->measure(0)->type() == ElementType::FBOX);
+        ASSERT_TRUE(score->measure(0)->isFBox());
 
         FBox* fretBox = toFBox(score->measure(0));
         ASSERT_TRUE(fretBox);
@@ -173,9 +171,9 @@ public:
             FretDiagram* diagram = toFretDiagram(elements[i]);
             ASSERT_TRUE(diagram);
             LOGD() << "Checking chord: " << chords[i].toStdString()
-                   << ", diagram: " << diagram->harmonyText().toStdString();
+                   << ", diagram: " << diagram->harmonyPlainText().toStdString();
 
-            EXPECT_EQ(diagram->harmonyText(), chords[i]);
+            EXPECT_EQ(diagram->harmonyPlainText(), chords[i]);
         }
     }
 
@@ -601,6 +599,24 @@ TEST_F(Engraving_FretBoxTests, DISABLED_RenameChords_AfterMoving)
 
     // [THEN] Check fret box and chords
     checkFretBox(score, { u"B", u"C", u"D", u"E", u"F" });
+
+    delete score;
+}
+
+TEST_F(Engraving_FretBoxTests, TestChordCase)
+{
+    // [GIVEN] Empty score
+    MasterScore* score = createEmptyScore();
+
+    // [GIVEN] Add chords to the score
+    // With default style settings applied, Am == am, AM != Am or am
+    addChords(score, { u"AM", u"Am", u"am" });
+
+    // [WHEN] Insert fret box
+    score->insertBox(mu::engraving::ElementType::FBOX, score->firstMeasure());
+
+    // [THEN] Check fret box and chords
+    checkFretBox(score, { u"AM", u"Am" });
 
     delete score;
 }

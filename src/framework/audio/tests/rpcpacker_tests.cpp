@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -258,11 +258,13 @@ TEST_F(Audio_RpcPackerTests, SoundTrackFormat)
     origin.outputSpec.samplesPerChannel = 256;
     origin.outputSpec.audioChannelCount = 2;
     origin.bitRate = 196;
+    origin.sampleFormat = AudioSampleFormat::Float32;
 
     KNOWN_FIELDS(origin,
                  origin.type,
                  origin.outputSpec,
-                 origin.bitRate);
+                 origin.bitRate,
+                 origin.sampleFormat);
 
     ByteArray data = rpc::RpcPacker::pack(origin);
 
@@ -295,11 +297,9 @@ TEST_F(Audio_RpcPackerTests, AudioSourceParams)
 TEST_F(Audio_RpcPackerTests, AudioSignalVal)
 {
     AudioSignalVal origin;
-    origin.amplitude = 0.6f;
     origin.pressure = 0.5;
 
     KNOWN_FIELDS(origin,
-                 origin.amplitude,
                  origin.pressure);
 
     ByteArray data = rpc::RpcPacker::pack(origin);
@@ -367,11 +367,14 @@ TEST_F(Audio_RpcPackerTests, InputProcessingProgress)
         origin.status = InputProcessingProgress::Status::Started;
         origin.errorCode = 73;
         origin.errorText = "Some error";
+        origin.data["key1"] = "AAAA";
+        origin.data["key2"] = "BBBB";
 
         KNOWN_FIELDS(origin,
                      origin.status,
                      origin.errorCode,
-                     origin.errorText);
+                     origin.errorText,
+                     origin.data);
 
         ByteArray data = rpc::RpcPacker::pack(origin);
 
@@ -382,6 +385,7 @@ TEST_F(Audio_RpcPackerTests, InputProcessingProgress)
         EXPECT_TRUE(origin.status == unpacked.status);
         EXPECT_TRUE(origin.errorCode == unpacked.errorCode);
         EXPECT_TRUE(origin.errorText == unpacked.errorText);
+        EXPECT_TRUE(origin.data == unpacked.data);
     }
 }
 
@@ -654,25 +658,6 @@ TEST_F(Audio_RpcPackerTests, MPE_PlaybackEvent)
         EXPECT_TRUE(origin == unpacked);
     }
 
-    // RestEvent
-    {
-        muse::mpe::ArrangementContext arrCtx = makeArrangementContext();
-        mpe::RestEvent event = muse::mpe::RestEvent(std::move(arrCtx));
-
-        KNOWN_FIELDS(event,
-                     event.arrangementCtx());
-
-        mpe::PlaybackEvent origin = event;
-
-        ByteArray data = rpc::RpcPacker::pack(origin);
-
-        mpe::PlaybackEvent unpacked;
-        bool ok = rpc::RpcPacker::unpack(data, unpacked);
-
-        EXPECT_TRUE(ok);
-        EXPECT_TRUE(origin == unpacked);
-    }
-
     // TextArticulationEvent
     {
         mpe::TextArticulationEvent event;
@@ -766,7 +751,6 @@ TEST_F(Audio_RpcPackerTests, MPE_PlaybackEvent)
     {
         using KnownPlaybackEvent = std::variant<std::monostate,
                                                 mpe::NoteEvent,
-                                                mpe::RestEvent,
                                                 mpe::TextArticulationEvent,
                                                 mpe::SoundPresetChangeEvent,
                                                 mpe::SyllableEvent,

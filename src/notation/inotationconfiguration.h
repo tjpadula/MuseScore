@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_NOTATION_INOTATIONCONFIGURATION_H
-#define MU_NOTATION_INOTATIONCONFIGURATION_H
+
+#pragma once
 
 #include <QColor>
 #include <optional>
@@ -33,7 +33,7 @@
 #include "global/globaltypes.h"
 
 namespace mu::notation {
-class INotationConfiguration : MODULE_EXPORT_INTERFACE
+class INotationConfiguration : MODULE_GLOBAL_EXPORT_INTERFACE
 {
     INTERFACE_ID(INotationConfiguration)
 
@@ -71,6 +71,16 @@ public:
     virtual muse::async::Notification foregroundChanged() const = 0;
 
     virtual muse::io::path_t wallpapersDefaultDirPath() const = 0;
+
+    virtual bool shouldInvertScore() const = 0;  // Whether score should be inverted now, based on theme.
+
+    virtual bool scoreInversionEnabled() const = 0;
+    virtual void setScoreInversionEnabled(bool value) = 0;
+    virtual muse::async::Notification scoreInversionChanged() const = 0;
+
+    virtual bool isOnlyInvertInDarkTheme() const = 0;
+    virtual void setOnlyInvertInDarkTheme(bool value) = 0;
+    virtual muse::async::Notification isOnlyInvertInDarkThemeChanged() const = 0;
 
     virtual QColor borderColor() const = 0;
     virtual int borderWidth() const = 0;
@@ -209,13 +219,13 @@ public:
     virtual void setTemplateModeEnabled(std::optional<bool> enabled) = 0;
     virtual void setTestModeEnabled(std::optional<bool> enabled) = 0;
 
-    virtual muse::io::path_t instrumentListPath() const = 0;
+    virtual muse::io::path_t instrumentsXmlPath() const = 0;
+    virtual muse::io::path_t scoreOrdersXmlPath() const = 0;
 
-    virtual muse::io::paths_t scoreOrderListPaths() const = 0;
-    virtual muse::async::Notification scoreOrderListPathsChanged() const = 0;
-
-    virtual muse::io::paths_t userScoreOrderListPaths() const = 0;
-    virtual void setUserScoreOrderListPaths(const muse::io::paths_t& paths) = 0;
+    virtual muse::io::path_t userInstrumentsFolder() const = 0;
+    virtual muse::io::paths_t userInstrumentsAndScoreOrdersPaths() const = 0;
+    virtual void setUserInstrumentsFolder(const muse::io::path_t& path) = 0;
+    virtual muse::async::Channel<muse::io::path_t> userInstrumentsFolderChanged() const = 0;
 
     virtual muse::io::path_t stringTuningsPresetsPath() const = 0;
 
@@ -224,15 +234,6 @@ public:
 
     virtual int gridSizeSpatium(muse::Orientation gridOrientation) const = 0;
     virtual void setGridSize(muse::Orientation gridOrientation, int sizeSpatium) = 0;
-
-    virtual bool needToShowAddTextErrorMessage() const = 0;
-    virtual void setNeedToShowAddTextErrorMessage(bool show) = 0;
-
-    virtual bool needToShowAddFiguredBassErrorMessage() const = 0;
-    virtual void setNeedToShowAddFiguredBassErrorMessage(bool show) = 0;
-
-    virtual bool needToShowAddGuitarBendErrorMessage() const = 0;
-    virtual void setNeedToShowAddGuitarBendErrorMessage(bool show) = 0;
 
     virtual bool needToShowMScoreError(const std::string& errorKey) const = 0;
     virtual void setNeedToShowMScoreError(const std::string& errorKey, bool show) = 0;
@@ -280,5 +281,3 @@ public:
     virtual void resetStyleDialogPageIndices() = 0;
 };
 }
-
-#endif // MU_NOTATION_INOTATIONCONFIGURATION_H

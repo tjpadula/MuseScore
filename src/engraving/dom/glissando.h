@@ -48,7 +48,7 @@ public:
 
     GlissandoSegment* clone() const override { return new GlissandoSegment(*this); }
 
-    EngravingItem* propertyDelegate(Pid) override;
+    EngravingObject* propertyDelegate(Pid) const override;
 };
 
 //---------------------------------------------------------
@@ -80,8 +80,6 @@ public:
 
     static Note* guessInitialNote(Chord* chord);
 
-    const TranslatableString& glissandoTypeName() const;
-
     std::optional<bool> isHarpGliss() const { return m_isHarpGliss; }
     void setIsHarpGliss(std::optional<bool> v) { m_isHarpGliss = v; }
 
@@ -97,6 +95,8 @@ public:
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;
     PropertyValue propertyDefault(Pid) const override;
+
+    TranslatableString subtypeUserName() const override;
 
     static bool pitchSteps(const Spanner* spanner, std::vector<int>& pitchOffsets);
 

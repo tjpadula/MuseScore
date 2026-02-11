@@ -28,6 +28,7 @@
 #include "iaudioexportconfiguration.h"
 #include "context/iglobalcontext.h"
 #include "playback/iplaybackcontroller.h"
+#include "global/iapplication.h"
 
 #include "project/inotationwriter.h"
 
@@ -35,10 +36,11 @@ namespace mu::iex::audioexport {
 class AbstractAudioWriter : public project::INotationWriter, public muse::Injectable, public muse::async::Asyncable
 {
 public:
+    muse::GlobalInject<IAudioExportConfiguration> configuration;
     muse::Inject<muse::audio::IPlayback> playback = { this };
-    muse::Inject<IAudioExportConfiguration> configuration = { this };
     muse::Inject<context::IGlobalContext> globalContext = { this };
     muse::Inject<playback::IPlaybackController> playbackController  = { this };
+    muse::Inject<muse::IApplication> application  = { this };
 
 public:
     AbstractAudioWriter(const muse::modularity::ContextPtr& iocCtx)

@@ -51,6 +51,9 @@ static const ElementStyle pedalStyle {
     { Sid::pedalTextAlign,                     Pid::BEGIN_TEXT_ALIGN },
     { Sid::pedalTextAlign,                     Pid::CONTINUE_TEXT_ALIGN },
     { Sid::pedalTextAlign,                     Pid::END_TEXT_ALIGN },
+    { Sid::pedalPosition,                      Pid::BEGIN_TEXT_POSITION },
+    { Sid::pedalPosition,                      Pid::CONTINUE_TEXT_POSITION },
+    { Sid::pedalPosition,                      Pid::END_TEXT_POSITION },
     { Sid::pedalHookHeight,                    Pid::BEGIN_HOOK_HEIGHT },
     { Sid::pedalHookHeight,                    Pid::END_HOOK_HEIGHT },
     { Sid::pedalLineWidth,                     Pid::LINE_WIDTH },
@@ -59,7 +62,15 @@ static const ElementStyle pedalStyle {
     { Sid::pedalPlacement,                     Pid::PLACEMENT },
     { Sid::pedalLineStyle,                     Pid::LINE_STYLE },
     { Sid::pedalPosBelow,                      Pid::OFFSET },
-    { Sid::pedalFontSpatiumDependent,          Pid::TEXT_SIZE_SPATIUM_DEPENDENT }
+    { Sid::pedalFontSpatiumDependent,          Pid::TEXT_SIZE_SPATIUM_DEPENDENT },
+    { Sid::pedalEndLineArrowHeight,            Pid::END_LINE_ARROW_HEIGHT },
+    { Sid::pedalEndLineArrowWidth,             Pid::END_LINE_ARROW_WIDTH },
+    { Sid::pedalBeginLineArrowHeight,          Pid::BEGIN_LINE_ARROW_HEIGHT },
+    { Sid::pedalBeginLineArrowWidth,           Pid::BEGIN_LINE_ARROW_WIDTH },
+    { Sid::pedalEndFilledArrowHeight,          Pid::END_FILLED_ARROW_HEIGHT },
+    { Sid::pedalEndFilledArrowWidth,           Pid::END_FILLED_ARROW_WIDTH },
+    { Sid::pedalBeginFilledArrowHeight,        Pid::BEGIN_FILLED_ARROW_HEIGHT },
+    { Sid::pedalBeginFilledArrowWidth,         Pid::BEGIN_FILLED_ARROW_WIDTH },
 };
 
 const String Pedal::PEDAL_SYMBOL = u"<sym>keyboardPedalPed</sym>";
@@ -68,8 +79,8 @@ const String Pedal::STAR_SYMBOL = u"<sym>keyboardPedalUp</sym>";
 PedalSegment::PedalSegment(Pedal* sp, System* parent)
     : TextLineBaseSegment(ElementType::PEDAL_SEGMENT, sp, parent, ElementFlag::MOVABLE | ElementFlag::ON_STAFF)
 {
-    m_text->setTextStyleType(TextStyleType::PEDAL);
-    m_endText->setTextStyleType(TextStyleType::PEDAL);
+    m_text->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
+    m_endText->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
 }
 
 //---------------------------------------------------------
@@ -175,6 +186,9 @@ engraving::PropertyValue Pedal::propertyDefault(Pid propertyId) const
 
     case Pid::PLACEMENT:
         return style().styleV(Sid::pedalPlacement);
+
+    case Pid::TEXT_STYLE:
+        return TextStyleType::PEDAL;
 
     default:
         return TextLineBase::propertyDefault(propertyId);

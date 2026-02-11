@@ -16,9 +16,9 @@ elseif (OS_IS_WASM)
     set(LIBVORBIS_PATH "" CACHE PATH "Path to libogg sources")
     set(SNDFILE_INCDIR LIBSND_PATH)
 
-    declare_thirdparty_module(sndfile)
+    muse_create_thirdparty_module(sndfile)
 
-    set(MODULE_SRC
+    target_sources(sndfile PRIVATE
         ${LIBSND_PATH}/sndfile.c
         ${LIBSND_PATH}/sndfile.hh
         ${LIBSND_PATH}/command.c
@@ -59,16 +59,14 @@ elseif (OS_IS_WASM)
         ${LIBVORBIS_PATH}/lib/vorbisfile.c
         ${LIBVORBIS_PATH}/lib/window.c
         ${LIBVORBIS_PATH}/lib/synthesis.c
-        )
+    )
 
-    set(MODULE_INCLUDE
+    target_include_directories(sndfile PRIVATE
         ${LIBSND_PATH}
         ${LIBOGG_PATH}/include
         ${LIBVORBIS_PATH}/include
         ${LIBVORBIS_PATH}/lib
-        )
-
-    setup_module()
+    )
 
 elseif (IOS)
 

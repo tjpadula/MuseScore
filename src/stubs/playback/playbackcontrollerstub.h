@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2025 MuseScore Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_PLAYBACK_PLAYBACKCONTROLLERSTUB_H
-#define MU_PLAYBACK_PLAYBACKCONTROLLERSTUB_H
+
+#pragma once
 
 #include "playback/iplaybackcontroller.h"
 
@@ -53,9 +53,8 @@ public:
     muse::async::Promise<muse::audio::SoundPresetList> availableSoundPresets(
         const engraving::InstrumentTrackId& instrumentTrackId) const override;
 
-    notation::INotationSoloMuteState::SoloMuteState trackSoloMuteState(const engraving::InstrumentTrackId& trackId) const override;
-    void setTrackSoloMuteState(const engraving::InstrumentTrackId& trackId,
-                               const notation::INotationSoloMuteState::SoloMuteState& state) override;
+    const SoloMuteState& trackSoloMuteState(const engraving::InstrumentTrackId& trackId) const override;
+    void setTrackSoloMuteState(const engraving::InstrumentTrackId& trackId, const SoloMuteState& state) override;
 
     void playElements(const std::vector<const notation::EngravingItem*>& elements,
                       const PlayParams& params = PlayParams(), bool isMidi = false) override;
@@ -65,8 +64,8 @@ public:
 
     void triggerControllers(const muse::mpe::ControllerChangeEventList& list, notation::staff_idx_t staffIdx, int tick) override;
 
-    void seekElement(const notation::EngravingItem* element) override;
-    void seekBeat(int measureIndex, int beatIndex) override;
+    void seekElement(const notation::EngravingItem* element, bool flushSound = true) override;
+    void seekBeat(int measureIndex, int beatIndex, bool flushSound = true) override;
 
     bool actionChecked(const muse::actions::ActionCode& actionCode) const override;
     muse::async::Channel<muse::actions::ActionCode> actionCheckedChanged() const override;
@@ -95,5 +94,3 @@ public:
     muse::Progress onlineSoundsProcessingProgress() const override;
 };
 }
-
-#endif // MU_PLAYBACK_PLAYBACKCONTROLLERSTUB_H

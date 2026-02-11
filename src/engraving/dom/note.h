@@ -25,6 +25,7 @@
 #include "containers.h"
 
 #include "engravingitem.h"
+#include "interval.h"
 #include "noteevent.h"
 #include "noteval.h"
 #include "pitchspelling.h"
@@ -46,6 +47,7 @@ class StaffType;
 class NoteEditData;
 enum class AccidentalType : unsigned char;
 enum class NoteType : unsigned char;
+struct NoteParenthesisInfo;
 
 static constexpr int MAX_DOTS = 4;
 
@@ -157,16 +159,12 @@ public:
     Chord* chord() const { return (Chord*)explicitParent(); }
     void setParent(Chord* ch);
 
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-    EngravingObjectList scanChildren() const override;
-
     void undoUnlink() override;
 
     double mag() const override;
     EngravingItem* elementBase() const override;
 
-    void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all = true) override;
+    void scanElements(std::function<void(EngravingItem*)> func) override;
     void setTrack(track_idx_t val) override;
 
     int playTicks() const;
@@ -359,7 +357,8 @@ public:
 
     bool removeSpannerFor(Spanner* e) { return muse::remove(m_spannerFor, e); }
 
-    void transposeDiatonic(int interval, bool keepAlterations, bool useDoubleAccidentals);
+    bool transposeDiatonic(int interval, bool keepAlterations, bool useDoubleAccidentals);
+    bool transpose(Interval interval, bool useDoubleSharpsFlats);
 
     void localSpatiumChanged(double oldValue, double newValue) override;
     PropertyValue getProperty(Pid propertyId) const override;
@@ -401,6 +400,10 @@ public:
     bool hasSlideFromNote() const;
     SlideType slideToType() const { return m_slideToType; }
     SlideType slideFromType() const { return m_slideFromType; }
+
+    void setParenthesesMode(const ParenthesesMode& v, bool addToLinked = true, bool generated = false) override;
+
+    const NoteParenthesisInfo* parenInfo() const;
 
     void setHarmonic(bool val) { m_harmonic = val; }
     bool harmonic() const { return m_harmonic; }
@@ -452,8 +455,8 @@ private:
     void startDrag(EditData&) override;
     RectF drag(EditData& ed) override;
     void endDrag(EditData&) override;
-    void editDrag(EditData& editData) override;
 
+    void dragInEditMode(EditData& ed);
     void verticalDrag(EditData& ed);
     void horizontalDrag(EditData& ed);
 
@@ -484,7 +487,6 @@ private:
                                       // except if only one note is dotted
     bool m_fretConflict = false;      // used by TAB staves to mark a fretting conflict:
                                       // two or more notes on the same string
-    bool m_dragMode = false;
     bool m_isSmall = false;
     bool m_play = true;           // note is not played if false
     mutable bool m_mark = false;  // for use in sequencer
@@ -526,6 +528,8 @@ private:
     Tie* m_tieBack = nullptr;
 
     bool m_harmonic = false;
+
+    bool m_hasParens = false;
 
     ElementList m_el;          // fingering, other text, symbols or images
     std::vector<NoteDot*> m_dots;

@@ -25,8 +25,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "types/typesconv.h"
-
 #include "barline.h"
 #include "keysig.h"
 #include "measure.h"
@@ -34,6 +32,7 @@
 #include "staff.h"
 #include "system.h"
 #include "tempo.h"
+#include "text.h"
 
 #include "log.h"
 
@@ -54,6 +53,9 @@ static const ElementStyle voltaStyle {
     { Sid::voltaAlign,                         Pid::BEGIN_TEXT_ALIGN },
     { Sid::voltaAlign,                         Pid::CONTINUE_TEXT_ALIGN },
     { Sid::voltaAlign,                         Pid::END_TEXT_ALIGN },
+    { Sid::voltaPosition,                      Pid::BEGIN_TEXT_POSITION },
+    { Sid::voltaPosition,                      Pid::CONTINUE_TEXT_POSITION },
+    { Sid::voltaPosition,                      Pid::END_TEXT_POSITION },
     { Sid::voltaOffset,                        Pid::BEGIN_TEXT_OFFSET },
     { Sid::voltaOffset,                        Pid::CONTINUE_TEXT_OFFSET },
     { Sid::voltaOffset,                        Pid::END_TEXT_OFFSET },
@@ -74,13 +76,15 @@ static const ElementStyle voltaStyle {
 VoltaSegment::VoltaSegment(Volta* sp, System* parent)
     : TextLineBaseSegment(ElementType::VOLTA_SEGMENT, sp, parent, ElementFlag::MOVABLE | ElementFlag::ON_STAFF | ElementFlag::SYSTEM)
 {
+    m_text->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
+    m_endText->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
 }
 
 //---------------------------------------------------------
 //   propertyDelegate
 //---------------------------------------------------------
 
-EngravingItem* VoltaSegment::propertyDelegate(Pid pid)
+EngravingObject* VoltaSegment::propertyDelegate(Pid pid) const
 {
     if (pid == Pid::BEGIN_HOOK_TYPE || pid == Pid::END_HOOK_TYPE || pid == Pid::VOLTA_ENDING) {
         return spanner();
@@ -259,6 +263,19 @@ PropertyValue Volta::propertyDefault(Pid propertyId) const
     case Pid::PLACEMENT:
         return PlacementV::ABOVE;
 
+    case Pid::TEXT_STYLE:
+        return TextStyleType::VOLTA;
+
+    case Pid::BEGIN_FILLED_ARROW_HEIGHT:   // No arrow endings for voltas
+    case Pid::BEGIN_FILLED_ARROW_WIDTH:
+    case Pid::END_FILLED_ARROW_HEIGHT:
+    case Pid::END_FILLED_ARROW_WIDTH:
+    case Pid::BEGIN_LINE_ARROW_HEIGHT:
+    case Pid::BEGIN_LINE_ARROW_WIDTH:
+    case Pid::END_LINE_ARROW_HEIGHT:
+    case Pid::END_LINE_ARROW_WIDTH:
+        return 0.0;
+
     default:
         return TextLineBase::propertyDefault(propertyId);
     }
@@ -278,8 +295,8 @@ void Volta::setChannel() const
             return;
         }
 
-        Fraction startTick = startMeasure->tick() - Fraction::fromTicks(1);
-        Fraction endTick  = endMeasure->endTick() - Fraction::fromTicks(1);
+        Fraction startTick = startMeasure->tick() - Fraction::eps();
+        Fraction endTick  = endMeasure->endTick() - Fraction::eps();
         Staff* st = staff();
         for (voice_idx_t voice = 0; voice < VOICES; ++voice) {
             int channel = st->channel(startTick, voice);
@@ -301,8 +318,8 @@ void Volta::setTempo() const
         if (!endMeasure->repeatEnd()) {
             return;
         }
-        Fraction startTick = startMeasure->tick() - Fraction::fromTicks(1);
-        Fraction endTick  = endMeasure->endTick() - Fraction::fromTicks(1);
+        Fraction startTick = startMeasure->tick() - Fraction::eps();
+        Fraction endTick  = endMeasure->endTick() - Fraction::eps();
         BeatsPerSecond tempoBeforeVolta = score()->tempomap()->tempo(startTick.ticks());
         score()->setTempo(endTick, tempoBeforeVolta);
     }
@@ -331,12 +348,15 @@ PointF Volta::linePos(Grip grip, System** system) const
     bool isAtSystemStart = segment->rtick().isZero() && measure && measure->system() && measure->isFirstInSystem();
     bool searchForPrevBarline = start ? segment->rtick().isZero() && (measure->repeatStart() || !isAtSystemStart) : true;
 
+    SegmentType barlineType = start ? (SegmentType::StartRepeatBarLine | SegmentType::EndBarLine) : SegmentType::EndBarLine;
+
     if (searchForPrevBarline) {
         Segment* prev = segment;
-        while (prev && !prev->isType(SegmentType::BarLineType) && prev->tick() == segment->tick()) {
+        while (prev && !prev->isType(barlineType) && prev->tick() == segment->tick()) {
             prev = prev->prev1MMenabled();
         }
-        if (prev && prev->isType(SegmentType::BarLineType)) {
+
+        if (prev && prev->isType(barlineType)) {
             segment = prev;
         }
     }
@@ -384,7 +404,7 @@ PointF Volta::linePos(Grip grip, System** system) const
             x += segment->staffShape(si).right();
             x -= 0.5 * absoluteFromSpatium(lineWidth());
         } else if (segment->segmentType() & SegmentType::BarLineType) {
-            BarLine* barLine = toBarLine(segment->elementAt(track()));
+            BarLine* barLine = toBarLine(segment->element(track()));
             if (barLine->barLineType() == BarLineType::END_REPEAT || barLine->barLineType() == BarLineType::END_START_REPEAT) {
                 x += symWidth(SymId::repeatDot) + style().styleMM(Sid::repeatBarlineDotSeparation);
             }

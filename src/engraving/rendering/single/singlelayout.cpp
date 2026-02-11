@@ -24,6 +24,7 @@
 
 #include "draw/fontmetrics.h"
 
+#include "types/types.h"
 #include "types/typesconv.h"
 #include "types/symnames.h"
 
@@ -77,6 +78,7 @@
 #include "dom/rehearsalmark.h"
 #include "dom/slur.h"
 #include "dom/soundflag.h"
+#include "dom/spacer.h"
 #include "dom/stafftext.h"
 #include "dom/stafftypechange.h"
 #include "dom/sticking.h"
@@ -95,10 +97,12 @@
 #include "dom/trill.h"
 #include "dom/vibrato.h"
 #include "dom/volta.h"
+#include "dom/whammybar.h"
 
 #include "dom/utils.h"
 
 #include "rendering/score/tlayout.h"
+#include "rendering/score/textlayout.h"
 #include "rendering/score/tremololayout.h"
 #include "rendering/score/chordlayout.h"
 #include "rendering/score/slurtielayout.h"
@@ -123,6 +127,8 @@ void SingleLayout::layoutItem(EngravingItem* item)
     case ElementType::AMBITUS:      layout(toAmbitus(item), ctx);
         break;
     case ElementType::ARPEGGIO:     layout(toArpeggio(item), ctx);
+        break;
+    case ElementType::CHORD_BRACKET: layout(toChordBracket(item), ctx);
         break;
     case ElementType::ARTICULATION: layout(toArticulation(item), ctx);
         break;
@@ -244,6 +250,8 @@ void SingleLayout::layoutItem(EngravingItem* item)
         break;
     case ElementType::VOLTA:        layout(toVolta(item), ctx);
         break;
+    case ElementType::WHAMMY_BAR:   layout(toWhammyBar(item), ctx);
+        break;
     // drumset
     case ElementType::CHORD:        layout(toChord(item), ctx);
         break;
@@ -281,6 +289,8 @@ void SingleLayout::layoutLineSegment(LineSegment* item, const Context& ctx)
     case ElementType::VIBRATO_SEGMENT:   layout(toVibratoSegment(item), ctx);
         break;
     case ElementType::VOLTA_SEGMENT:     layout(toVoltaSegment(item), ctx);
+        break;
+    case ElementType::WHAMMY_BAR_SEGMENT: layout(toWhammyBarSegment(item), ctx);
         break;
     default:
         UNREACHABLE;
@@ -429,7 +439,7 @@ void SingleLayout::layout(Arpeggio* item, const Context& ctx)
     ldata->bottom = ldata->arpeggioHeight;
 
     ldata->setMag(item->staff() ? item->staff()->staffMag(item->tick()) : item->mag());
-    ldata->magS = ldata->mag() * (ctx.style().spatium() / SPATIUM20);
+    ldata->magS = ldata->mag() * (ctx.style().spatium() / ctx.style().defaultSpatium());
 
     std::shared_ptr<const IEngravingFont> font = ctx.engravingFont();
     switch (item->arpeggioType()) {
@@ -475,6 +485,20 @@ void SingleLayout::layout(Arpeggio* item, const Context& ctx)
     }
 }
 
+void SingleLayout::layout(ChordBracket* item, const Context& ctx)
+{
+    ChordBracket::LayoutData* ldata = item->mutldata();
+
+    ldata->arpeggioHeight = item->spatium() * 2;
+    ldata->top = 0.0;
+    ldata->bottom = ldata->arpeggioHeight;
+    ldata->setMag(1);
+    ldata->magS = 1;
+
+    double w  = ctx.style().styleS(Sid::chordBracketHookLen).toMM(item->spatium());
+    ldata->setBbox(RectF(0.0, ldata->top, w, ldata->bottom));
+}
+
 void SingleLayout::layout(Articulation* item, const Context& ctx)
 {
     RectF bbox;
@@ -491,14 +515,15 @@ void SingleLayout::layout(Articulation* item, const Context& ctx)
         text->setXmlText(TConv::text(item->textType()));
         text->setTrack(item->track());
         text->setParent(item);
-        text->setAlign(Align(AlignH::HCENTER, AlignV::VCENTER));
 
         layoutTextBase(item->text(), ctx, item->text()->mutldata());
+        bbox = text->ldata()->bbox();
     } else {
         bbox = item->symBbox(item->symId());
+        bbox.translate(-0.5 * bbox.width(), 0.0);
     }
 
-    item->setbbox(bbox.translated(-0.5 * bbox.width(), 0.0));
+    item->setbbox(bbox);
 }
 
 void SingleLayout::layout(BagpipeEmbellishment* item, const Context& ctx)
@@ -668,9 +693,7 @@ void SingleLayout::layout(Bend* item, const Context&)
 
             int idx = (pitch + 12) / 25;
             const char* l = Bend::label[idx];
-            bb.unite(fm.boundingRect(RectF(x2, y2, 0, 0),
-                                     muse::draw::AlignHCenter | muse::draw::AlignBottom | muse::draw::TextDontClip,
-                                     String::fromAscii(l)));
+            bb.unite(fm.boundingRect(String::fromAscii(l)));
             y = y2;
         }
         if (pitch == item->points().at(pt + 1).pitch) {
@@ -695,9 +718,7 @@ void SingleLayout::layout(Bend* item, const Context&)
 
             int idx = (item->points().at(pt + 1).pitch + 12) / 25;
             const char* l = Bend::label[idx];
-            bb.unite(fm.boundingRect(RectF(x2, y2, 0, 0),
-                                     muse::draw::AlignHCenter | muse::draw::AlignBottom | muse::draw::TextDontClip,
-                                     String::fromAscii(l)));
+            bb.unite(fm.boundingRect(String::fromAscii(l)));
         } else {
             // down
             x2 = x + spatium * .5;
@@ -1056,6 +1077,7 @@ void SingleLayout::layout(HammerOnPullOffSegment* item, const Context& ctx)
     align.vertical = AlignV::BASELINE;
     align.horizontal = AlignH::HCENTER;
     hopoText->setAlign(align);
+    hopoText->setPosition(AlignH::HCENTER);
     layoutTextBase(hopoText, ctx, hopoText->mutldata());
 
     RectF bbox = item->ldata()->bbox();
@@ -1071,6 +1093,7 @@ void SingleLayout::layout(HammerOnPullOffSegment* item, const Context& ctx)
 void SingleLayout::layout(HairpinSegment* item, const Context& ctx)
 {
     const double spatium = item->spatium();
+    HairpinSegment::LayoutData* ldata = item->mutldata();
 
     HairpinType type = item->hairpin()->hairpinType();
     if (item->hairpin()->isLineType()) {
@@ -1163,11 +1186,11 @@ void SingleLayout::layout(HairpinSegment* item, const Context& ctx)
             item->setCircledTip(t.map(item->circledTip()));
         }
 
-        item->pointsRef()[0] = l1.p1();
-        item->pointsRef()[1] = l1.p2();
-        item->pointsRef()[2] = l2.p1();
-        item->pointsRef()[3] = l2.p2();
-        item->npointsRef()   = 4;
+        ldata->points[0] = l1.p1();
+        ldata->points[1] = l1.p2();
+        ldata->points[2] = l2.p1();
+        ldata->points[3] = l2.p2();
+        ldata->npoints   = 4;
 
         RectF r = RectF(l1.p1(), l1.p2()).normalized().united(RectF(l2.p1(), l2.p2()).normalized());
         if (!item->text()->empty()) {
@@ -1353,7 +1376,7 @@ void SingleLayout::layout(LetRingSegment* item, const Context& ctx)
 
 void SingleLayout::layout(Lyrics* item, const Context& ctx)
 {
-    layoutTextBase(static_cast<TextBase*>(item), ctx, item->mutldata());
+    layoutTextBase(toTextBase(item), ctx, item->mutldata());
 }
 
 void SingleLayout::layout(NoteHead* item, const Context& ctx)
@@ -1414,28 +1437,7 @@ void SingleLayout::layout(MeasureRepeat* item, const Context& ctx)
 
 void SingleLayout::layout(Ornament* item, const Context& ctx)
 {
-    double spatium = item->spatium();
-    double vertMargin = 0.35 * spatium;
-    constexpr double ornamentAccidentalMag = 0.6; // TODO: style?
-
-    if (!item->showCueNote()) {
-        for (size_t i = 0; i < item->accidentalsAboveAndBelow().size(); ++i) {
-            bool above = (i == 0);
-            Accidental* accidental = item->accidentalsAboveAndBelow()[i];
-            if (!accidental) {
-                continue;
-            }
-            accidental->computeMag();
-            accidental->mutldata()->setMag(accidental->mag() * ornamentAccidentalMag);
-            layout(accidental, ctx);
-            Shape accidentalShape = accidental->shape();
-            double minVertDist = above
-                                 ? accidentalShape.minVerticalDistance(item->ldata()->bbox())
-                                 : Shape(item->ldata()->bbox()).minVerticalDistance(accidentalShape);
-            accidental->setPos(-0.5 * accidental->width(), above ? (-minVertDist - vertMargin) : (minVertDist + vertMargin));
-        }
-        return;
-    }
+    layout(toArticulation(item), ctx);
 }
 
 void SingleLayout::layout(Ottava* item, const Context& ctx)
@@ -1511,7 +1513,49 @@ void SingleLayout::layout(Slur* item, const Context& ctx)
 
 void SingleLayout::layout(Spacer* item, const Context&)
 {
-    UNUSED(item);
+    Spacer::LayoutData* ldata = item->mutldata();
+
+    double spatium = item->spatium();
+
+    PainterPath path = PainterPath();
+    double w = spatium;
+    double b = w * .5;
+    double h = item->explicitParent() ? item->absoluteGap() : std::min(item->gap(), 4.0_sp).toMM(spatium).val();       // limit length for palette
+
+    switch (item->spacerType()) {
+    case SpacerType::DOWN:
+        path.lineTo(w, 0.0);
+        path.moveTo(b, 0.0);
+        path.lineTo(b, h);
+        path.lineTo(0.0, h - b);
+        path.moveTo(b, h);
+        path.lineTo(w, h - b);
+        break;
+    case SpacerType::UP:
+        path.moveTo(b, 0.0);
+        path.lineTo(0.0, b);
+        path.moveTo(b, 0.0);
+        path.lineTo(w, b);
+        path.moveTo(b, 0.0);
+        path.lineTo(b, h);
+        path.moveTo(0.0, h);
+        path.lineTo(w, h);
+        break;
+    case SpacerType::FIXED:
+        path.lineTo(w, 0.0);
+        path.moveTo(b, 0.0);
+        path.lineTo(b, h);
+        path.moveTo(0.0, h);
+        path.lineTo(w, h);
+        break;
+    }
+    ldata->path = path;
+    double lw = spatium * 0.4;
+    RectF bb(0, 0, w, h);
+    bb.adjust(-lw, -lw, lw, lw);
+    ldata->setBbox(bb);
+
+    item->setZ(0.0);
 }
 
 void SingleLayout::layout(StaffText* item, const Context& ctx)
@@ -1609,7 +1653,7 @@ void SingleLayout::layout(Stem* item, const Context& ctx)
 
 void SingleLayout::layout(Sticking* item, const Context& ctx)
 {
-    layoutTextBase(static_cast<TextBase*>(item), ctx, item->mutldata());
+    layoutTextBase(toTextBase(item), ctx, item->mutldata());
 }
 
 void SingleLayout::layout(TempoText* item, const Context& ctx)
@@ -1860,6 +1904,8 @@ void SingleLayout::layout(VibratoSegment* item, const Context&)
     case VibratoType::VIBRATO_SAWTOOTH_WIDE:
         item->symbolLine(SymId::wiggleSawtoothWide, SymId::wiggleSawtoothWide);
         break;
+    default:
+        break;
     }
 
     item->setOffset(PointF());
@@ -1870,16 +1916,36 @@ void SingleLayout::layout(Volta* item, const Context& ctx)
     layoutLine(item, ctx);
 }
 
+void SingleLayout::layout(WhammyBar* item, const Context& ctx)
+{
+    layoutLine(item, ctx);
+}
+
 void SingleLayout::layout(VoltaSegment* item, const Context& ctx)
 {
     layoutTextLineBaseSegment(item, ctx);
     item->setOffset(PointF());
-    item->text()->setOffset(PointF(10.0, 54.0)); //! TODO
+
+    double spatium = ctx.style().spatium();
+    double hookHeight = item->volta()->beginHookHeight().toMM(spatium);
+    if (item->text()) {
+        Text* text = item->text();
+        text->setParent(item);
+        RectF textBBox = text->ldata()->bbox().translated(text->pos());
+        text->mutldata()->moveY(hookHeight - textBBox.bottom());
+        text->mutldata()->moveX(0.5 * spatium);
+    }
+}
+
+void SingleLayout::layout(WhammyBarSegment* item, const Context& ctx)
+{
+    layoutTextLineBaseSegment(item, ctx);
+    item->setOffset(PointF());
 }
 
 void SingleLayout::layout(Text* item, const Context& ctx)
 {
-    layoutTextBase(static_cast<TextBase*>(item), ctx, item->mutldata());
+    layoutTextBase(toTextBase(item), ctx, item->mutldata());
 }
 
 void SingleLayout::layoutTextBase(const TextBase* item, const Context& ctx, TextBase::LayoutData* ldata)
@@ -1894,19 +1960,60 @@ void SingleLayout::layoutTextBase(const TextBase* item, const Context& ctx, Text
     layout1TextBase(item, ctx, ldata);
 }
 
+static void textHorizontalLayout(const TextBase* item, Shape& shape, double maxBlockWidth, TextBase::LayoutData* ldata)
+{
+    // Position and alignment
+    for (size_t i = 0; i < ldata->blocks.size(); ++i) {
+        TextBlock& textBlock = ldata->blocks[i];
+        double xAdj = -textBlock.boundingRect().left();
+
+        // Set position relative to reference point
+        AlignH position = item->position();
+        if (position == AlignH::HCENTER) {
+            xAdj += (-maxBlockWidth) * .5;
+        } else if (position == AlignH::RIGHT) {
+            xAdj += -maxBlockWidth;
+        }
+
+        double diff = maxBlockWidth - textBlock.boundingRect().width();
+        if (muse::RealIsNull(diff)) {
+            // This is the longest line, don't align
+            for (TextFragment& f : textBlock.fragments()) {
+                f.pos.rx() += xAdj;
+            }
+            textBlock.shape().translate(PointF(xAdj, 0.0));
+            shape.add(textBlock.shape().translated(PointF(0.0, textBlock.y())));
+            continue;
+        }
+        // Align relative to the longest line
+        AlignH alignH = item->align().horizontal;
+        if (alignH == AlignH::HCENTER) {
+            xAdj += diff * 0.5;
+        } else if (alignH == AlignH::RIGHT) {
+            xAdj += diff;
+        }
+
+        for (TextFragment& fragment : textBlock.fragments()) {
+            fragment.pos.rx() += xAdj;
+        }
+        textBlock.shape().translate(PointF(xAdj, 0.0));
+        shape.add(textBlock.shape().translated(PointF(0.0, textBlock.y())));
+    }
+}
+
 void SingleLayout::layout1TextBase(const TextBase* item, const Context&, TextBase::LayoutData* ldata)
 {
     if (ldata->layoutInvalid) {
         item->createBlocks(ldata);
     }
 
-    RectF bb;
     double y = 0;
 
+    double maxBlockWidth = -DBL_MAX;
     // adjust the bounding box for the text item
     for (size_t i = 0; i < ldata->rows(); ++i) {
         TextBlock& t = ldata->blocks[i];
-        t.layout(item);
+        TextLayout::layoutTextBlock(&t, item);
         const RectF* r = &t.boundingRect();
 
         if (r->height() == 0) {
@@ -1914,8 +2021,14 @@ void SingleLayout::layout1TextBase(const TextBase* item, const Context&, TextBas
         }
         y += t.lineSpacing();
         t.setY(y);
-        bb |= r->translated(0.0, y);
+        maxBlockWidth = std::max(maxBlockWidth, t.boundingRect().width());
     }
+
+    Shape shape;
+    textHorizontalLayout(item, shape, maxBlockWidth, ldata);
+
+    RectF bb = shape.bbox();
+
     double yoff = 0;
     double h    = 0;
 
@@ -1946,7 +2059,7 @@ void SingleLayout::layout1TextBase(const TextBase* item, const Context&, TextBas
 void SingleLayout::layoutLine(SLine* item, const Context& ctx)
 {
     if (item->spannerSegments().empty()) {
-        item->setLen(ctx.style().spatium() * 7);
+        item->setLen(ctx.style().spatium() * 8);
     }
 
     LineSegment* lineSegm = item->frontSegment();
@@ -1955,10 +2068,62 @@ void SingleLayout::layoutLine(SLine* item, const Context& ctx)
     item->setbbox(lineSegm->ldata()->bbox(LD_ACCESS::BAD));
 }
 
+static PolygonF createArrow(bool start, bool filled, PointF& startPoint, PointF& endPoint, const TextLineBase* tl)
+{
+    double arrowWidth = 0.0;
+    double arrowHeight = 0.0;
+    if (filled) {
+        arrowWidth = tl->absoluteFromSpatium(start ? tl->beginFilledArrowWidth() : tl->endFilledArrowWidth());
+        arrowHeight = tl->absoluteFromSpatium(start ? tl->beginFilledArrowHeight() : tl->endFilledArrowHeight());
+    } else {
+        arrowWidth = tl->absoluteFromSpatium(start ? tl->beginLineArrowWidth() : tl->endLineArrowWidth());
+        arrowHeight = tl->absoluteFromSpatium(start ? tl->beginLineArrowHeight() : tl->endLineArrowHeight());
+    }
+
+    PolygonF arrow;
+    if (start) {
+        arrow << PointF(0.0, -arrowHeight / 2) << PointF(-arrowWidth, 0.0) << PointF(0.0, arrowHeight / 2);  // left
+    } else {
+        arrow << PointF(0.0, -arrowHeight / 2) << PointF(arrowWidth, 0.0) << PointF(0.0, arrowHeight / 2);  // right
+    }
+
+    PointF arrowAdjust = PointF(arrowWidth, 0.0);
+    arrowAdjust = (start ? 1.0 : -1.0) * arrowAdjust;
+    arrow.translate(arrowAdjust);
+
+    const double yDiff = endPoint.y() - startPoint.y();
+    const double xDiff = endPoint.x() - startPoint.x();
+    const double rotate = atan(yDiff / xDiff) + (endPoint.x() < startPoint.x() ? M_PI : 0.0);
+
+    Transform t;
+    t.rotateRadians(rotate);
+
+    for (PointF& p : arrow) {
+        p = t.map(p);
+    }
+
+    if (start) {
+        arrow.translate(startPoint);
+    } else {
+        arrow.translate(endPoint);
+    }
+
+    const PointF lineVector = endPoint - startPoint;
+    const PointF unitVector = lineVector.normalized();
+    const double reduction = filled ? arrowWidth : tl->absoluteFromSpatium(tl->lineWidth()) / 2;
+    if (start) {
+        startPoint += reduction * unitVector;
+    } else {
+        endPoint -= reduction * unitVector;
+    }
+
+    return arrow;
+}
+
 void SingleLayout::layoutTextLineBaseSegment(TextLineBaseSegment* item, const Context& ctx)
 {
     TextLineBaseSegment::LayoutData* ldata = item->mutldata();
-    item->npointsRef() = 0;
+    ldata->npoints = 0;
     TextLineBase* tl = item->textLineBase();
     double spatium = tl->spatium();
 
@@ -2029,8 +2194,8 @@ void SingleLayout::layoutTextLineBaseSegment(TextLineBaseSegment* item, const Co
     }
 
     if (!item->textLineBase()->textSizeSpatiumDependent()) {
-        item->text()->setSize(item->text()->size() * SPATIUM20 / item->spatium());
-        item->endText()->setSize(item->endText()->size() * SPATIUM20 / item->spatium());
+        item->text()->setSize(item->text()->size() * item->defaultSpatium() / item->spatium());
+        item->endText()->setSize(item->endText()->size() * item->defaultSpatium() / item->spatium());
     }
 
     PointF pp1;
@@ -2040,10 +2205,10 @@ void SingleLayout::layoutTextLineBaseSegment(TextLineBaseSegment* item, const Co
     if (item->text()->empty() && item->endText()->empty()
         && (!item->isSingleBeginType() || tl->beginHookType() == HookType::NONE)
         && (!item->isSingleEndType() || tl->endHookType() == HookType::NONE)) {
-        item->npointsRef() = 2;
-        item->pointsRef()[0] = pp1;
-        item->pointsRef()[1] = pp2;
-        item->setLineLength(sqrt(PointF::dotProduct(pp2 - pp1, pp2 - pp1)));
+        ldata->npoints = 2;
+        ldata->points[0] = pp1;
+        ldata->points[1] = pp2;
+        ldata->lineLength = sqrt(PointF::dotProduct(pp2 - pp1, pp2 - pp1));
 
         item->setbbox(TextLineBaseSegment::boundingBoxOfLine(pp1, pp2, tl->absoluteFromSpatium(tl->lineWidth()) / 2,
                                                              tl->lineStyle() == LineType::DOTTED));
@@ -2166,18 +2331,63 @@ void SingleLayout::layoutTextLineBaseSegment(TextLineBaseSegment* item, const Co
             return;
         }
 
-        if (item->isSingleBeginType() && tl->beginHookType() != HookType::NONE) {
+        bool beginArrow = isSingleOrBegin && (tl->beginHookType() == HookType::ARROW_FILLED || tl->beginHookType() == HookType::ARROW);
+        bool endArrow = item->isSingleEndType() && (tl->endHookType() == HookType::ARROW_FILLED || tl->endHookType() == HookType::ARROW);
+
+        if (beginArrow || endArrow) {
+            if (beginArrow) {
+                bool filled = tl->beginHookType() == HookType::ARROW_FILLED;
+                ldata->beginArrow = createArrow(true, filled, pp1, pp2, tl);
+            }
+            if (endArrow) {
+                bool filled = tl->endHookType() == HookType::ARROW_FILLED;
+                ldata->endArrow = createArrow(false, filled, pp1, pp2, tl);
+            }
+        }
+
+        auto hasHook = [](HookType type) -> bool {
+            switch (type) {
+            case HookType::HOOK_45:
+            case HookType::HOOK_90:
+            case HookType::HOOK_90T:
+                return true;
+            case HookType::NONE:
+            case HookType::ARROW:
+            case HookType::ARROW_FILLED:
+            case HookType::ROSETTE:
+                return false;
+            default:
+                break;
+            }
+            return false;
+        };
+
+        const bool beginHook = isSingleOrBegin && hasHook(tl->beginHookType());
+        const bool endHook = isSingleOrBegin && hasHook(tl->endHookType());
+
+        if (!beginHook && !endHook) {
+            ldata->npoints = 2;
+            ldata->points[0] = pp1;
+            ldata->points[1] = pp2;
+            ldata->lineLength = sqrt(PointF::dotProduct(pp2 - pp1, pp2 - pp1));
+
+            item->setbbox(TextLineBaseSegment::boundingBoxOfLine(pp1, pp2, tl->absoluteFromSpatium(tl->lineWidth()) / 2,
+                                                                 tl->lineStyle() == LineType::DOTTED));
+            return;
+        }
+
+        if (beginHook) {
             // We use the term "endpoint" for the point that does not touch the main line.
-            const PointF& beginHookEndpoint = item->pointsRef()[item->npointsRef()++]
+            const PointF& beginHookEndpoint = ldata->points[ldata->npoints++]
                                                   = PointF(pp1.x() - beginHookWidth, pp1.y() + beginHookHeight);
 
             if (tl->beginHookType() == HookType::HOOK_90T) {
                 // A T-hook needs to be drawn separately, so we add an extra point
-                item->pointsRef()[item->npointsRef()++] = PointF(pp1.x() - beginHookWidth, pp1.y() - beginHookHeight);
+                ldata->points[ldata->npoints++] = PointF(pp1.x() - beginHookWidth, pp1.y() - beginHookHeight);
             } else if (tl->lineStyle() != LineType::SOLID) {
                 // For non-solid lines, we also draw the hook separately,
                 // so that we can distribute the dashes/dots for each linepiece individually
-                PointF& beginHookStartpoint = item->pointsRef()[item->npointsRef()++] = pp1;
+                PointF& beginHookStartpoint = ldata->points[ldata->npoints++] = pp1;
 
                 if (tl->lineStyle() == LineType::DASHED) {
                     // For dashes lines, we extend the lines somewhat,
@@ -2188,19 +2398,19 @@ void SingleLayout::layoutTextLineBaseSegment(TextLineBaseSegment* item, const Co
             }
         }
 
-        item->pointsRef()[item->npointsRef()++] = pp1;
-        PointF& pp22 = item->pointsRef()[item->npointsRef()++] = pp2; // Keep a reference so that we can modify later
+        ldata->points[ldata->npoints++] = pp1;
+        PointF& pp22 = ldata->points[ldata->npoints++] = pp2; // Keep a reference so that we can modify later
 
-        if (item->isSingleEndType() && tl->endHookType() != HookType::NONE) {
+        if (endHook) {
             const PointF endHookEndpoint = PointF(pp2.x() + endHookWidth, pp2.y() + endHookHeight);
 
             if (tl->endHookType() == HookType::HOOK_90T) {
                 // A T-hook needs to be drawn separately, so we add an extra point
-                item->pointsRef()[item->npointsRef()++] = PointF(pp2.x() + endHookWidth, pp2.y() - endHookHeight);
+                ldata->points[ldata->npoints++] = PointF(pp2.x() + endHookWidth, pp2.y() - endHookHeight);
             } else if (tl->lineStyle() != LineType::SOLID) {
                 // For non-solid lines, we also draw the hook separately,
                 // so that we can distribute the dashes/dots for each linepiece individually
-                PointF& endHookStartpoint = item->pointsRef()[item->npointsRef()++] = pp2;
+                PointF& endHookStartpoint = ldata->points[ldata->npoints++] = pp2;
 
                 if (tl->lineStyle() == LineType::DASHED) {
                     bool checkAngle = tl->endHookType() == HookType::HOOK_45 || tl->diagonal();
@@ -2211,9 +2421,9 @@ void SingleLayout::layoutTextLineBaseSegment(TextLineBaseSegment* item, const Co
                 }
             }
 
-            item->pointsRef()[item->npointsRef()++] = endHookEndpoint;
+            ldata->points[ldata->npoints++] = endHookEndpoint;
         }
 
-        item->setLineLength(sqrt(PointF::dotProduct(pp22 - pp1, pp22 - pp1)));
+        ldata->lineLength = sqrt(PointF::dotProduct(pp22 - pp1, pp22 - pp1));
     }
 }

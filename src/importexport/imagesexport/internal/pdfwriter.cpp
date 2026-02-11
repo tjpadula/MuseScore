@@ -73,6 +73,12 @@ Ret PdfWriter::write(INotationPtr notation, io::IODevice& destinationDevice, con
     opt.onNewPage = [&pdfWriter]() { pdfWriter.newPage(); };
     opt.printPageBackground = !TRANSPARENT_BACKGROUND;
 
+    auto pageNumIt = options.find(OptionKey::PAGE_NUMBER);
+    if (pageNumIt != options.end()) {
+        opt.fromPage = pageNumIt->second.toInt();
+        opt.toPage = opt.fromPage;
+    }
+
     notation->painting()->paintPdf(&painter, opt);
 
     painter.endDraw();
@@ -148,4 +154,10 @@ void PdfWriter::preparePdfWriter(QPdfWriter& pdfWriter, const QString& title, co
     pdfWriter.setTitle(title);
     pdfWriter.setPageMargins(QMarginsF());
     pdfWriter.setPageLayout(QPageLayout(QPageSize(size, QPageSize::Inch), QPageLayout::Orientation::Portrait, QMarginsF()));
+
+    if (configuration()->exportPdfWithGrayscale()) {
+        pdfWriter.setColorModel(QPdfWriter::ColorModel::Grayscale);
+    } else {
+        pdfWriter.setColorModel(QPdfWriter::ColorModel::Auto);
+    }
 }

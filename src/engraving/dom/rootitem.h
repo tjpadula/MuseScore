@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_ROOTITEM_H
-#define MU_ENGRAVING_ROOTITEM_H
+
+#pragma once
 
 #include "engravingitem.h"
 
@@ -39,8 +39,6 @@ public:
     compat::DummyElement* dummy() const;
     void init();
 
-    EngravingObject* scanParent() const override;
-
     EngravingItem* clone() const override { return nullptr; }
     PropertyValue getProperty(Pid) const override { return PropertyValue(); }
     bool setProperty(Pid, const PropertyValue&) override { return false; }
@@ -51,9 +49,6 @@ private:
     AccessibleItemPtr createAccessible() override;
 #endif
 
-    Score* m_score = nullptr;
     compat::DummyElement* m_dummy = nullptr;
 };
 }
-
-#endif // MU_ENGRAVING_ROOTITEM_H

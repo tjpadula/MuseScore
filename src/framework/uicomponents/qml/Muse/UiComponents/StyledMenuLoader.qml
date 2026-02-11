@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,9 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import QtQuick 2.15
+pragma ComponentBehavior: Bound
 
-import Muse.UiComponents 1.0
+import QtQuick
+
+import Muse.UiComponents
 
 import "internal"
 
@@ -65,7 +67,7 @@ Loader {
         focusPolicies: PopupView.NoFocus
 
         accessibleName: loader.accessibleName
-
+        hasSiblingMenus: loader.hasSiblingMenus
         parentWindow: loader.parentWindow
 
         onHandleMenuItem: function(itemId) {
@@ -137,6 +139,9 @@ Loader {
 
         menu.closeSubMenu()
 
+        menu.model = model
+        menu.calculateSize()
+
         if (x !== -1) {
             menu.x = x
         }
@@ -144,10 +149,6 @@ Loader {
         if (y !== -1) {
             menu.y = y
         }
-
-        menu.model = model
-
-        Qt.callLater(menu.calculateSize)
     }
 
     Timer {

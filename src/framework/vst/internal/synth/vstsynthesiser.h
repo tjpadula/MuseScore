@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,8 +23,8 @@
 
 #include <memory>
 
-#include "audio/worker/internal/synthesizers/abstractsynthesizer.h"
-#include "audio/worker/iaudioworkerconfiguration.h"
+#include "audio/engine/internal/synthesizers/abstractsynthesizer.h"
+#include "audio/engine/iaudioengineconfiguration.h"
 #include "audio/common/audiotypes.h"
 #include "modularity/ioc.h"
 #include "mpe/events.h"
@@ -37,8 +37,8 @@
 namespace muse::vst {
 class VstSynthesiser : public muse::audio::synth::AbstractSynthesizer
 {
+    GlobalInject<audio::engine::IAudioEngineConfiguration> config;
     Inject<IVstInstancesRegister> instancesRegister = { this };
-    Inject<audio::worker::IAudioWorkerConfiguration> config = { this };
 
 public:
     explicit VstSynthesiser(const muse::audio::TrackId trackId, const muse::audio::AudioInputParams& params,
@@ -52,7 +52,6 @@ public:
     muse::audio::AudioSourceType type() const override;
     std::string name() const override;
 
-    void revokePlayingNotes() override;
     void flushSound() override;
 
     void setupSound(const mpe::PlaybackSetupData& setupData) override;
@@ -72,6 +71,8 @@ public:
     muse::audio::samples_t process(float* buffer, muse::audio::samples_t samplesPerChannel) override;
 
 private:
+    void updateRenderingMode(const audio::RenderMode mode) override;
+
     void toggleVolumeGain(const bool isActive);
     audio::samples_t processSequence(const VstSequencer::EventSequence& sequence, const audio::samples_t samples, float* buffer);
 
@@ -85,6 +86,7 @@ private:
 
     muse::audio::TrackId m_trackId = muse::audio::INVALID_TRACK_ID;
 
+    bool m_inited = false;
     bool m_useDynamicEvents = false;
 };
 

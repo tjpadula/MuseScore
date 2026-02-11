@@ -24,21 +24,20 @@
 
 #include <QMimeData>
 
-#include "internal/qmimedataadapter.h"
+#include "engraving/internal/qmimedataadapter.h"
 
-#include "dom/chord.h"
-#include "dom/chordrest.h"
-#include "dom/durationtype.h"
-#include "dom/masterscore.h"
-#include "dom/measure.h"
-#include "dom/note.h"
-#include "dom/segment.h"
+#include "engraving/dom/chord.h"
+#include "engraving/dom/chordrest.h"
+#include "engraving/dom/durationtype.h"
+#include "engraving/dom/masterscore.h"
+#include "engraving/dom/measure.h"
+#include "engraving/dom/note.h"
+#include "engraving/dom/segment.h"
 
 #include "utils/scorerw.h"
 #include "utils/scorecomp.h"
 #include "utils/testutils.h"
 
-using namespace mu;
 using namespace mu::engraving;
 
 static const String COPYPASTE_DATA_DIR(u"copypaste_data/");
@@ -296,7 +295,7 @@ TEST_F(Engraving_CopyPasteTests, copypaste2Voice5)
     //paste to quarter rest
     EngravingItem* dest = m1->first()->next(segTypeCR)->next(segTypeCR)->next(segTypeCR)->element(0);
     EXPECT_TRUE(dest->isRest());
-    EXPECT_EQ(static_cast<ChordRest*>(dest)->durationType(), DurationType::V_QUARTER);
+    EXPECT_EQ(toChordRest(dest)->durationType(), DurationType::V_QUARTER);
     score->select(dest);
 
     score->startCmd(TranslatableString::untranslatable("Copy/paste tests"));
@@ -335,7 +334,7 @@ TEST_F(Engraving_CopyPasteTests, copypaste2Voice6)
     EngravingItem* dest = m1->first(segTypeCR)->next(segTypeCR)->next(segTypeCR)->next(segTypeCR)->next(segTypeCR)->element(0);
 
     EXPECT_TRUE(dest->isRest());
-    EXPECT_EQ(static_cast<ChordRest*>(dest)->durationType(), DurationType::V_16TH);
+    EXPECT_EQ(toChordRest(dest)->durationType(), DurationType::V_16TH);
     score->select(dest);
 
     score->startCmd(TranslatableString::untranslatable("Copy/paste tests"));

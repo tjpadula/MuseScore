@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -38,6 +38,7 @@
 
 #include "log.h"
 
+// #define MUSE_MODULE_ACCESSIBILITY_TRACE
 #ifdef MUSE_MODULE_ACCESSIBILITY_TRACE
 #define MYLOG() LOGI()
 #else
@@ -157,6 +158,18 @@ void AccessibilityController::reg(IAccessible* item)
         init();
     }
 
+    if (item != this) {
+        if (!item->accessibleParent()) {
+            MYLOG() << "Skipping item with no parent: " << item->accessibleName();
+            return;
+        }
+
+        if (!m_allItems.contains(item->accessibleParent())) {
+            MYLOG() << "Skipping item with unregistered parent: " << item->accessibleName();
+            return;
+        }
+    }
+
     if (findItem(item).isValid()) {
         LOGW() << "Already registered";
         return;
@@ -187,6 +200,16 @@ void AccessibilityController::reg(IAccessible* item)
     // VoiceOver: Use QObject not QAccessibleInterface in QAccessible…Event() constructors.
     QAccessibleEvent ev(it.object, QAccessible::ObjectCreated);
     sendEvent(&ev);
+
+    // Register children
+    size_t childCount = item->accessibleChildCount();
+    for (size_t i = 0; i < childCount; ++i) {
+        IAccessible* child = item->accessibleChild(i);
+        if (m_allItems.contains(child)) {
+            continue;
+        }
+        reg(child);
+    }
 }
 
 void AccessibilityController::unreg(IAccessible* aitem)
@@ -592,7 +615,10 @@ void AccessibilityController::restoreFocus()
                               // Must do this before sending focus changed events.
 
     const Item& restore = findItem(m_lastFocused);
-    IF_ASSERT_FAILED(restore.isValid() && restore.item != pretendItem) {
+    //! FIXME we just need to open the project and close the project tab after opening it
+    //! will triggered this assert
+    //IF_ASSERT_FAILED(restore.isValid() && restore.item != pretendItem) {
+    if (!(restore.isValid() && restore.item != pretendItem)) {
         return;
     }
 

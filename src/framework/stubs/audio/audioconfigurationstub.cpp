@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -24,23 +24,28 @@
 using namespace muse::audio;
 using namespace muse;
 
-AudioWorkerConfig AudioConfigurationStub::workerConfig() const
+AudioEngineConfig AudioConfigurationStub::engineConfig() const
 {
     return {};
 }
 
-std::vector<std::string> AudioConfigurationStub::availableAudioApiList() const
+std::string AudioConfigurationStub::defaultAudioApi() const
 {
     return {};
 }
 
 std::string AudioConfigurationStub::currentAudioApi() const
 {
-    return std::string();
+    return {};
 }
 
 void AudioConfigurationStub::setCurrentAudioApi(const std::string&)
 {
+}
+
+async::Notification AudioConfigurationStub::currentAudioApiChanged() const
+{
+    return {};
 }
 
 std::string AudioConfigurationStub::audioOutputDeviceId() const
@@ -74,16 +79,6 @@ void AudioConfigurationStub::setDriverBufferSize(unsigned int)
 async::Notification AudioConfigurationStub::driverBufferSizeChanged() const
 {
     return async::Notification();
-}
-
-samples_t AudioConfigurationStub::samplesToPreallocate() const
-{
-    return 0;
-}
-
-async::Channel<samples_t> AudioConfigurationStub::samplesToPreallocateChanged() const
-{
-    return async::Channel<samples_t>();
 }
 
 unsigned int AudioConfigurationStub::sampleRate() const

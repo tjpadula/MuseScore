@@ -18,6 +18,7 @@ enum class ConvertType {
     ExportScoreParts,
     ExportScorePartsPdf,
     ExportScoreTranspose,
+    ExportScoreElements,
     SourceUpdate,
     ExportScoreVideo
 };
@@ -36,11 +37,13 @@ struct CmdOptions {
         StylePath,
         ScoreSource,
         ScoreTransposeOptions,
+        ScoreElementsOptions,
         ForceMode,
+        UnrollRepeats,
         SoundProfile,
-        ExtensionUri
-
-        // Video
+        ExtensionUri,
+        PageNumber,
+        ScoreRegion,
     };
 
     muse::IApplication::RunMode runMode = muse::IApplication::RunMode::GuiApp;

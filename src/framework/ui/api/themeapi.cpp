@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -837,11 +837,7 @@ QSize ProxyStyle::sizeFromContents(QStyle::ContentsType type, const QStyleOption
     case CT_LineEdit:
         return proxyStyleSize.expandedTo(QSize(30, 30));
     case CT_SpinBox:
-#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
         return QSize(proxyStyleSize.width(), 26); // results in a height of 30
-#else
-        return QSize(proxyStyleSize.width(), 32); // results in a height of 30
-#endif
     case CT_GroupBox: {
         const QGroupBox* groupBox = qobject_cast<const QGroupBox*>(widget);
         const bool checkable = groupBox && groupBox->isCheckable();

@@ -30,7 +30,7 @@
 #include "async/notification.h"
 
 namespace mu::appshell {
-class IAppShellConfiguration : MODULE_EXPORT_INTERFACE
+class IAppShellConfiguration : MODULE_GLOBAL_EXPORT_INTERFACE
 {
     INTERFACE_ID(IAppshellConfiguration)
 
@@ -62,6 +62,7 @@ public:
 
     virtual std::string handbookUrl() const = 0;
     virtual std::string askForHelpUrl() const = 0;
+    virtual std::string accessibilityStatementUrl() const = 0;
     virtual std::string museScoreUrl() const = 0;
     virtual std::string museScoreForumUrl() const = 0;
     virtual std::string museScoreContributionUrl() const = 0;

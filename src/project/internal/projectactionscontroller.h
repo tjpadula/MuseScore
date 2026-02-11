@@ -19,12 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_PROJECT_PROJECTACTIONSCONTROLLER_H
-#define MU_PROJECT_PROJECTACTIONSCONTROLLER_H
+
+#pragma once
 
 #include "iprojectfilescontroller.h"
 
 #include <QObject>
+#include <QString>
 
 #include "modularity/ioc.h"
 #include "iinteractive.h"
@@ -37,11 +38,11 @@
 #include "cloud/audiocom/iaudiocomservice.h"
 #include "playback/iplaybackcontroller.h"
 #include "print/iprintprovider.h"
+#include "iexportprojectscenario.h"
 #include "inotationreadersregister.h"
 #include "iopensaveprojectscenario.h"
 #include "imscmetareader.h"
 #include "io/ifilesystem.h"
-#include "internal/iexportprojectscenario.h"
 #include "notation/inotationconfiguration.h"
 #include "musesounds/imusesoundscheckupdatescenario.h"
 #include "musesounds/imusesamplercheckupdatescenario.h"
@@ -58,7 +59,10 @@ namespace mu::project {
 class ProjectActionsController : public IProjectFilesController, public muse::mi::IProjectProvider, public muse::Injectable,
     public muse::actions::Actionable, public muse::async::Asyncable
 {
-    muse::Inject<IProjectConfiguration> configuration = { this };
+    muse::GlobalInject<IProjectConfiguration> configuration;
+    muse::GlobalInject<muse::mi::IMultiInstancesProvider> multiInstancesProvider;
+    muse::GlobalInject<notation::INotationConfiguration> notationConfiguration;
+    muse::GlobalInject<muse::io::IFileSystem> fileSystem;
     muse::Inject<INotationReadersRegister> readers = { this };
     muse::Inject<IProjectCreator> projectCreator = { this };
     muse::Inject<IRecentFilesController> recentFilesController = { this };
@@ -69,13 +73,10 @@ class ProjectActionsController : public IProjectFilesController, public muse::mi
     muse::Inject<muse::actions::IActionsDispatcher> dispatcher = { this };
     muse::Inject<muse::IInteractive> interactive = { this };
     muse::Inject<context::IGlobalContext> globalContext = { this };
-    muse::Inject<muse::mi::IMultiInstancesProvider> multiInstancesProvider = { this };
     muse::Inject<muse::cloud::IMuseScoreComService> museScoreComService = { this };
     muse::Inject<muse::cloud::IAudioComService> audioComService = { this };
-    muse::Inject<notation::INotationConfiguration> notationConfiguration = { this };
     muse::Inject<playback::IPlaybackController> playbackController = { this };
     muse::Inject<print::IPrintProvider> printProvider = { this };
-    muse::Inject<muse::io::IFileSystem> fileSystem = { this };
     muse::Inject<musesounds::IMuseSoundsCheckUpdateScenario> museSoundsCheckUpdateScenario = { this };
     muse::Inject<musesounds::IMuseSamplerCheckUpdateScenario> museSamplerCheckUpdateScenario = { this };
     muse::Inject<muse::extensions::IExtensionsProvider> extensionsProvider = { this };
@@ -138,7 +139,7 @@ private:
 
     struct AudioFile {
         QString format;
-        QIODevice* device = nullptr;
+        std::shared_ptr<QIODevice> device = nullptr;
 
         AudioFile() {}
 
@@ -151,6 +152,7 @@ private:
     void publish();
     void shareAudio(const AudioFile& existingAudio);
     void shareAudio() { shareAudio(AudioFile()); }
+    void uploadAudioToAudioCom(const AudioFile& audio, const INotationProjectPtr& project, const CloudAudioInfo& info);
     void alsoShareAudioCom(const AudioFile& audio);
 
     muse::Ret askAudioGenerationSettings() const;
@@ -161,7 +163,8 @@ private:
     void closeUploadProgressDialog();
 
     muse::Ret uploadProject(const CloudProjectInfo& info, const AudioFile& audio, bool openEditUrl, bool publishMode);
-    void uploadAudio(const AudioFile& audio, const QUrl& sourceUrl, const QUrl& urlToOpen, bool isFirstSave, bool publishMode);
+    void uploadAudioToMuseScoreCom(const AudioFile& audio, const QUrl& sourceUrl, const QUrl& urlToOpen, bool isFirstSave,
+                                   bool publishMode);
 
     void onProjectSuccessfullyUploaded(const QUrl& urlToOpen = QUrl(), bool isFirstSave = true);
     muse::Ret onProjectUploadFailed(const muse::Ret& ret, const CloudProjectInfo& info, const AudioFile& audio, bool openEditUrl,
@@ -235,5 +238,3 @@ private:
     muse::async::Notification m_projectBeingDownloadedChanged;
 };
 }
-
-#endif // MU_PROJECT_PROJECTACTIONSCONTROLLER_H

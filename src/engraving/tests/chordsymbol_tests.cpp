@@ -22,20 +22,22 @@
 
 #include <gtest/gtest.h>
 
-#include "compat/scoreaccess.h"
-#include "dom/chordrest.h"
-#include "dom/durationtype.h"
-#include "dom/excerpt.h"
-#include "dom/harmony.h"
-#include "dom/masterscore.h"
-#include "dom/measure.h"
-#include "dom/part.h"
-#include "dom/segment.h"
+#include "engraving/compat/scoreaccess.h"
+#include "engraving/dom/chordrest.h"
+#include "engraving/dom/durationtype.h"
+#include "engraving/dom/excerpt.h"
+#include "engraving/dom/fret.h"
+#include "engraving/dom/harmony.h"
+#include "engraving/dom/masterscore.h"
+#include "engraving/dom/measure.h"
+#include "engraving/dom/part.h"
+#include "engraving/dom/score.h"
+#include "engraving/dom/segment.h"
+#include "engraving/editing/transpose.h"
 
 #include "utils/scorerw.h"
 #include "utils/scorecomp.h"
 
-using namespace mu;
 using namespace mu::engraving;
 
 static const String CHORDSYMBOL_DATA_DIR("chordsymbol_data/");
@@ -202,7 +204,7 @@ TEST_F(Engraving_ChordSymbolTests, testTranspose)
     MasterScore* score = test_pre(u"transpose");
     score->startCmd(TranslatableString::untranslatable("Engraving chord symbol tests"));
     score->cmdSelectAll();
-    score->transpose(TransposeMode::BY_INTERVAL, TransposeDirection::UP, Key::C, 4, false, true, true);
+    Transpose::transpose(score, TransposeMode::BY_INTERVAL, TransposeDirection::UP, Key::C, 4, false, true, true);
     score->endCmd();
     test_post(score, u"transpose");
 }
@@ -212,7 +214,7 @@ TEST_F(Engraving_ChordSymbolTests, testTransposePart)
     MasterScore* score = test_pre(u"transpose-part");
     score->startCmd(TranslatableString::untranslatable("Engraving chord symbol tests"));
     score->cmdSelectAll();
-    score->transpose(TransposeMode::BY_INTERVAL, TransposeDirection::UP, Key::C, 4, false, true, true);
+    Transpose::transpose(score, TransposeMode::BY_INTERVAL, TransposeDirection::UP, Key::C, 4, false, true, true);
     score->endCmd(false, /*layoutAllParts = */ true);
     test_post(score, u"transpose-part");
 }
@@ -301,7 +303,7 @@ TEST_F(Engraving_ChordSymbolTests, testRealizeTransposed)
     MasterScore* score = test_pre(u"transpose");
     //transpose
     score->cmdSelectAll();
-    score->transpose(TransposeMode::BY_INTERVAL, TransposeDirection::UP, Key::C, 4, false, true, true);
+    Transpose::transpose(score, TransposeMode::BY_INTERVAL, TransposeDirection::UP, Key::C, 4, false, true, true);
 
     //realize all chord symbols
     selectAllChordSymbols(score);
@@ -433,5 +435,23 @@ TEST_F(Engraving_ChordSymbolTests, testParserSuffix)
     }
 
     delete pc;
+    delete score;
+}
+
+TEST_F(Engraving_ChordSymbolTests, testAddHarmonyToFretDiagram)
+{
+    MasterScore* score = ScoreRW::readScore(CHORDSYMBOL_DATA_DIR + u"add-to-fret" + ".mscz");
+    EXPECT_TRUE(score);
+    score->doLayout();
+
+    Measure* firstMeasure = score->firstMeasure();
+    Segment* firstSeg = firstMeasure->findFirstR(SegmentType::ChordRest, Fraction(0, 1));
+    FretDiagram* fretDiag = toFretDiagram(firstSeg->findAnnotation(ElementType::FRET_DIAGRAM, 0, 0));
+    EXPECT_TRUE(fretDiag);
+
+    score->addText(TextStyleType::HARMONY_A, fretDiag);
+
+    EXPECT_TRUE(fretDiag->harmony());
+
     delete score;
 }

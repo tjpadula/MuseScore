@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -59,6 +59,12 @@ public:
         SpinBox,
         Range,
         Group,
+        Table,
+        ColumnHeader,
+        RowHeader,
+        Column,
+        Row,
+        Cell,
 
         // Custom roles
         Information, // just text
@@ -122,7 +128,7 @@ public:
 
     virtual const IAccessible* accessibleParent() const = 0;
     virtual size_t accessibleChildCount() const = 0;
-    virtual const IAccessible* accessibleChild(size_t i) const = 0;
+    virtual IAccessible* accessibleChild(size_t i) const = 0;
     virtual QWindow* accessibleWindow() const = 0;
     virtual muse::modularity::ContextPtr iocContext() const = 0;
 

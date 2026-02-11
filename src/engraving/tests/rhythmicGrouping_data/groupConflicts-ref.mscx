@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -1294,8 +1294,7 @@
             </Chord>
           <StaffText>
             <eid>nD_nD</eid>
-            <text>Alternative: don't dot leading rest (compare rest
-on beat 3 with rest on beat 1 at start of measure)</text>
+            <text>Alternative: don't dot leading rest (compare rest<br/>on beat 3 with rest on beat 1 at start of measure)</text>
             </StaffText>
           <Chord>
             <eid>oD_oD</eid>

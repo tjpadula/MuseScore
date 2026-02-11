@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_AUDIO_AUDIODRIVERSTUB_H
-#define MU_AUDIO_AUDIODRIVERSTUB_H
+#pragma once
 
 #include "audio/iaudiodriver.h"
 
@@ -31,33 +30,20 @@ public:
     void init() override;
 
     std::string name() const override;
+
+    AudioDeviceID defaultDevice() const override;
+
     bool open(const Spec& spec, Spec* activeSpec) override;
     void close() override;
     bool isOpened() const override;
 
     const Spec& activeSpec() const override;
-
-    AudioDeviceID outputDevice() const override;
-    bool selectOutputDevice(const AudioDeviceID& id) override;
-    bool resetToDefaultOutputDevice() override;
-    async::Notification outputDeviceChanged() const override;
+    async::Channel<Spec> activeSpecChanged() const override;
 
     AudioDeviceList availableOutputDevices() const override;
     async::Notification availableOutputDevicesChanged() const override;
 
-    bool setOutputDeviceBufferSize(unsigned int bufferSize) override;
-    async::Notification outputDeviceBufferSizeChanged() const override;
-
-    std::vector<unsigned int> availableOutputDeviceBufferSizes() const override;
-
-    bool setOutputDeviceSampleRate(unsigned int bufferSize) override;
-    async::Notification outputDeviceSampleRateChanged() const override;
-
-    std::vector<unsigned int> availableOutputDeviceSampleRates() const override;
-
-    void resume() override;
-    void suspend() override;
+    std::vector<samples_t> availableOutputDeviceBufferSizes() const override;
+    std::vector<sample_rate_t> availableOutputDeviceSampleRates() const override;
 };
 }
-
-#endif // MU_AUDIO_AUDIODRIVERSTUB_H

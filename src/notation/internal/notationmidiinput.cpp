@@ -182,7 +182,7 @@ void NotationMidiInput::doProcessEvents()
         if (note) {
             if (useDurationAndVelocity) {
                 note->setUserVelocity(event.velocity7());
-                m_playingNotes[note->pitch()] = note;
+                m_playingNotes[note->pitch()] = { isSoundPreview, note };
             }
             notesOn.push_back(note);
         }
@@ -206,13 +206,17 @@ void NotationMidiInput::doProcessEvents()
     }
 
     if (!notesOn.empty()) {
-        std::vector<const EngravingItem*> elements(notesOn.begin(), notesOn.end());
+        if (isNoteInput) {
+            playbackController()->seekElement(notesOn.front(), !useDurationAndVelocity /*flushSound*/);
+        }
+
+        const std::vector<const EngravingItem*> elements(notesOn.begin(), notesOn.end());
         playbackController()->playElements(elements, makeNoteOnParams(useDurationAndVelocity), true);
         m_notesReceivedChannel.send(notesOn);
     }
 
     if (!notesOff.empty()) {
-        releasePlayingNotes(notesOff, isSoundPreview);
+        releasePlayingNotes(notesOff);
     }
 }
 
@@ -222,8 +226,14 @@ void NotationMidiInput::startNoteInputIfNeed()
         return;
     }
 
+    const auto containsNoteOn = [this]() -> bool {
+        return std::any_of(m_eventsQueue.begin(), m_eventsQueue.end(), [](const muse::midi::Event& e) {
+            return e.opcode() == muse::midi::Event::Opcode::NoteOn;
+        });
+    };
+
     if (configuration()->startNoteInputAtSelectedNoteRestWhenPressingMidiKey()) {
-        if (m_notationInteraction->selection()->elementsSelected(NOTE_REST_TYPES)) {
+        if (m_notationInteraction->selection()->elementsSelected(NOTE_REST_TYPES) && containsNoteOn()) {
             dispatcher()->dispatch("note-input");
         }
     }
@@ -414,9 +424,10 @@ void NotationMidiInput::triggerControllers(const ControllerEventMap& events)
     playbackController()->triggerControllers(controllers, is.staffIdx(), is.tick().ticks());
 }
 
-void NotationMidiInput::releasePlayingNotes(const std::vector<int>& pitches, bool deleteNotes)
+void NotationMidiInput::releasePlayingNotes(const std::vector<int>& pitches)
 {
-    std::vector<const EngravingItem*> notes;
+    std::vector<const EngravingItem*> notesOff;
+    std::vector<Note*> notesToDelete;
 
     const staff_idx_t staffIdx = score()->inputState().staffIdx();
     const bool useWrittenPitch = configuration()->midiUseWrittenPitch().val;
@@ -429,16 +440,20 @@ void NotationMidiInput::releasePlayingNotes(const std::vector<int>& pitches, boo
             continue;
         }
 
-        notes.push_back(it->second);
-        it->second->setUserVelocity(0);
+        Note* note = it->second.note;
+        note->setUserVelocity(0);
+
+        notesOff.push_back(note);
+
+        if (it->second.isPreview) {
+            notesToDelete.push_back(note);
+        }
+
         m_playingNotes.erase(it);
     }
 
-    playbackController()->playElements(notes, makeNoteOffParams(), true /*isMidi*/);
-
-    if (deleteNotes) {
-        muse::DeleteAll(notes);
-    }
+    playbackController()->playElements(notesOff, makeNoteOffParams(), true /*isMidi*/);
+    muse::DeleteAll(notesToDelete);
 }
 
 void NotationMidiInput::enableMetronome()

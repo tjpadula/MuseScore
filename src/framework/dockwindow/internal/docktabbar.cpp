@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -69,12 +69,15 @@ void DockTabBar::onMousePressRelease(const QMouseEvent* mouseEvent)
     switch (mouseEvent->type()) {
     case QEvent::MouseButtonPress: {
         m_indexOfPressedTab = tabIndex;
+        m_tabChangedOnClick = false;
         TabBar::onMousePress(localPos);
         break;
     }
     case QEvent::MouseButtonRelease: {
-        if (tabIndex == m_indexOfPressedTab) {
+        const int currentTabIndex = tabBar->property("currentIndex").toInt();
+        if (tabIndex != currentTabIndex && tabIndex == m_indexOfPressedTab) {
             tabBar->setProperty("currentIndex", tabIndex);
+            m_tabChangedOnClick = true;
         }
         m_indexOfPressedTab = -1;
         break;

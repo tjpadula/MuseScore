@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -23,22 +23,20 @@
 
 #include "imusesamplercheckupdateservice.h"
 
+#include "async/asyncable.h"
 #include "modularity/ioc.h"
 #include "musesampler/imusesamplerinfo.h"
 #include "musesampler/imusesamplerconfiguration.h"
 #include "network/inetworkmanagercreator.h"
 #include "imusesoundsconfiguration.h"
-#include "async/asyncable.h"
-
-#include "async/channel.h"
 
 namespace mu::musesounds {
 class MuseSamplerCheckUpdateService : public IMuseSamplerCheckUpdateService, public muse::Injectable, public muse::async::Asyncable
 {
-    Inject<muse::musesampler::IMuseSamplerInfo> museSampler = { this };
-    Inject<muse::musesampler::IMuseSamplerConfiguration> museSamplerConfiguration = { this };
-    Inject<muse::network::INetworkManagerCreator> networkManagerCreator = { this };
-    Inject<IMuseSoundsConfiguration> configuration = { this };
+    muse::GlobalInject<IMuseSoundsConfiguration> configuration;
+    muse::GlobalInject<muse::network::INetworkManagerCreator> networkManagerCreator;
+    muse::GlobalInject<muse::musesampler::IMuseSamplerConfiguration> museSamplerConfiguration;
+    muse::Inject<muse::musesampler::IMuseSamplerInfo> museSampler = { this };
 
 public:
     MuseSamplerCheckUpdateService(const muse::modularity::ContextPtr& iocCtx)
@@ -48,5 +46,8 @@ public:
     bool incompatibleLocalVersion() const override;
 
     muse::async::Promise<muse::RetVal<bool> > checkForUpdate() override;
+
+private:
+    muse::network::INetworkManagerPtr m_networkManager;
 };
 }

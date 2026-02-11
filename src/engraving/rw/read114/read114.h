@@ -24,6 +24,14 @@
 
 #include "../ireader.h"
 
+namespace mu::engraving {
+class Excerpt;
+}
+
+namespace mu::engraving::read400  {
+class ReadContext;
+}
+
 namespace mu::engraving::read114 {
 class Read114 : public rw::IReader
 {
@@ -39,7 +47,11 @@ public:
 
     void readTremoloCompat(compat::TremoloCompat* item, XmlReader& xml) override;
 
+    static void setBarLineSpanToStaves(Score*, const read400::ReadContext&);
+
 private:
     void doReadItem(EngravingItem* item, XmlReader& xml) override;
+
+    void readExcerpt(Excerpt* ex, XmlReader& e, read400::ReadContext& ctx);
 };
 }

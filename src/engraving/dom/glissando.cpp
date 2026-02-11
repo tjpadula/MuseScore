@@ -80,7 +80,7 @@ GlissandoSegment::GlissandoSegment(Glissando* sp, System* parent)
 //   propertyDelegate
 //---------------------------------------------------------
 
-EngravingItem* GlissandoSegment::propertyDelegate(Pid pid)
+EngravingObject* GlissandoSegment::propertyDelegate(Pid pid) const
 {
     switch (pid) {
     case Pid::GLISS_TYPE:
@@ -136,11 +136,6 @@ Glissando::Glissando(const Glissando& g)
     _showText       = g._showText;
     _fontStyle      = g._fontStyle;
     m_isHarpGliss   = g.m_isHarpGliss;
-}
-
-const TranslatableString& Glissando::glissandoTypeName() const
-{
-    return TConv::userName(glissandoType());
 }
 
 //---------------------------------------------------------
@@ -357,7 +352,7 @@ PropertyValue Glissando::getProperty(Pid propertyId) const
 {
     switch (propertyId) {
     case Pid::GLISS_TYPE:
-        return int(glissandoType());
+        return glissandoType();
     case Pid::GLISS_TEXT:
         return text();
     case Pid::GLISS_SHOW_TEXT:
@@ -390,7 +385,7 @@ bool Glissando::setProperty(Pid propertyId, const PropertyValue& v)
 {
     switch (propertyId) {
     case Pid::GLISS_TYPE:
-        setGlissandoType(GlissandoType(v.toInt()));
+        setGlissandoType(v.value<GlissandoType>());
         break;
     case Pid::GLISS_TEXT:
         setText(v.value<String>());
@@ -464,5 +459,10 @@ PropertyValue Glissando::propertyDefault(Pid propertyId) const
         break;
     }
     return SLine::propertyDefault(propertyId);
+}
+
+TranslatableString Glissando::subtypeUserName() const
+{
+    return TConv::userName(glissandoType());
 }
 }

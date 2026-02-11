@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,7 +40,7 @@ class UiConfiguration : public IUiConfiguration, public Injectable, public async
 {
     Inject<IMainWindow> mainWindow = { this };
     Inject<IPlatformTheme> platformTheme = { this };
-    Inject<IGlobalConfiguration> globalConfiguration = { this };
+    GlobalInject<IGlobalConfiguration> globalConfiguration;
 
 public:
 
@@ -130,6 +130,9 @@ public:
     int flickableMaxVelocity() const override;
 
     int tooltipDelay() const override;
+
+    std::vector<QColor> colorDialogCustomColors() const override;
+    void setColorDialogCustomColors(const std::vector<QColor>&) override;
 
 private:
     void initThemes();

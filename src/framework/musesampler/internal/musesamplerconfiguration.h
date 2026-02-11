@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -30,7 +30,7 @@
 namespace muse::musesampler {
 class MuseSamplerConfiguration : public IMuseSamplerConfiguration, public Injectable
 {
-    Inject<IGlobalConfiguration> globalConfig = { this };
+    GlobalInject<IGlobalConfiguration> globalConfig;
 
 public:
     MuseSamplerConfiguration(const modularity::ContextPtr& iocCtx)

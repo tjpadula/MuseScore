@@ -86,6 +86,7 @@ public:
     static void centerBigTimeSigsAcrossStaves(const System* system);
 
     static void updateSkylineForElement(EngravingItem* element, const System* system, double yMove);
+    static void removeElementFromSkyline(EngravingItem* element, const System* system);
 
     static void layoutSystemLockIndicators(System* system, LayoutContext& ctx);
 
@@ -95,7 +96,7 @@ private:
         Measure* measure = nullptr;
         double measureWidth = 0.0;
         double measurePos = 0.0;
-        std::vector < std::pair<Segment*, double> > segmentsPos;
+        std::map<EngravingItem*, PointF> elementPositions;
         bool curHeader = false;
         bool curTrailer = false;
 
@@ -104,17 +105,15 @@ private:
             measure = nullptr;
             measureWidth = 0.0;
             measurePos = 0.0;
-            segmentsPos.clear();
+            elementPositions.clear();
         }
 
         void restoreMeasure()
         {
             measure->mutldata()->setPosX(measurePos);
             measure->setWidth(measureWidth);
-            for (auto pair : segmentsPos) {
-                Segment* segment = pair.first;
-                double x = pair.second;
-                segment->mutldata()->setPosX(x);
+            for (auto pair : elementPositions) {
+                pair.first->setPos(pair.second);
             }
         }
     };
@@ -144,7 +143,7 @@ private:
         std::vector<StaffText*> staffText;
         std::vector<InstrumentChange*> instrChanges;
         std::vector<SystemText*> systemText;
-        std::vector<EngravingItem*> playTechCapoStringTunSystemTextTripletFeel;
+        std::vector<EngravingItem*> playTechCapoStringTunTripletFeel;
         std::vector<RehearsalMark*> rehMarks;
         std::vector<TempoText*> tempoText;
         std::vector<Image*> images;
@@ -161,6 +160,8 @@ private:
         std::vector<Spanner*> tempoChangeLines;
         std::vector<Spanner*> partialLyricsLines;
         std::vector<Spanner*> allOtherSpanners;
+
+        std::vector<GuitarBend*> guitarBends;
 
         ElementsToLayout(System* s)
             : system(s) {}
@@ -195,6 +196,7 @@ private:
 
     static bool elementShouldBeCenteredBetweenStaves(const EngravingItem* item, const System* system);
     static bool mmRestShouldBeCenteredBetweenStaves(const MMRest* mmRest, const System* system);
+    static bool whammyBarShouldBeCenteredBetweenStaves(const WhammyBarSegment* wbar, const System* system);
     static bool elementHasAnotherStackedOutside(const EngravingItem* element, const Shape& elementShape, const SkylineLine& skylineLine);
     static void centerElementBetweenStaves(EngravingItem* element, const System* system);
     static void centerMMRestBetweenStaves(MMRest* mmRest, const System* system);

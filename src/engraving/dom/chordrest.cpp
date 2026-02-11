@@ -57,6 +57,9 @@
 #include "utils.h"
 #include "volta.h"
 
+#include "editing/splitjoinmeasure.h"
+#include "editing/transpose.h"
+
 #include "log.h"
 
 using namespace mu;
@@ -137,21 +140,59 @@ ChordRest::~ChordRest()
 }
 
 //---------------------------------------------------------
-//   undoSetSmall
-//---------------------------------------------------------
-
-void ChordRest::undoSetSmall(bool val)
-{
-    undoChangeProperty(Pid::SMALL, val);
-}
-
-//---------------------------------------------------------
 //   drop
 //---------------------------------------------------------
 
+bool ChordRest::acceptDrop(EditData& data) const
+{
+    EngravingItem* e = data.dropElement;
+
+    switch (e->type()) {
+    case ElementType::FERMATA:
+    case ElementType::CLEF:
+    case ElementType::KEYSIG:
+    case ElementType::TIMESIG:
+    case ElementType::SYSTEM_TEXT:
+    case ElementType::TRIPLET_FEEL:
+    case ElementType::STAFF_TEXT:
+    case ElementType::PLAYTECH_ANNOTATION:
+    case ElementType::CAPO:
+    case ElementType::BAR_LINE:
+    case ElementType::BREATH:
+    case ElementType::STAFF_STATE:
+    case ElementType::INSTRUMENT_CHANGE:
+    case ElementType::DYNAMIC:
+    case ElementType::EXPRESSION:
+    case ElementType::HARMONY:
+    case ElementType::TEMPO_TEXT:
+    case ElementType::REHEARSAL_MARK:
+    case ElementType::FRET_DIAGRAM:
+    case ElementType::TREMOLOBAR:
+    case ElementType::HARP_DIAGRAM:
+        return true;
+    case  ElementType::STRING_TUNINGS:
+        return measure()->canAddStringTunings(staffIdx());
+    case ElementType::ACTION_ICON: {
+        switch (toActionIcon(e)->actionType()) {
+        case ActionIconType::BEAM_AUTO:
+        case ActionIconType::BEAM_NONE:
+        case ActionIconType::BEAM_BREAK_LEFT:
+        case ActionIconType::BEAM_BREAK_INNER_8TH:
+        case ActionIconType::BEAM_BREAK_INNER_16TH:
+        case ActionIconType::BEAM_JOIN:
+            return true;
+        default: break;
+        }
+        break;
+    }
+    default: break;
+    }
+    return measure()->acceptDrop(data);
+}
+
 EngravingItem* ChordRest::drop(EditData& data)
 {
-    EngravingItem* e       = data.dropElement;
+    EngravingItem* e = data.dropElement;
     Measure* m       = measure();
     bool fromPalette = (e->track() == muse::nidx);
     switch (e->type()) {
@@ -160,70 +201,60 @@ EngravingItem* ChordRest::drop(EditData& data)
         Breath* b = toBreath(e);
         b->setPos(PointF());
         // allow breath marks in voice > 1
-        b->setTrack(this->track());
+        b->setTrack(track());
         b->setPlacement(b->track() & 1 ? PlacementV::BELOW : PlacementV::ABOVE);
-        Fraction bt = tick() + actualTicks();
-        bt = tick() + actualTicks();
 
         // TODO: insert automatically in all staves?
 
-        Segment* seg = m->undoGetSegment(SegmentType::Breath, bt);
+        Segment* seg = m->undoGetSegment(SegmentType::Breath, endTick());
         b->setParent(seg);
         score()->undoAddElement(b);
-    }
         return e;
+    }
 
     case ElementType::BAR_LINE:
+    {
+        BarLine* bl = toBarLine(e);
+        Fraction barLineTick = bl->barLineType() == BarLineType::START_REPEAT ? tick() : endTick();
+
         if (data.control()) {
-            score()->cmdSplitMeasure(this);
-        } else {
-            BarLine* bl = toBarLine(e);
-            bl->setPos(PointF());
-            bl->setTrack(staffIdx() * VOICES);
-            bl->setGenerated(false);
-            Fraction blt = bl->barLineType() == BarLineType::START_REPEAT ? tick() : tick() + actualTicks();
-
-            if (blt == m->tick() || blt == m->endTick()) {
-                return m->drop(data);
-            }
-
-            BarLine* obl = 0;
-            for (Staff* st  : staff()->staffList()) {
-                Score* score = st->score();
-                Measure* measure = score->tick2measure(m->tick());
-                Segment* seg = measure->undoGetSegment(SegmentType::BarLine, blt);
-                BarLine* l;
-                if (obl == 0) {
-                    obl = l = bl->clone();
-                } else {
-                    l = toBarLine(obl->linkedClone());
-                }
-                l->setTrack(st->idx() * VOICES);
-                l->setParent(seg);
-                score->undoAddElement(l);
-            }
+            SplitJoinMeasure::splitMeasure(masterScore(), barLineTick);
+            m = score()->tick2measure(tick());
+            // consume the ControlModifier flag
+            data.modifiers &= ~ControlModifier;
         }
+
+        if (barLineTick == m->tick() || barLineTick == m->endTick()) {
+            return m->drop(data);
+        }
+
+        bl->setPos(PointF());
+        bl->setTrack(staffIdx() * VOICES);
+        bl->setGenerated(false);
+
+        BarLine* obl = nullptr;
+        for (Staff* st : staff()->staffList()) {
+            Score* score = st->score();
+            Measure* measure = score->tick2measure(m->tick());
+            Segment* seg = measure->undoGetSegment(SegmentType::BarLine, barLineTick);
+            BarLine* l;
+            if (!obl) {
+                obl = l = bl->clone();
+            } else {
+                l = toBarLine(obl->linkedClone());
+            }
+            l->setTrack(st->idx() * VOICES);
+            l->setParent(seg);
+            score->undoAddElement(l);
+        }
+
         delete e;
-        return 0;
+        return nullptr;
+    }
 
     case ElementType::CLEF:
         score()->cmdInsertClef(toClef(e), this);
-        break;
-
-    case ElementType::TIMESIG:
-        if (measure()->system()) {
-            EditData ndd = data;
-            // adding from palette sets pos, but normal paste does not
-            if (!fromPalette) {
-                ndd.pos = pagePos();
-            }
-            // convert page-relative pos to score-relative
-            ndd.pos += measure()->system()->page()->pos();
-            return measure()->drop(ndd);
-        } else {
-            delete e;
-            return 0;
-        }
+        return nullptr;
 
     case ElementType::FERMATA:
         e->setPlacement(track() & 1 ? PlacementV::BELOW : PlacementV::ABOVE);
@@ -241,7 +272,7 @@ EngravingItem* ChordRest::drop(EditData& data)
                 }
             }
         }
-    // fall through
+        [[fallthrough]];
     case ElementType::TEMPO_TEXT:
     case ElementType::EXPRESSION:
     case ElementType::FRET_DIAGRAM:
@@ -265,7 +296,7 @@ EngravingItem* ChordRest::drop(EditData& data)
         // calculate correct transposed tpc
         Interval v = staff()->transpose(tick());
         v.flip();
-        note->setTpc2(transposeTpc(note->tpc1(), v, true));
+        note->setTpc2(Transpose::transposeTpc(note->tpc1(), v, true));
 
         Segment* seg = segment();
         score()->undoRemoveElement(this);
@@ -286,41 +317,40 @@ EngravingItem* ChordRest::drop(EditData& data)
         Interval interval = staff()->transpose(tick());
         if (!style().styleB(Sid::concertPitch) && !interval.isZero()) {
             interval.flip();
-            score()->undoTransposeHarmony(harmony, interval);
+            Transpose::undoTransposeHarmony(score(), harmony, interval);
         }
     }
-    // fall through
+        [[fallthrough]];
     case ElementType::TEXT:
     case ElementType::STAFF_TEXT:
     case ElementType::SYSTEM_TEXT:
     case ElementType::TRIPLET_FEEL:
     case ElementType::PLAYTECH_ANNOTATION:
     case ElementType::CAPO:
-    case ElementType::STRING_TUNINGS:
     case ElementType::STICKING:
     case ElementType::STAFF_STATE:
     case ElementType::HARP_DIAGRAM:
-    // fall through
     case ElementType::REHEARSAL_MARK:
     {
         e->setParent(segment());
         e->setTrack(trackZeroVoice(track()));
-        if (e->isRehearsalMark()) {
+        if (e->isRehearsalMark() && fromPalette) {
             RehearsalMark* r = toRehearsalMark(e);
-            if (fromPalette) {
-                r->setXmlText(score()->createRehearsalMarkText(r));
+            r->setXmlText(score()->createRehearsalMarkText(r));
+        } else if (e->isHarpPedalDiagram() && fromPalette && part()) {
+            // Match pedal config with previous diagram's
+            if (HarpPedalDiagram* prevDiagram = part()->prevHarpDiagram(segment()->tick())) {
+                toHarpPedalDiagram(e)->setPedalState(prevDiagram->getPedalState());
             }
         }
-        // Match pedal config with previous diagram's
-        if (e->isHarpPedalDiagram()) {
-            HarpPedalDiagram* h = toHarpPedalDiagram(e);
-            if (fromPalette && part()) {
-                HarpPedalDiagram* prevDiagram = part()->prevHarpDiagram(segment()->tick());
-                if (prevDiagram) {
-                    h->setPedalState(prevDiagram->getPedalState());
-                }
-            }
-        }
+        score()->undoAddElement(e);
+        return e;
+    }
+    case ElementType::STRING_TUNINGS:
+    {
+        Staff* st = staff()->isPrimaryStaff() ? staff() : staff()->primaryStaff();
+        e->setParent(segment());
+        e->setTrack(staff2track(st->idx()));
         score()->undoAddElement(e);
         return e;
     }
@@ -368,48 +398,34 @@ EngravingItem* ChordRest::drop(EditData& data)
 
     case ElementType::ACTION_ICON:
     {
-        switch (toActionIcon(e)->actionType()) {
-        case ActionIconType::BEAM_AUTO:
-            undoChangeProperty(Pid::BEAM_MODE, BeamMode::AUTO);
-            break;
-        case ActionIconType::BEAM_NONE:
-            undoChangeProperty(Pid::BEAM_MODE, BeamMode::NONE);
-            break;
-        case ActionIconType::BEAM_BREAK_LEFT:
-            undoChangeProperty(Pid::BEAM_MODE, BeamMode::BEGIN);
-            break;
-        case ActionIconType::BEAM_BREAK_INNER_8TH:
-            undoChangeProperty(Pid::BEAM_MODE, BeamMode::BEGIN16);
-            break;
-        case ActionIconType::BEAM_BREAK_INNER_16TH:
-            undoChangeProperty(Pid::BEAM_MODE, BeamMode::BEGIN32);
-            break;
-        case ActionIconType::BEAM_JOIN:
-            undoChangeProperty(Pid::BEAM_MODE, BeamMode::MID);
-            break;
-        default:
-            break;
+        ActionIconType actionType = toActionIcon(e)->actionType();
+        static const std::unordered_map<ActionIconType, BeamMode> beamModeTable = {
+            { ActionIconType::BEAM_AUTO,             BeamMode::AUTO },
+            { ActionIconType::BEAM_NONE,             BeamMode::NONE },
+            { ActionIconType::BEAM_BREAK_LEFT,       BeamMode::BEGIN },
+            { ActionIconType::BEAM_BREAK_INNER_8TH,  BeamMode::BEGIN16 },
+            { ActionIconType::BEAM_BREAK_INNER_16TH, BeamMode::BEGIN32 },
+            { ActionIconType::BEAM_JOIN,             BeamMode::MID },
+        };
+        if (muse::contains(beamModeTable, actionType)) {
+            undoChangeProperty(Pid::BEAM_MODE, muse::value(beamModeTable, actionType));
+            delete e;
+            return nullptr;
         }
-    }
-        delete e;
         break;
+    }
 
     case ElementType::KEYSIG:
     {
-        KeySig* ks    = toKeySig(e);
-        KeySigEvent k = ks->keySigEvent();
-
         if (data.modifiers & ControlModifier) {
-            // apply only to this stave, before the selected chordRest
+            // apply only to this stave
+            KeySigEvent k = toKeySig(e)->keySigEvent();
             score()->undoChangeKeySig(staff(), tick(), k);
-            delete ks;
-        } else {
-            // apply to all staves, at the beginning of the measure
-            data.pos = canvasPos(); // measure->drop() expects to receive canvas pos
-            return m->drop(data);
+            delete e;
+            return nullptr;
         }
+        break;
     }
-    break;
 
     default:
         if (e->isSpanner()) {
@@ -425,11 +441,9 @@ EngravingItem* ChordRest::drop(EditData& data)
             score()->undoAddElement(spanner);
             return e;
         }
-        LOGD("cannot drop %s", e->typeName());
-        delete e;
-        return 0;
+        break;
     }
-    return 0;
+    return m->drop(data);
 }
 
 //---------------------------------------------------------
@@ -559,7 +573,7 @@ void ChordRest::add(EngravingItem* e)
         e->added();
         break;
     default:
-        ASSERT_X(u"ChordRest::add: unknown element " + String::fromAscii(e->typeName()));
+        EngravingItem::add(e);
         break;
     }
 }
@@ -583,7 +597,7 @@ void ChordRest::remove(EngravingItem* e)
     }
     break;
     default:
-        ASSERT_X(u"ChordRest::remove: unknown element " + String::fromAscii(e->typeName()));
+        EngravingItem::remove(e);
     }
 }
 
@@ -665,7 +679,7 @@ Slur* ChordRest::slur(const ChordRest* secondChordRest) const
 void ChordRest::undoChangeProperty(Pid id, const PropertyValue& newValue, PropertyFlags ps)
 {
     if (id == Pid::BEAM_MODE) {
-        if (m_durationType.hooks() == 0) {
+        if (isChord() && m_durationType.hooks() == 0) {
             return;
         }
         BeamMode newBeamMode = newValue.value<BeamMode>();
@@ -701,7 +715,7 @@ PropertyValue ChordRest::getProperty(Pid propertyId) const
 {
     switch (propertyId) {
     case Pid::SMALL:      return PropertyValue::fromValue(isSmall());
-    case Pid::BEAM_MODE:  return int(beamMode());
+    case Pid::BEAM_MODE:  return beamMode();
     case Pid::STAFF_MOVE: return staffMove();
     case Pid::DURATION_TYPE_WITH_DOTS: return actualDurationType().typeWithDots();
     default:              return DurationElement::getProperty(propertyId);
@@ -794,9 +808,8 @@ bool ChordRest::isGraceAfter() const
 //---------------------------------------------------------
 Breath* ChordRest::hasBreathMark() const
 {
-    Fraction end = tick() + actualTicks();
-    Segment* s = measure()->findSegment(SegmentType::Breath, end);
-    return s ? toBreath(s->element(track())) : 0;
+    Segment* s = measure()->findSegment(SegmentType::Breath, endTick());
+    return s ? toBreath(s->element(track())) : nullptr;
 }
 
 //---------------------------------------------------------
@@ -1037,22 +1050,22 @@ EngravingItem* ChordRest::nextSegmentElement()
 //   scanElements
 //---------------------------------------------------------
 
-void ChordRest::scanElements(void* data, void (* func)(void*, EngravingItem*), bool all)
+void ChordRest::scanElements(std::function<void(EngravingItem*)> func)
 {
     if (m_beam && (m_beam->elements().front() == this)
         && !measure()->stemless(staffIdx())) {
-        m_beam->scanElements(data, func, all);
+        m_beam->scanElements(func);
     }
     for (Lyrics* l : m_lyrics) {
-        l->scanElements(data, func, all);
+        l->scanElements(func);
     }
     DurationElement* de = this;
     while (de->tuplet() && de->tuplet()->elements().front() == de) {
-        de->tuplet()->scanElements(data, func, all);
+        de->tuplet()->scanElements(func);
         de = de->tuplet();
     }
     if (m_tabDur) {
-        func(data, m_tabDur);
+        func(m_tabDur);
     }
 }
 
@@ -1092,12 +1105,12 @@ String ChordRest::accessibleExtraInfo() const
             if (!score()->selectionFilter().canSelect(s)) {
                 continue;
             }
-            if (s->type() == ElementType::VOLTA          //voltas are added for barlines
-                || s->type() == ElementType::TIE) {      //ties are added in notes
+            // voltas are added for barlines, ties are added in notes
+            if (s->isVolta() || s->isTie()) {
                 continue;
             }
 
-            if (s->type() == ElementType::SLUR) {
+            if (s->isSlur()) {
                 if (s->tick() == tick() && s->track() == track()) {
                     rez += u" " + muse::mtrc("engraving", "Start of %1").arg(s->screenReaderInfo());
                 }
@@ -1147,20 +1160,20 @@ void ChordRest::setMelismaEnd(bool v)
 //   lyrics
 //---------------------------------------------------------
 
-Lyrics* ChordRest::lyrics(int no) const
+Lyrics* ChordRest::lyrics(int verse) const
 {
     for (Lyrics* l : m_lyrics) {
-        if (l->no() == no) {
+        if (l->verse() == verse) {
             return l;
         }
     }
     return 0;
 }
 
-Lyrics* ChordRest::lyrics(int no, PlacementV p) const
+Lyrics* ChordRest::lyrics(int verse, PlacementV p) const
 {
     for (Lyrics* l : m_lyrics) {
-        if (l->placement() == p && l->no() == no) {
+        if (l->placement() == p && l->verse() == verse) {
             return l;
         }
     }
@@ -1178,8 +1191,8 @@ int ChordRest::lastVerse(PlacementV p) const
     int lastVerse = -1;
 
     for (Lyrics* l : m_lyrics) {
-        if (l->placement() == p && l->no() > lastVerse) {
-            lastVerse = l->no();
+        if (l->placement() == p && l->verse() > lastVerse) {
+            lastVerse = l->verse();
         }
     }
 
@@ -1272,7 +1285,7 @@ bool ChordRest::isBelowCrossBeam(const BeamBase* beamBase) const
 
 void ChordRest::checkStaffMoveValidity()
 {
-    if (!staff() || !staff()->visible()) {
+    if (!staff()) {
         return;
     }
     staff_idx_t idx = m_staffMove ? vStaffIdx() : staffIdx() + m_storedStaffMove;

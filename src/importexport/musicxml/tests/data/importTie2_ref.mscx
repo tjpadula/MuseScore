@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -167,6 +167,7 @@
         </Staff>
       <trackName>MusicXML Part</trackName>
       <Instrument id="grand-piano">
+        <longName>MusicXML Part</longName>
         <trackName>MusicXML Part</trackName>
         <minPitchP>21</minPitchP>
         <maxPitchP>108</maxPitchP>

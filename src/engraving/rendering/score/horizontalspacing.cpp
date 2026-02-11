@@ -48,6 +48,10 @@ double HorizontalSpacing::computeSpacingForFullSystem(System* system, double str
 {
     TRACEFUNC;
 
+    if (system->score()->allStavesInvisible()) {
+        return 0.0;
+    }
+
     HorizontalSpacingContext ctx;
     ctx.system = system;
     ctx.spatium = system->spatium();
@@ -85,6 +89,10 @@ double HorizontalSpacing::computeSpacingForFullSystem(System* system, double str
 double HorizontalSpacing::updateSpacingForLastAddedMeasure(System* system, bool startOfContinuousLayoutRegion)
 {
     TRACEFUNC;
+
+    if (system->score()->allStavesInvisible()) {
+        return 0.0;
+    }
 
     HorizontalSpacingContext ctx;
     ctx.system = system;
@@ -556,7 +564,7 @@ double HorizontalSpacing::spaceLyricsAgainstBarlines(Segment* firstSeg, Segment*
         }
 
         BarLine* barline = toBarLine(barlineSegment->element(staff2track(staffIdx)));
-        if (!barline || barline->spanStaff() == 0) {
+        if (!barline || !barline->spanStaff()) {
             continue;
         }
 
@@ -639,7 +647,7 @@ void HorizontalSpacing::moveRightAlignedSegments(std::vector<SegmentPosition>& p
             }
 
             Segment* followingSeg = segPos.segment;
-            if (followingSeg->isRightAligned() || followingSeg->hasTimeSigAboveStaves()) {
+            if (followingSeg->hasTimeSigAboveStaves()) {
                 continue;
             }
             if (followingSeg->measure() != segment->measure() && followingSeg->rtick().isNotZero()) {
@@ -647,12 +655,21 @@ void HorizontalSpacing::moveRightAlignedSegments(std::vector<SegmentPosition>& p
             }
             double followingSegX = segPos.xPosInSystemCoords;
             double minDist = minHorizontalDistance(segment, followingSeg, ctx.squeezeFactor);
+
+            if (followingSeg->isRightAligned() && muse::RealIsNull(minDist)) {
+                continue;
+            }
+
             x = std::min(x, followingSegX - minDist);
         }
 
         if (x != DBL_MAX) {
             placedSegments[i].xPosInSystemCoords = x;
-            double nextSegX = placedSegments[i + 1].xPosInSystemCoords;
+            SegmentPosition& nextSegPos = placedSegments[i + 1];
+            for (size_t j = i + 2; nextSegPos.ignoreForSpacing && j < placedSegments.size(); ++j) {
+                nextSegPos = placedSegments[j];
+            }
+            double nextSegX = nextSegPos.xPosInSystemCoords;
             Segment* prevCRSeg = segment->prev(SegmentType::ChordRest);
             if (prevCRSeg) {
                 prevCRSeg->addWidthOffset(-nextSegX + x);
@@ -1764,7 +1781,7 @@ KerningType HorizontalSpacing::computeLyricsKerningType(const Lyrics* lyrics1, c
 {
     if (item2->isLyrics()) {
         const Lyrics* lyrics2 = toLyrics(item2);
-        if (lyrics1->no() == lyrics2->no()) {
+        if (lyrics1->verse() == lyrics2->verse()) {
             return KerningType::NON_KERNING;
         }
     }

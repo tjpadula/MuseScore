@@ -45,14 +45,14 @@ enum class SegmentType {
     HeaderClef            = 0x2,
     KeySig                = 0x4,
     Ambitus               = 0x8,
-    TimeSig               = 0x10,
-    StartRepeatBarLine    = 0x20,
-    ClefStartRepeatAnnounce    = 0x40,
-    KeySigStartRepeatAnnounce  = 0x80,
-    TimeSigStartRepeatAnnounce = 0x100,
-    Clef                  = 0x200,
-    BarLine               = 0x400,
-    Breath                = 0x800,
+    Breath                = 0x10,
+    TimeSig               = 0x20,
+    StartRepeatBarLine    = 0x40,
+    ClefStartRepeatAnnounce    = 0x80,
+    KeySigStartRepeatAnnounce  = 0x100,
+    TimeSigStartRepeatAnnounce = 0x200,
+    Clef                  = 0x400,
+    BarLine               = 0x800,
     //--
     TimeTick              = 0x1000,
     ChordRest             = 0x2000,
@@ -128,10 +128,6 @@ public:
 
     void setParent(Measure* parent);
 
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-    EngravingObjectList scanChildren() const override;
-
     Segment* clone() const override { return new Segment(*this); }
 
     void setScore(Score*) override;
@@ -158,14 +154,13 @@ public:
     Segment* next1MM() const;
     Segment* next1MMenabled() const;
     Segment* next1(SegmentType) const;
-    Segment* next1ChordRestOrTimeTick() const;
     Segment* next1WithElemsOnStaff(staff_idx_t staffIdx, SegmentType segType = SegmentType::ChordRest) const;
     Segment* next1WithElemsOnTrack(track_idx_t trackIdx, SegmentType segType = SegmentType::ChordRest) const;
     Segment* next1MM(SegmentType) const;
 
     Segment* prev1() const;
-    Segment* prev1ChordRestOrTimeTick() const;
     Segment* prev1WithElemsOnStaff(staff_idx_t staffIdx, SegmentType segType = SegmentType::ChordRest) const;
+    Segment* prev1WithElemsOnTrack(track_idx_t trackIdx, SegmentType segType = SegmentType::ChordRest) const;
     Segment* prev1enabled() const;
     Segment* prev1MM() const;
     Segment* prev1MMenabled() const;
@@ -178,22 +173,16 @@ public:
 
     EngravingItem* element(track_idx_t track) const;
 
-    // a variant of the above function, specifically designed to be called from QML
-    //@ returns the element at track 'track' (null if none)
-    EngravingItem* elementAt(track_idx_t track) const;
-
     const std::vector<EngravingItem*>& elist() const { return m_elist; }
     std::vector<EngravingItem*>& elist() { return m_elist; }
 
     void removeElement(track_idx_t track);
     void setElement(track_idx_t track, EngravingItem* el);
-    void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
+    void scanElements(std::function<void(EngravingItem*)> func) override;
 
     Measure* measure() const { return toMeasure(explicitParent()); }
     System* system() const { return toSystem(explicitParent()->explicitParent()); }
     double x() const override { return ldata()->pos().x(); }
-
-    RectF contentRect() const;
 
     void insertStaff(staff_idx_t staff);
     void removeStaff(staff_idx_t staff);
@@ -356,7 +345,7 @@ public:
     double xPosInSystemCoords() const;
     void setXPosInSystemCoords(double x);
 
-    bool isTupletSubdivision() const;
+    bool isTupletSubdivisionOnStaff(staff_idx_t staffIdx) const;
     bool isInsideTupletOnStaff(staff_idx_t staffIdx) const;
 
 private:

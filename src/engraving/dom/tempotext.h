@@ -93,6 +93,12 @@ public:
     PropertyValue propertyDefault(Pid id) const override;
     String accessibleInfo() const override;
 
+    bool positionRelativeToNoteheadRest() const override { return true; }
+
+    String tempoInfo() const;
+
+    static constexpr double DEFAULT_SYM_SIZE_RATIO = 5.0 / 3.0;
+
 protected:
     void added() override;
     void removed() override;

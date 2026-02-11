@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,14 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MUSE_VST_VSTFXPROCESSOR_H
-#define MUSE_VST_VSTFXPROCESSOR_H
+
+#pragma once
 
 #include <memory>
 
 #include "async/asyncable.h"
 
-#include "audio/worker/ifxprocessor.h"
+#include "audio/engine/ifxprocessor.h"
 
 #include "../vstaudioclient.h"
 #include "vsttypes.h"
@@ -45,7 +45,7 @@ public:
     void setOutputSpec(const audio::OutputSpec& spec) override;
     bool active() const override;
     void setActive(bool active) override;
-    void process(float* buffer, unsigned int sampleCount) override;
+    void process(float* buffer, unsigned int sampleCount, muse::audio::msecs_t playbackPosition = 0) override;
 
 private:
     bool m_inited = false;
@@ -61,5 +61,3 @@ private:
 
 using VstFxPtr = std::shared_ptr<VstFxProcessor>;
 }
-
-#endif // MUSE_VST_VSTFXPROCESSOR_H

@@ -23,10 +23,14 @@
 #include "gradualtempochange.h"
 
 #include "measure.h"
+#include "rehearsalmark.h"
 #include "score.h"
 #include "segment.h"
 #include "system.h"
 #include "tempotext.h"
+#include "text.h"
+
+#include "types/typesconv.h"
 
 #include "log.h"
 
@@ -58,12 +62,25 @@ static const ElementStyle tempoStyle {
     { Sid::tempoChangeAlign, Pid::CONTINUE_TEXT_ALIGN },
     { Sid::tempoChangeAlign, Pid::END_TEXT_ALIGN },
 
+    { Sid::tempoChangePosition, Pid::BEGIN_TEXT_POSITION },
+    { Sid::tempoChangePosition, Pid::CONTINUE_TEXT_POSITION },
+    { Sid::tempoChangePosition, Pid::END_TEXT_POSITION },
+
     { Sid::tempoChangeFontSpatiumDependent, Pid::SIZE_SPATIUM_DEPENDENT },
     { Sid::tempoChangeLineWidth, Pid::LINE_WIDTH },
     { Sid::tempoChangeLineStyle, Pid::LINE_STYLE },
     { Sid::tempoChangeDashLineLen, Pid::DASH_LINE_LEN },
     { Sid::tempoChangeDashGapLen, Pid::DASH_GAP_LEN },
     { Sid::tempoChangeFontSpatiumDependent, Pid::TEXT_SIZE_SPATIUM_DEPENDENT },
+
+    { Sid::gradualTempoChangeEndLineArrowHeight,         Pid::END_LINE_ARROW_HEIGHT },
+    { Sid::gradualTempoChangeEndLineArrowWidth,          Pid::END_LINE_ARROW_WIDTH },
+    { Sid::gradualTempoChangeBeginLineArrowHeight,       Pid::BEGIN_LINE_ARROW_HEIGHT },
+    { Sid::gradualTempoChangeBeginLineArrowWidth,        Pid::BEGIN_LINE_ARROW_WIDTH },
+    { Sid::gradualTempoChangeEndFilledArrowHeight,       Pid::END_FILLED_ARROW_HEIGHT },
+    { Sid::gradualTempoChangeEndFilledArrowWidth,        Pid::END_FILLED_ARROW_WIDTH },
+    { Sid::gradualTempoChangeBeginFilledArrowHeight,     Pid::BEGIN_FILLED_ARROW_HEIGHT },
+    { Sid::gradualTempoChangeBeginFilledArrowWidth,      Pid::BEGIN_FILLED_ARROW_WIDTH },
 };
 
 static const ElementStyle tempoSegmentStyle {
@@ -147,6 +164,8 @@ PropertyValue GradualTempoChange::getProperty(Pid id) const
         return tempoChangeFactor();
     case Pid::SNAP_AFTER:
         return snapToItemAfter();
+    case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
+        return m_alignRightOfRehearsalMark;
     default:
         return TextLineBase::getProperty(id);
     }
@@ -156,16 +175,19 @@ bool GradualTempoChange::setProperty(Pid id, const PropertyValue& val)
 {
     switch (id) {
     case Pid::TEMPO_CHANGE_TYPE:
-        m_tempoChangeType = GradualTempoChangeType(val.toInt());
+        m_tempoChangeType = val.value<GradualTempoChangeType>();
         break;
     case Pid::TEMPO_EASING_METHOD:
-        m_tempoEasingMethod = ChangeMethod(val.toInt());
+        m_tempoEasingMethod = val.value<ChangeMethod>();
         break;
     case Pid::TEMPO_CHANGE_FACTOR:
         m_tempoChangeFactor = val.toReal();
         break;
     case Pid::SNAP_AFTER:
         setSnapToItemAfter(val.toBool());
+        break;
+    case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
+        m_alignRightOfRehearsalMark = val.toBool();
         break;
     default:
         if (!TextLineBase::setProperty(id, val)) {
@@ -221,6 +243,12 @@ PropertyValue GradualTempoChange::propertyDefault(Pid propertyId) const
     case Pid::SNAP_AFTER:
         return true;
 
+    case Pid::TEMPO_ALIGN_RIGHT_OF_REHEARSAL_MARK:
+        return true;
+
+    case Pid::TEXT_STYLE:
+        return TextStyleType::TEMPO_CHANGE;
+
     default:
         return TextLineBase::propertyDefault(propertyId);
     }
@@ -261,6 +289,67 @@ Sid GradualTempoChange::getPropertyStyle(Pid id) const
     return TextLineBase::getPropertyStyle(id);
 }
 
+bool GradualTempoChange::adjustForRehearsalMark(bool start) const
+{
+    const Segment* segment = start ? startSegment() : endSegment();
+    if (!m_alignRightOfRehearsalMark || !segment) {
+        return false;
+    }
+
+    const RehearsalMark* rehearsalMark = toRehearsalMark(segment->findAnnotation(ElementType::REHEARSAL_MARK, track(), track()));
+    if (!rehearsalMark) {
+        return false;
+    }
+    RectF thisBbox = ldata()->bbox().translated(pos());
+    RectF rehearsalMarkBbox = rehearsalMark ? rehearsalMark->ldata()->bbox().translated(rehearsalMark->pos()) : RectF();
+
+    const bool sameSide = placeAbove() == rehearsalMark->placeAbove();
+    const bool collision = placeAbove() ? muse::RealIsEqualOrMore(rehearsalMarkBbox.bottom(), thisBbox.top()) : muse::RealIsEqualOrLess(
+        rehearsalMarkBbox.top(), thisBbox.bottom());
+
+    return sameSide && collision;
+}
+
+PointF GradualTempoChange::linePos(Grip grip, System** system) const
+{
+    bool start = grip == Grip::START;
+    PointF defaultPos = TextLineBase::linePos(grip, system);
+    if (!adjustForRehearsalMark(start)) {
+        return defaultPos;
+    }
+
+    const Segment* segment = start ? startSegment() : endSegment();
+    const RehearsalMark* rehearsalMark = toRehearsalMark(segment->findAnnotation(ElementType::REHEARSAL_MARK, track(), track()));
+    RectF rehearsalMarkBbox = rehearsalMark ? rehearsalMark->ldata()->bbox().translated(rehearsalMark->pos()) : RectF();
+
+    PointF rehearsalMarkPos = segment->pos() + segment->measure()->pos();
+    rehearsalMarkBbox.translate(rehearsalMarkPos);
+
+    Text* text = start ? toGradualTempoChangeSegment(frontSegment())->text() : toGradualTempoChangeSegment(backSegment())->endText();
+
+    const double sp = spatium();
+
+    double padding = sp;
+    if (text) {
+        const double fontSizeScaleFactor = text->size() / 10.0;
+        padding = 0.5 * sp * fontSizeScaleFactor;
+    }
+
+    padding *= start ? 1.0 : -1.0;
+    double x = (start ? rehearsalMarkBbox.right() : rehearsalMarkBbox.left()) + padding;
+
+    *system = segment->measure()->system();
+
+    x = start ? std::max(x, defaultPos.x()) : x;
+
+    return PointF(x, 0.0);
+}
+
+TranslatableString GradualTempoChange::subtypeUserName() const
+{
+    return TConv::userName(m_tempoChangeType);
+}
+
 void GradualTempoChange::added()
 {
     requestToRebuildTempo();
@@ -285,6 +374,8 @@ GradualTempoChangeSegment::GradualTempoChangeSegment(GradualTempoChange* annotat
                           ElementFlag::MOVABLE | ElementFlag::ON_STAFF | ElementFlag::SYSTEM)
 {
     initElementStyle(&tempoSegmentStyle);
+    m_text->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
+    m_endText->setTextStyleType(propertyDefault(Pid::TEXT_STYLE).value<TextStyleType>());
 }
 
 GradualTempoChangeSegment* GradualTempoChangeSegment::clone() const

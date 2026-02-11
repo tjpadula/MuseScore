@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_PAGE_H
-#define MU_ENGRAVING_PAGE_H
+#pragma once
 
 #include <vector>
 
@@ -50,10 +49,6 @@ class Page final : public EngravingItem
     DECLARE_CLASSOF(ElementType::PAGE)
 
 public:
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-    EngravingObjectList scanChildren() const override;
-
     Page* clone() const override { return new Page(*this); }
     const std::vector<System*>& systems() const { return m_systems; }
     std::vector<System*>& systems() { return m_systems; }
@@ -72,7 +67,7 @@ public:
     double headerExtension() const;
     double footerExtension() const;
 
-    void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
+    void scanElements(std::function<void(EngravingItem*)> func) override;
 
     std::vector<EngravingItem*> items(const RectF& r);
     std::vector<EngravingItem*> items(const PointF& p);
@@ -96,6 +91,8 @@ private:
     void doRebuildBspTree();
     TextBlock replaceTextMacros(const TextBlock&) const;
     const CharFormat formatForMacro(const String&) const;
+    void appendFormattedString(std::list<TextFragment>& fragments, const String& string, const CharFormat& defaultFormat,
+                               const CharFormat& newFormat) const;
 
     std::vector<System*> m_systems;
     page_idx_t m_no = 0;                        // page number
@@ -103,5 +100,4 @@ private:
     BspTree bspTree;
     bool m_bspTreeValid = false;
 };
-} // namespace mu::engraving
-#endif
+}

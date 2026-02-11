@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MUSE_AUDIO_AUDIOCONFIGURATION_H
-#define MUSE_AUDIO_AUDIOCONFIGURATION_H
+
+#pragma once
 
 #include "../iaudioconfiguration.h"
 
@@ -32,8 +32,8 @@
 namespace muse::audio {
 class AudioConfiguration : public IAudioConfiguration, public Injectable
 {
-    Inject<IGlobalConfiguration> globalConfiguration = { this };
-    Inject<io::IFileSystem> fileSystem = { this };
+    GlobalInject<IGlobalConfiguration> globalConfiguration;
+    GlobalInject<io::IFileSystem> fileSystem;
     Inject<rpc::IRpcChannel> rpcChannel = { this };
 
 public:
@@ -42,13 +42,12 @@ public:
 
     void init();
 
-    AudioWorkerConfig workerConfig() const override;
-    void onWorkerConfigChanged();
+    AudioEngineConfig engineConfig() const override;
 
-    std::vector<std::string> availableAudioApiList() const override;
-
+    std::string defaultAudioApi() const override;
     std::string currentAudioApi() const override;
     void setCurrentAudioApi(const std::string& name) override;
+    async::Notification currentAudioApiChanged() const override;
 
     std::string audioOutputDeviceId() const override;
     void setAudioOutputDeviceId(const std::string& deviceId) override;
@@ -60,14 +59,9 @@ public:
     void setDriverBufferSize(unsigned int size) override;
     async::Notification driverBufferSizeChanged() const override;
 
-    samples_t samplesToPreallocate() const override;
-    async::Channel<samples_t> samplesToPreallocateChanged() const override;
-
     unsigned int sampleRate() const override;
     void setSampleRate(unsigned int sampleRate) override;
     async::Notification sampleRateChanged() const override;
-
-    // synthesizers
 
     io::paths_t soundFontDirectories() const override;
     io::paths_t userSoundFontDirectories() const override;
@@ -81,18 +75,15 @@ public:
     bool shouldMeasureInputLag() const override;
 
 private:
-    void updateSamplesToPreallocate();
+    void onEngineConfigChanged();
 
     async::Channel<io::paths_t> m_soundFontDirsChanged;
     async::Channel<samples_t> m_samplesToPreallocateChanged;
     async::Channel<bool> m_autoProcessOnlineSoundsInBackgroundChanged;
 
+    async::Notification m_currentAudioApiChanged;
     async::Notification m_audioOutputDeviceIdChanged;
     async::Notification m_driverBufferSizeChanged;
     async::Notification m_driverSampleRateChanged;
-
-    samples_t m_samplesToPreallocate = 0;
 };
 }
-
-#endif // MUSE_AUDIO_AUDIOCONFIGURATION_H

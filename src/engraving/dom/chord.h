@@ -115,6 +115,17 @@ private:
 //   @P stemDirection Direction     the stem direction of the chord: AUTO, UP, DOWN (read only)
 //---------------------------------------------------------
 
+struct NoteParenthesisInfo {
+    NoteParenthesisInfo (Parenthesis* lParen, Parenthesis* rParen, std::vector<Note*> nList)
+        : leftParen(lParen), rightParen(rParen), notes(nList) {}
+    NoteParenthesisInfo() {}
+    Parenthesis* leftParen = nullptr;
+    Parenthesis* rightParen = nullptr;
+    std::vector<Note*> notes;
+};
+
+using NoteParenthesisInfoList = std::vector<NoteParenthesisInfo>;
+
 class Chord final : public ChordRest
 {
     OBJECT_ALLOCATOR(engraving, Chord)
@@ -125,10 +136,7 @@ public:
     ~Chord();
     Chord& operator=(const Chord&) = delete;
 
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-    EngravingObjectList scanChildren() const override;
-    void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
+    void scanElements(std::function<void(EngravingItem*)> func) override;
 
     Chord* clone() const override { return new Chord(*this, false); }
     EngravingItem* linkedClone() override { return new Chord(*this, true); }
@@ -161,6 +169,15 @@ public:
 
     std::vector<Note*>& notes() { return m_notes; }
     const std::vector<Note*>& notes() const { return m_notes; }
+
+    const NoteParenthesisInfoList& noteParens() const { return m_noteParens; }
+    const NoteParenthesisInfo* findNoteParenInfo(const Note* note) const;
+    const NoteParenthesisInfo* findNoteParenInfo(const Parenthesis* paren) const;
+    NoteParenthesisInfo* findNoteParenInfo(const Parenthesis* paren);
+    void addNoteParenInfo(Parenthesis* leftParen, Parenthesis* rightParen, std::vector<Note*> notes);
+    void removeNoteParenInfo(const NoteParenthesisInfo* noteParenInfo);
+    void addNoteToParenInfo(Note* note, const Parenthesis* paren);
+    void removeNoteFromParenInfo(Note* note, const Parenthesis* paren);
 
     bool isChordPlayable() const;
     void setIsChordPlayable(const bool isPlayable);
@@ -207,6 +224,7 @@ public:
     const std::vector<Chord*>& graceNotes() const { return m_graceNotes; }
     std::vector<Chord*>& graceNotes() { return m_graceNotes; }
     std::vector<Chord*> allGraceChordsOfMainChord();
+    void removeAllGraceNotes() { m_graceNotes.clear(); }
 
     GraceNotesGroup& graceNotesBefore(bool filterUnplayable = false) const;
     GraceNotesGroup& graceNotesAfter(bool filterUnplayable = false) const;
@@ -226,9 +244,7 @@ public:
     Hook* hook() const { return m_hook; }
     void setHook(Hook* h) { m_hook = h; }
 
-    //@ add an element to the Chord
     void add(EngravingItem*) override;
-    //@ remove the element from the Chord
     void remove(EngravingItem*) override;
 
     Note* selectedNote() const;
@@ -243,7 +259,6 @@ public:
 
     bool isPreBendOrGraceBendStart() const;
     bool isGraceBendEnd() const;
-    bool preOrGraceBendSpacingExceptionInTab() const;
 
     bool isTrillCueNote() const { return m_isTrillCueNote; }
     void setIsTrillCueNote(bool v);
@@ -358,6 +373,7 @@ public:
     StartEndSlurs& startEndSlurs() { return m_startEndSlurs; }
 
     bool allNotesTiedToNext() const;
+    bool allElementsInvisible() const;
 
 private:
 
@@ -371,6 +387,7 @@ private:
 
     std::vector<Note*> m_notes;           // sorted to decreasing line step
     std::vector<LedgerLine*> m_ledgerLines;
+    NoteParenthesisInfoList m_noteParens;
 
     Stem* m_stem = nullptr;
     Hook* m_hook = nullptr;

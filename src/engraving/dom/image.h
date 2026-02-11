@@ -20,8 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MU_ENGRAVING_IMAGE_H
-#define MU_ENGRAVING_IMAGE_H
+#pragma once
 
 #include "bsymbol.h"
 
@@ -49,7 +48,7 @@ class Image final : public BSymbol, public muse::Injectable
     OBJECT_ALLOCATOR(engraving, Image)
     DECLARE_CLASSOF(ElementType::IMAGE)
 
-    muse::Inject<muse::draw::IImageProvider> imageProvider = { this };
+    muse::GlobalInject<muse::draw::IImageProvider> imageProvider;
 
 public:
     Image(EngravingItem* parent);
@@ -58,9 +57,9 @@ public:
 
     Image* clone() const override { return new Image(*this); }
 
-    bool load(); // after set paths
-    bool load(const muse::io::path_t& s);
-    bool loadFromData(const muse::io::path_t& name, const muse::ByteArray&);
+    bool loadFromStore(const std::string& storePath);
+    bool loadFromFile(muse::io::path_t path);
+    bool loadFromData(const std::string& suffix, const muse::ByteArray&);
 
     void init();
 
@@ -80,11 +79,8 @@ public:
     bool sizeIsSpatium() const { return m_sizeIsSpatium; }
     void setSizeIsSpatium(bool val) { m_sizeIsSpatium = val; }
 
-    String storePath() const { return m_storePath; }
-    void setStorePath(const String& p) { m_storePath = p; }
-    String linkPath() const { return m_linkPath; }
-    void setLinkPath(const String& p) { m_linkPath = p; }
-    bool linkIsValid() const { return m_linkIsValid; }
+    const std::string& storePath() const { return m_storePath; }
+    void setStorePath(const std::string& p) { m_storePath = p; }
 
     PropertyValue getProperty(Pid) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;
@@ -116,15 +112,13 @@ public:
 private:
 
     bool isEditable() const override { return true; }
-    void startEditDrag(EditData&) override;
-    void editDrag(EditData& ed) override;
+    void startDragGrip(EditData&) override;
+    void dragGrip(EditData& ed) override;
     std::vector<LineF> gripAnchorLines(Grip) const override { return std::vector<LineF>(); }
 
     ImageStoreItem* m_storeItem = nullptr;
-    String m_storePath;                 // the path of the img in the ImageStore
-    String m_linkPath;                  // the path of an external linked img
-    bool m_linkIsValid = false;         // whether _linkPath file exists or not
-    mutable muse::draw::Pixmap m_buffer;  // cached rendering
+    std::string m_storePath; // the path of the img in the ImageStore
+    mutable muse::draw::Pixmap m_buffer; // cached rendering
     SizeF m_size;                   // in mm or spatium units
     bool m_lockAspectRatio = false;
     bool m_autoScale = false;           // fill parent frame
@@ -136,5 +130,4 @@ private:
 
     ImageType m_imageType = ImageType::NONE;
 };
-} // namespace mu::engraving
-#endif
+}

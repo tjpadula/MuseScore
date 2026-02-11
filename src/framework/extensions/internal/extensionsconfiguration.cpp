@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -123,11 +123,13 @@ std::map<muse::Uri, Manifest::Config> ExtensionsConfiguration::manifestConfigs()
     //! NOTE Load current config
     if (io::File::exists(configPath)) {
         ByteArray data;
-        mi::ReadResourceLockGuard lock_guard(multiInstancesProvider.get(), EXTENSIONS_RESOURCE_NAME);
-        Ret ret = io::File::readFile(configPath, data);
-        if (!ret) {
-            LOGE() << "failed read config data, err: " << ret.toString() << ", file: " << configPath;
-            return {};
+        {
+            mi::ReadResourceLockGuard lock_guard(multiInstancesProvider.get(), EXTENSIONS_RESOURCE_NAME);
+            Ret ret = io::File::readFile(configPath, data);
+            if (!ret) {
+                LOGE() << "failed read config data, err: " << ret.toString() << ", file: " << configPath;
+                return {};
+            }
         }
 
         std::string err;
@@ -174,11 +176,14 @@ std::map<muse::Uri, Manifest::Config> ExtensionsConfiguration::manifestConfigs()
     //! NOTE Load old plugins config
     else {
         ByteArray data;
-        mi::ReadResourceLockGuard lock_guard(multiInstancesProvider.get(), EXTENSIONS_RESOURCE_NAME);
-        Ret ret = io::File::readFile(oldPluginsConfigPath, data);
-        if (!ret) {
-            LOGE() << "failed read config data, err: " << ret.toString() << ", file: " << oldPluginsConfigPath;
-            return {};
+
+        {
+            mi::ReadResourceLockGuard lock_guard(multiInstancesProvider.get(), EXTENSIONS_RESOURCE_NAME);
+            Ret ret = io::File::readFile(oldPluginsConfigPath, data);
+            if (!ret) {
+                LOGE() << "failed read config data, err: " << ret.toString() << ", file: " << oldPluginsConfigPath;
+                return {};
+            }
         }
 
         std::string err;

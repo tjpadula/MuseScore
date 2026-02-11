@@ -19,8 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_ENGRAVING_DEBUGPAINT_DEV_H
-#define MU_ENGRAVING_DEBUGPAINT_DEV_H
+#pragma once
 
 #include "draw/painter.h"
 
@@ -36,10 +35,5 @@ class DebugPaint
 public:
     static void paintElementDebug(muse::draw::Painter& painter, const EngravingItem* item);
     static void paintPageDebug(muse::draw::Painter& painter, const Page* page, const std::vector<EngravingItem*>& items);
-
-    static void paintPageTree(muse::draw::Painter& painter, const Page* page);
-    static void paintTreeElement(muse::draw::Painter& painter, const EngravingItem* item);
 };
 }
-
-#endif // MU_ENGRAVING_DEBUGPAINT_DEV_H

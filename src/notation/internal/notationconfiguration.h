@@ -33,15 +33,18 @@
 #include "../inotationconfiguration.h"
 
 namespace mu::notation {
-class NotationConfiguration : public INotationConfiguration, public muse::async::Asyncable
+class NotationConfiguration : public INotationConfiguration, public muse::async::Asyncable, public muse::Injectable
 {
-    INJECT(muse::IGlobalConfiguration, globalConfiguration)
-    INJECT(muse::io::IFileSystem, fileSystem)
-    INJECT(muse::ui::IUiConfiguration, uiConfiguration)
-    INJECT(engraving::IEngravingConfiguration, engravingConfiguration)
-    INJECT(context::IGlobalContext, context)
+    muse::GlobalInject<muse::IGlobalConfiguration> globalConfiguration;
+    muse::GlobalInject<muse::io::IFileSystem> fileSystem;
+    muse::GlobalInject<muse::ui::IUiConfiguration> uiConfiguration;
+    muse::GlobalInject<engraving::IEngravingConfiguration> engravingConfiguration;
+    muse::Inject<context::IGlobalContext> context = { this };
 
 public:
+
+    explicit NotationConfiguration(const muse::modularity::ContextPtr& ctx);
+
     void init();
 
     QColor notationColor() const override;
@@ -75,6 +78,16 @@ public:
     muse::async::Notification foregroundChanged() const override;
 
     muse::io::path_t wallpapersDefaultDirPath() const override;
+
+    bool shouldInvertScore() const override;  // Whether score should be inverted now, based on theme.
+
+    bool scoreInversionEnabled() const override;
+    void setScoreInversionEnabled(bool value) override;
+    muse::async::Notification scoreInversionChanged() const override;
+
+    bool isOnlyInvertInDarkTheme() const override;
+    void setOnlyInvertInDarkTheme(bool value) override;
+    muse::async::Notification isOnlyInvertInDarkThemeChanged() const override;
 
     QColor borderColor() const override;
     int borderWidth() const override;
@@ -213,13 +226,13 @@ public:
     void setTemplateModeEnabled(std::optional<bool> enabled) override;
     void setTestModeEnabled(std::optional<bool> enabled) override;
 
-    muse::io::path_t instrumentListPath() const override;
+    muse::io::path_t instrumentsXmlPath() const override;
+    muse::io::path_t scoreOrdersXmlPath() const override;
 
-    muse::io::paths_t scoreOrderListPaths() const override;
-    muse::async::Notification scoreOrderListPathsChanged() const override;
-
-    muse::io::paths_t userScoreOrderListPaths() const override;
-    void setUserScoreOrderListPaths(const muse::io::paths_t& paths) override;
+    muse::io::path_t userInstrumentsFolder() const override;
+    muse::io::paths_t userInstrumentsAndScoreOrdersPaths() const override;
+    void setUserInstrumentsFolder(const muse::io::path_t& path) override;
+    muse::async::Channel<muse::io::path_t> userInstrumentsFolderChanged() const override;
 
     muse::io::path_t stringTuningsPresetsPath() const override;
 
@@ -228,15 +241,6 @@ public:
 
     int gridSizeSpatium(muse::Orientation gridOrientation) const override;
     void setGridSize(muse::Orientation gridOrientation, int sizeSpatium) override;
-
-    bool needToShowAddTextErrorMessage() const override;
-    void setNeedToShowAddTextErrorMessage(bool show) override;
-
-    bool needToShowAddFiguredBassErrorMessage() const override;
-    void setNeedToShowAddFiguredBassErrorMessage(bool show) override;
-
-    bool needToShowAddGuitarBendErrorMessage() const override;
-    void setNeedToShowAddGuitarBendErrorMessage(bool show) override;
 
     bool needToShowMScoreError(const std::string& errorKey) const override;
     void setNeedToShowMScoreError(const std::string& errorKey, bool show) override;
@@ -284,14 +288,10 @@ public:
     void resetStyleDialogPageIndices() override;
 
 private:
-    muse::io::path_t firstScoreOrderListPath() const;
-    void setFirstScoreOrderListPath(const muse::io::path_t& path);
-
-    muse::io::path_t secondScoreOrderListPath() const;
-    void setSecondScoreOrderListPath(const muse::io::path_t& path);
-
     muse::async::Notification m_backgroundChanged;
     muse::async::Notification m_foregroundChanged;
+    muse::async::Notification m_scoreInversionChanged;
+    muse::async::Notification m_isOnlyInvertInDarkThemeChanged;
 
     muse::async::Notification m_defaultNoteInputMethodChanged;
     muse::async::Notification m_addAccidentalDotsArticulationsToNextNoteEnteredChanged;
@@ -304,7 +304,7 @@ private:
     muse::async::Channel<muse::Orientation> m_canvasOrientationChanged;
     muse::async::Channel<muse::io::path_t> m_userStylesPathChanged;
     muse::async::Channel<muse::io::path_t> m_userMusicFontsPathChanged;
-    muse::async::Notification m_scoreOrderListPathsChanged;
+    muse::async::Channel<muse::io::path_t> m_userInstrumentsFolderChanged;
     muse::async::Notification m_isLimitCanvasScrollAreaChanged;
     muse::async::Channel<int> m_selectionProximityChanged;
     muse::async::Channel<bool> m_colorNotesOutsideOfUsablePitchRangeChanged;

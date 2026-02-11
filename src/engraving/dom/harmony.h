@@ -72,7 +72,6 @@ struct HarmonyRenderItem {
 
     virtual double leftPadding() const = 0;
     virtual double rightPadding() const = 0;
-    virtual double bboxBaseLine() const = 0;
 
     virtual HarmonyRenderItemType type() const = 0;
 
@@ -101,8 +100,6 @@ struct ChordSymbolParen : HarmonyRenderItem {
     double leftPadding() const override { return parenItem->direction() == DirectionH::LEFT ? OUTER_PADDING : INNER_PADDING; }
     double rightPadding() const override { return parenItem->direction() == DirectionH::LEFT ? INNER_PADDING : OUTER_PADDING; }
 
-    double bboxBaseLine() const override { return bottom; }
-
     HarmonyRenderItemType type() const override { return HarmonyRenderItemType::PAREN; }
 
 private:
@@ -117,7 +114,6 @@ private:
 struct TextSegment : HarmonyRenderItem {
     double width() const;
     double capHeight() const;
-    double bboxBaseLine() const override;
     RectF boundingRect() const override;
     RectF tightBoundingRect() const override;
 
@@ -271,12 +267,15 @@ public:
 
     bool hasModifiers() const;
 
+    String displayText() const;
     String harmonyName() const;
 
     double baseLine() const override;
     void spatiumChanged(double oldValue, double newValue) override;
     void localSpatiumChanged(double oldValue, double newValue) override;
     void setHarmony(const String& s);
+
+    int subtype() const override { return static_cast<int>(harmonyType()); }
 
     TranslatableString typeUserName() const override;
     String accessibleInfo() const override;
@@ -286,22 +285,34 @@ public:
     bool acceptDrop(EditData&) const override;
     EngravingItem* drop(EditData&) override;
 
+    void undoChangeProperty(Pid id, const PropertyValue& v, PropertyFlags ps) override;
+    using EngravingObject::undoChangeProperty;
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue& v) override;
     PropertyValue propertyDefault(Pid id) const override;
+
+    bool positionRelativeToNoteheadRest() const override;
 
     double mag() const override;
 
     double bassScale() const { return m_bassScale; }
     void setBassScale(double v) { m_bassScale = v; }
 
-    Color curColor() const override;
+    Color curColor(const rendering::PaintOptions& opt) const override;
     void setColor(const Color& color) override;
 
     bool doNotStackModifiers() const { return m_doNotStackModifiers; }
 
     NoteCaseType rootRenderCase(HarmonyInfo* info) const;
     NoteCaseType bassRenderCase() const;
+
+    FontStyle fontStyle() const override { return m_fontStyle; }
+    String family() const override { return m_fontFamily; }
+    double size() const override { return m_fontSize; }
+
+    void setFontStyle(const FontStyle& val) override { m_fontStyle = val; }
+    void setFamily(const String& val) override { m_fontFamily = val; }
+    void setSize(const double& val) override { m_fontSize = val; }
 
     struct LayoutData : public TextBase::LayoutData {
         ld_field<double> harmonyHeight = { "[Harmony] harmonyHeight", 0.0 };    // used for calculating the height is frame while editing.
@@ -337,5 +348,10 @@ private:
     NoteCaseType m_bassCase = NoteCaseType::AUTO;        // case as typed
 
     double m_bassScale = 1.0;
+
+    // Overridden textbase properties to apply to whole item
+    double m_fontSize = 10.0;
+    String m_fontFamily = u"";
+    FontStyle m_fontStyle;
 };
 } // namespace mu::engraving

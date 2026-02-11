@@ -59,7 +59,7 @@ void NoteArticulationsParser::buildNoteArticulationMap(const Note* note, const R
 
 void NoteArticulationsParser::doParse(const EngravingItem* item, const RenderingContext& ctx, mpe::ArticulationMap& result)
 {
-    IF_ASSERT_FAILED(item->type() == ElementType::NOTE) {
+    IF_ASSERT_FAILED(item->isNote()) {
         return;
     }
 
@@ -131,9 +131,14 @@ ArticulationType NoteArticulationsParser::articulationTypeByNoteheadGroup(const 
     }
 }
 
-void NoteArticulationsParser::parsePlayingTechnique(const RenderingContext& ctx, mpe::ArticulationMap& result)
+void NoteArticulationsParser::parsePlayingTechnique(const RenderingContext& ctx, mpe::ArticulationMap& result, bool sustainAllowed)
 {
-    const std::pair<timestamp_t, PlayingTechniqueType> tech = ctx.playbackCtx->playingTechnique(ctx.score, ctx.nominalPositionStartTick);
+    const int chordPosTickWithOffset = ctx.nominalPositionStartTick + ctx.positionTickOffset;
+    const std::pair<timestamp_t, PlayingTechniqueType> tech = ctx.playbackCtx->playingTechnique(ctx.score, chordPosTickWithOffset);
+    if (tech.second == PlayingTechniqueType::HandbellsLV && !sustainAllowed) {
+        return;
+    }
+
     const mpe::ArticulationType articulationType = articulationFromPlayTechType(tech.second);
     if (articulationType == ArticulationType::Standard || articulationType == ArticulationType::Undefined) {
         return;
@@ -149,7 +154,7 @@ void NoteArticulationsParser::parsePlayingTechnique(const RenderingContext& ctx,
 
     if (tech.second == PlayingTechniqueType::HandbellsLV) {
         const timestamp_t dampTime = ctx.playbackCtx->findPlayingTechniqueTimestamp(ctx.score, PlayingTechniqueType::HandbellsDamp,
-                                                                                    ctx.nominalPositionStartTick);
+                                                                                    chordPosTickWithOffset);
         timestamp = tech.first;
         duration = dampTime > 0 ? dampTime - timestamp : mpe::INFINITE_DURATION;
     }

@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -395,18 +395,26 @@ typedef enum ms_RenderingState
     ms_RenderingState_ErrorNetwork,
     ms_RenderingState_ErrorFileIO,
     ms_RenderingState_ErrorTimeOut,
+    ms_RenderingState_ErrorLimitReached,
 } ms_RenderingState;
 
-typedef struct ms_RenderProgressInfo
+typedef struct ms_RenderRangeInfo
 {
     long long _start_us;
     long long _end_us;
     ms_RenderingState _state;
 } ms_RenderRangeInfo;
 
+typedef struct ms_RenderRangeInfo2
+{
+    long long _start_us;
+    long long _end_us;
+    ms_RenderingState _state;
+    const char* _error_message; // possibly null
+} ms_RenderRangeInfo2;
+
 typedef void* ms_RenderingRangeList;
 
-typedef ms_RenderingRangeList (* ms_MuseSampler_get_render_info)(ms_MuseSampler ms, int* num_ranges);
 typedef ms_RenderRangeInfo (* ms_RenderProgressInfo_get_next)(ms_RenderingRangeList range_list);
 
 typedef void (* ms_MuseSampler_set_auto_render_interval)(ms_MuseSampler ms, double interval_seconds);
@@ -417,6 +425,16 @@ typedef ms_Result (* ms_MuseSampler_add_audition_cc_event)(ms_MuseSampler ms, ms
 
 typedef ms_Result (* ms_MuseSampler_add_track_note_event_6)(ms_MuseSampler ms, ms_Track track, ms_NoteEvent_5 evt, long long& event_id);
 typedef ms_Result (* ms_MuseSampler_start_audition_note_5)(ms_MuseSampler ms, ms_Track track, ms_AuditionStartNoteEvent_5 evt);
+// ------------------------------------------------------------
+
+// Added in 0.103
+typedef void (* ms_rendering_state_changed_callback)(void* user_data, ms_RenderingRangeList list, int num_ranges);
+typedef void (* ms_MuseSampler_set_rendering_state_changed_callback)(ms_MuseSampler ms, ms_rendering_state_changed_callback callback,
+                                                                     void* user_data);
+// ------------------------------------------------------------
+
+// added in v0.104
+typedef ms_RenderRangeInfo2 (* ms_RenderProgressInfo2_get_next)(ms_RenderingRangeList range_list);
 // ------------------------------------------------------------
 
 namespace muse::musesampler {
@@ -454,4 +472,5 @@ using DynamicEvent = ms_DynamicsEvent_2;
 using PedalEvent = ms_PedalEvent_2;
 using NoteEvent = ms_NoteEvent_5;
 using SyllableEvent = ms_SyllableEvent2;
+using RenderRangeInfo = ms_RenderRangeInfo2;
 }

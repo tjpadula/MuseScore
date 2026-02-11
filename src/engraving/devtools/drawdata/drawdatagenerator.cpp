@@ -25,6 +25,7 @@
 #include "global/io/fileinfo.h"
 
 #include "draw/bufferedpaintprovider.h"
+#include "draw/painter.h"
 #include "draw/utils/drawdatarw.h"
 
 #include "engraving/compat/scoreaccess.h"
@@ -123,7 +124,7 @@ DrawDataPtr DrawDataGenerator::genDrawData(const muse::io::path_t& scorePath, co
     {
         TRACEFUNC_C("Paint");
         Painter painter(pd, "DrawData");
-        rendering::IScoreRenderer::PaintOptions option;
+        rendering::IScoreRenderer::ScorePaintOptions option;
         //option.fromPage = 0;
         //option.toPage = 0;
         option.isMultiPage = true;
@@ -170,7 +171,7 @@ Pixmap DrawDataGenerator::genImage(const muse::io::path_t& scorePath) const
     {
         Painter painter(&image, "DrawData");
 
-        rendering::IScoreRenderer::PaintOptions opt;
+        rendering::IScoreRenderer::ScorePaintOptions opt;
         opt.fromPage = 0;
         opt.toPage = 0;
         opt.deviceDpi = DrawData::CANVAS_DPI;

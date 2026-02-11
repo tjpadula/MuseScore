@@ -36,6 +36,7 @@
 #include "../../dom/bracket.h"
 #include "../../dom/breath.h"
 
+#include "../../dom/chordbracket.h"
 #include "../../dom/chordline.h"
 #include "../../dom/clef.h"
 #include "../../dom/capo.h"
@@ -204,8 +205,8 @@ public:
     static void layoutAccidental(const Accidental* item, Accidental::LayoutData* ldata, const LayoutConfiguration& conf);
     static void layoutActionIcon(const ActionIcon* item, ActionIcon::LayoutData* ldata);
     static void layoutAmbitus(const Ambitus* item, Ambitus::LayoutData* ldata, const LayoutContext& ctx);
-    static void layoutArpeggio(const Arpeggio* item, Arpeggio::LayoutData* ldata, const LayoutConfiguration& conf,
-                               bool includeCrossStaffHeight = false);
+    static void layoutArpeggio(const Arpeggio* item, Arpeggio::LayoutData* ldata, const LayoutConfiguration& conf);
+    static void layoutChordBracket(const ChordBracket* item, ChordBracket::LayoutData* ldata, const LayoutConfiguration& conf);
     static void layoutArticulation(Articulation* item, Articulation::LayoutData* ldata);
     static void fillArticulationShape(const Articulation* item, Articulation::LayoutData* ldata);
 
@@ -215,10 +216,7 @@ public:
     static void layoutBeam1(Beam* item, LayoutContext& ctx);
     static void layoutBend(const Bend* item, Bend::LayoutData* ldata);
 
-    static void layoutBox(const Box* item, Box::LayoutData* ldata, const LayoutContext& ctx); // factory
-    static void layoutBaseBox(const Box* item, Box::LayoutData* ldata, const LayoutContext& ctx); // base class
     static void layoutHBox(const HBox* item, HBox::LayoutData* ldata, const LayoutContext& ctx);
-    static void layoutHBox2(HBox* item, const LayoutContext& ctx);
     static void layoutVBox(const VBox* item, VBox::LayoutData* ldata, const LayoutContext& ctx);
     static void layoutFBox(const FBox* item, FBox::LayoutData* ldata, const LayoutContext& ctx);
     static void layoutTBox(const TBox* item, TBox::LayoutData* ldata, const LayoutContext& ctx);
@@ -279,10 +277,10 @@ public:
     static void layoutLetRingSegment(LetRingSegment* item, LayoutContext& ctx);
     static void layoutLineSegment(LineSegment* item, LayoutContext& ctx);  // factory
     static void layoutLyrics(Lyrics* item, LayoutContext& ctx);
-    static void layoutLyricsLine(LyricsLine* item, LayoutContext& ctx);
+    static void layoutLyricsLine(LyricsLine* item);
     static void layoutLyricsLineSegment(LyricsLineSegment* item, LayoutContext& ctx);
 
-    static void layoutMarker(const Marker* item, Marker::LayoutData* ldata, LayoutContext& ctx);
+    static void layoutMarker(Marker* item, Marker::LayoutData* ldata, LayoutContext& ctx);
     static void layoutMeasureBase(MeasureBase* item, LayoutContext& ctx); // factory
     static void layoutBaseMeasureBase(const MeasureBase* item, MeasureBase::LayoutData* ldata, const LayoutContext& ctx); // base class
     static void layoutMeasureNumber(MeasureNumber* item, MeasureNumber::LayoutData* ldata, const LayoutContext& ctx);
@@ -344,13 +342,6 @@ public:
     static void layoutTappingHalfSlur(TappingHalfSlur* item);
     static void layoutTempoText(const TempoText* item, TempoText::LayoutData* ldata);
 
-    static void layoutTextBase(TextBase* item, LayoutContext& ctx);                 // factory
-    static void layoutBaseTextBase(const TextBase* item, TextBase::LayoutData* data); // base class
-    static void layoutBaseTextBase(TextBase* item, LayoutContext& ctx);  // base class
-    static void layoutBaseTextBase1(TextBase* item, const LayoutContext& ctx);  // base class
-    static void layoutBaseTextBase1(const TextBase* item, TextBase::LayoutData* data);
-    static void computeTextHighResShape(const TextBase* item, TextBase::LayoutData* ldata);
-
     static void layoutText(const Text* item, Text::LayoutData* ldata);
 
     static void layoutTextLine(TextLine* item, LayoutContext& ctx);
@@ -402,6 +393,11 @@ private:
     static void manageHairpinSnapping(HairpinSegment* item, LayoutContext& ctx);
 
     static void checkRehearsalMarkVSBigTimeSig(const RehearsalMark* item, RehearsalMark::LayoutData* ldata);
+
+    static void manageTempoChangeSnapping(GradualTempoChangeSegment* item, LayoutContext& ctx);
+    static void doLayoutGradualTempoChangeSegment(GradualTempoChangeSegment* item, LayoutContext& ctx);
+
+    static void alignTabGraceNotesToMainStave(GraceNotesGroup* graceNotes, const Staff* notationStaff);
 };
 }
 

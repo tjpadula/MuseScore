@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -64,6 +64,7 @@ TEST(Global_RetTests, Data_KeyNotFound_ReturnsDefaultInReleaseANDTriggersAsserti
     const Ret ret;
     EXPECT_DEATH({
         const auto result = ret.data<std::string>("missing", std::string("fallback"));
+        UNUSED(result);
     }, ".*Assertion.*failed");
 #endif
 }
@@ -81,6 +82,7 @@ TEST(Global_RetTests, Data_KeyExistsButTypeMismatch_ReturnsDefaultInReleaseANDTr
     // In debug builds, expect the assertion to trigger
     EXPECT_DEATH({
         const auto result = ret.data<std::string>("answer", std::string("0"));
+        UNUSED(result);
     }, ".*Assertion.*failed");
 #endif
 }

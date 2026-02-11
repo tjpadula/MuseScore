@@ -29,12 +29,13 @@
 #include "mpe/tests/utils/articulationutils.h"
 #include "mpe/tests/mocks/articulationprofilesrepositorymock.h"
 
-#include "utils/scorerw.h"
-#include "dom/part.h"
-#include "dom/measure.h"
-#include "dom/chord.h"
+#include "engraving/dom/part.h"
+#include "engraving/dom/measure.h"
+#include "engraving/dom/chord.h"
 
-#include "playback/playbackmodel.h"
+#include "engraving/playback/playbackmodel.h"
+
+#include "utils/scorerw.h"
 
 using ::testing::NiceMock;
 using ::testing::Return;
@@ -68,8 +69,8 @@ protected:
     ArticulationPattern buildTestArticulationPattern() const
     {
         ArticulationPatternSegment blankSegment(ArrangementPattern(HUNDRED_PERCENT /*durationFactor*/, 0 /*timestampOffset*/),
-                                                PitchPattern(EXPECTED_SIZE, TEN_PERCENT, 0),
-                                                ExpressionPattern(EXPECTED_SIZE, TEN_PERCENT, 0));
+                                                PitchPattern(ArticulationMap::EXPECTED_SIZE, TEN_PERCENT, 0),
+                                                ExpressionPattern(ArticulationMap::EXPECTED_SIZE, TEN_PERCENT, 0));
 
         ArticulationPattern pattern;
         pattern.emplace(0, std::move(blankSegment));
@@ -177,26 +178,24 @@ TEST_F(Engraving_PlaybackModelTests, Repeat_And_Tremolo)
     EXPECT_CALL(*m_repositoryMock, defaultProfile(_)).WillRepeatedly(Return(m_defaultProfile));
 
     // [GIVEN] Expected amount of events per timestamp
-    const std::map<timestamp_t, std::pair<size_t /*notes*/, size_t /*rests*/> > expectedSizePerTimestamp {
+    const std::map<timestamp_t, size_t> expectedSizePerTimestamp {
         // The first four half notes; repeated
-        { 0 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 1 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 2 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 3 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 4 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 5 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 6 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 7 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
+        { 0 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 1 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 2 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 3 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 4 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 5 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 6 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 7 * 2 * QUARTER_NOTE_DURATION, 16 },
 
         // After the repeat
-        { 8 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 9 * 2 * QUARTER_NOTE_DURATION, { 0, 1 } },
+        { 8 * 2 * QUARTER_NOTE_DURATION, 16 },
 
         // Final three half notes
-        { 10 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 11 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 12 * 2 * QUARTER_NOTE_DURATION, { 16, 0 } },
-        { 13 * 2 * QUARTER_NOTE_DURATION, { 0, 1 } }
+        { 10 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 11 * 2 * QUARTER_NOTE_DURATION, 16 },
+        { 12 * 2 * QUARTER_NOTE_DURATION, 16 },
     };
 
     // [WHEN] The articulation profiles repository will be returning profiles for StringsArticulation family
@@ -224,7 +223,7 @@ TEST_F(Engraving_PlaybackModelTests, Repeat_And_Tremolo)
 
         ASSERT_TRUE(isExpectedTimestamp(pair.first));
 
-        size_t notes = 0, rests = 0;
+        size_t notes = 0;
         for (const PlaybackEvent& event : pair.second) {
             if (std::holds_alternative<mpe::NoteEvent>(event)) {
                 // Check actual timestamp
@@ -232,12 +231,10 @@ TEST_F(Engraving_PlaybackModelTests, Repeat_And_Tremolo)
                 EXPECT_EQ(noteEvent.arrangementCtx().actualTimestamp, pair.first + notes * (2 * QUARTER_NOTE_DURATION / 16));
 
                 ++notes;
-            } else {
-                ++rests;
             }
         }
 
-        EXPECT_EQ(std::make_pair(notes, rests), expectedSizePerTimestamp.at(pair.first));
+        EXPECT_EQ(expectedSizePerTimestamp.at(pair.first), notes);
     }
 
     EXPECT_EQ(timestampCount, expectedSizePerTimestamp.size());
@@ -893,20 +890,27 @@ TEST_F(Engraving_PlaybackModelTests, SimpleRepeat_Changes_Notification)
     // [GIVEN] The articulation profiles repository will be returning profiles for StringsArticulation family
     ON_CALL(*m_repositoryMock, defaultProfile(_)).WillByDefault(Return(m_defaultProfile));
 
-    // [GIVEN] Expected amount of changed events
-    int expectedChangedEventsCount = 24;
-
     // [GIVEN] The playback model requested to be loaded
     PlaybackModel model(modularity::globalCtx());
     model.profilesRepository.set(m_repositoryMock);
     model.load(score);
 
-    PlaybackData result = model.resolveTrackPlaybackData(part->id(), part->instrumentId());
-    EXPECT_EQ(result.originEvents.size(), expectedChangedEventsCount);
+    InstrumentTrackId trackId {
+        part->id(),
+        part->instrumentId()
+    };
+
+    PlaybackData result = model.resolveTrackPlaybackData(trackId);
+    size_t expectedEventCount = 24;
+    EXPECT_EQ(result.originEvents.size(), expectedEventCount);
+
+    // [WHEN] Notify on score change
+    size_t receivedEventCount = 0;
+    model.setSendEventsOnScoreChange(trackId, true);
 
     // [THEN] Updated events map will match our expectations
-    result.mainStream.onReceive(this, [expectedChangedEventsCount](const PlaybackEventsMap& updatedEvents, const DynamicLevelLayers&) {
-        EXPECT_EQ(updatedEvents.size(), expectedChangedEventsCount);
+    result.mainStream.onReceive(this, [&receivedEventCount](const PlaybackEventsMap& updatedEvents, const DynamicLevelLayers&) {
+        receivedEventCount = updatedEvents.size();
     });
 
     // [WHEN] Score has been changed: the range starts ouside the repeat and ends inside it
@@ -919,6 +923,13 @@ TEST_F(Engraving_PlaybackModelTests, SimpleRepeat_Changes_Notification)
 
     score->changesChannel().send(changes);
 
+    // [THEN] Main stream events received
+    EXPECT_EQ(receivedEventCount, expectedEventCount);
+
+    // [WHEN] Notify on score change
+    receivedEventCount = 0;
+    model.setSendEventsOnScoreChange(trackId, false);
+
     // [WHEN] Score has been changed: the range is inside the repeat and tickTo == the end tick of the repeat
     // See: https://github.com/musescore/MuseScore/issues/25899
     changes.tickFrom = 4800; // 3rd note of the 3rd measure (inside the repeat)
@@ -928,6 +939,25 @@ TEST_F(Engraving_PlaybackModelTests, SimpleRepeat_Changes_Notification)
     changes.changedTypes = { ElementType::PEDAL };
 
     score->changesChannel().send(changes);
+
+    // [THEN] Events not sent despite score change
+    EXPECT_EQ(receivedEventCount, 0);
+
+    // [WHEN] Send events
+    model.sendEventsForChangedTracks();
+
+    // [THEN] Events received
+    EXPECT_EQ(receivedEventCount, expectedEventCount);
+
+    // [WHEN] Send score changes
+    score->changesChannel().send(changes);
+
+    // [WHEN] Re-enable sending events on score change
+    receivedEventCount = 0;
+    model.setSendEventsOnScoreChange(trackId, true);
+
+    // [THEN] Events are sent and received immediately
+    EXPECT_EQ(receivedEventCount, expectedEventCount);
 }
 
 /**

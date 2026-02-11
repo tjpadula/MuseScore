@@ -52,7 +52,7 @@ public:
     bool isEditAllowed(EditData&) const override;
     bool edit(EditData&) override;
 
-    void editDrag(EditData& ed) override;
+    void dragGrip(EditData& ed) override;
 
     Slur* slur() const { return toSlur(spanner()); }
 
@@ -60,7 +60,7 @@ public:
     double midWidth() const override;
     double dottedWidth() const override;
 
-    Color curColor() const override;
+    Color curColor(const rendering::PaintOptions& opt) const override;
 
 protected:
     void changeAnchor(EditData&, EngravingItem*) override;
@@ -114,6 +114,7 @@ public:
     const SlurSegment* segmentAt(int n) const { return toSlurSegment(Spanner::segmentAt(n)); }
 
     bool isCrossStaff();
+    bool hasCrossBeams();
     const StemFloated& stemFloated() const { return m_stemFloated; }
     StemFloated& stemFloated() { return m_stemFloated; }
 

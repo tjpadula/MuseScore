@@ -23,9 +23,8 @@
 #include <cmath>
 #include <stack>
 
+#include "dom/harppedaldiagram.h"
 #include "draw/fontmetrics.h"
-#include "draw/types/pen.h"
-#include "draw/types/brush.h"
 
 #include "iengravingfont.h"
 
@@ -35,7 +34,6 @@
 #include "rw/xmlwriter.h"
 
 #include "types/symnames.h"
-#include "types/translatablestring.h"
 #include "types/typesconv.h"
 
 #ifndef ENGRAVING_NO_ACCESSIBILITY
@@ -51,9 +49,9 @@
 #include "mscore.h"
 #include "page.h"
 #include "score.h"
-#include "textedit.h"
-#include "textline.h"
-#include "undo.h"
+
+#include "../editing/textedit.h"
+#include "../editing/undo.h"
 
 #include "log.h"
 
@@ -62,10 +60,6 @@ using namespace muse::draw;
 using namespace mu::engraving;
 
 namespace mu::engraving {
-static constexpr double subScriptSize     = 0.6;
-static constexpr double subScriptOffset   = 0.5; // of x-height
-static constexpr double superScriptOffset = -0.9; // of x-height
-
 static const char* FALLBACK_SYMBOL_FONT = "Bravura";
 static const char* FALLBACK_SYMBOLTEXT_FONT = "Bravura Text";
 
@@ -245,6 +239,7 @@ Char TextCursor::currentCharacter() const
 
     const TextBlock& t = ldata->blocks.at(row());
     String s = t.text(static_cast<int>(column()), 1);
+    s = TextBase::unEscape(s);
     if (s.isEmpty()) {
         return Char();
     }
@@ -371,48 +366,79 @@ const CharFormat TextCursor::selectedFragmentsFormat() const
         return m_format;
     }
 
-    size_t startColumn = hasSelection() ? std::min(selectColumn(), m_column) : 0;
-    size_t startRow = hasSelection() ? std::min(selectLine(), m_row) : 0;
+    size_t startRow = hasSelection() ? m_selectLine : 0;
+    size_t endRow = hasSelection() ? m_row : ldata->blocks.size() - 1;
+    size_t selectionStartCol = hasSelection() ? m_selectColumn : 0;
+    size_t selectionEndCol = hasSelection() ? m_column : 1; // corrected below at `endColumn
 
-    size_t endSelectionRow = hasSelection() ? std::max(selectLine(), m_row) : ldata->blocks.size() - 1;
+    TextBase::sort(startRow, selectionStartCol, endRow, selectionEndCol);
 
-    const TextFragment* tf = ldata->textBlock(static_cast<int>(startRow)).fragment(static_cast<int>(startColumn));
+    const TextFragment* tf = ldata->textBlock(static_cast<int>(startRow)).fragment(static_cast<int>(selectionStartCol));
     CharFormat resultFormat = tf ? tf->format : CharFormat();
 
-    for (size_t row = startRow; row <= endSelectionRow; ++row) {
+    bool allBlocksEmpty = true;
+    for (size_t row = startRow; row <= endRow; ++row) {
         const TextBlock& block = ldata->blocks.at(row);
 
         if (block.fragments().empty()) {
             continue;
         }
+        allBlocksEmpty = false;
 
-        size_t endSelectionColumn = hasSelection() ? std::max(selectColumn(), m_column) : block.columns();
+        const size_t startColumn = (row == startRow) ? selectionStartCol : 0;
+        const size_t endColumn = (row == endRow && hasSelection()) ? selectionEndCol : block.columns();
 
-        for (size_t column = startColumn; column < endSelectionColumn; column++) {
-            const TextFragment* fragment = block.fragment(static_cast<int>(column));
-            CharFormat format = fragment ? fragment->format : CharFormat();
+        size_t column = 0;
+
+        bool isSingleFragment = block.fragments().size() == 1;
+
+        for (const TextFragment& fragment : block.fragments()) {
+            const size_t fragCols = fragment.columns();
+
+            if (!isSingleFragment) {
+                if (column + fragCols <= startColumn) {
+                    column += fragCols;
+                    continue;
+                }
+                if (column > 0 && column >= endColumn) {
+                    break;
+                }
+            }
 
             // proper bitwise 'and' to ensure Bold/Italic/Underline/Strike only true if true for all fragments
-            resultFormat.setStyle(static_cast<FontStyle>(static_cast<int>(resultFormat.style()) & static_cast<int>(format.style())));
+            resultFormat.setStyle(static_cast<FontStyle>(static_cast<int>(resultFormat.style())
+                                                         & static_cast<int>(fragment.format.style())));
 
             if (resultFormat.fontFamily() == "ScoreText") {
-                resultFormat.setFontFamily(format.fontFamily());
+                resultFormat.setFontFamily(fragment.format.fontFamily());
             }
-            if (format.fontFamily() != "ScoreText" && resultFormat.fontFamily() != format.fontFamily()) {
+            if (fragment.format.fontFamily() != "ScoreText" && resultFormat.fontFamily() != fragment.format.fontFamily()) {
                 resultFormat.setFontFamily(TextBase::UNDEFINED_FONT_FAMILY);
             }
 
-            if (resultFormat.fontSize() != format.fontSize()) {
+            if (resultFormat.fontSize() != fragment.format.fontSize()) {
                 resultFormat.setFontSize(TextBase::UNDEFINED_FONT_SIZE);
             }
 
-            if (resultFormat.valign() != format.valign()) {
+            if (resultFormat.valign() != fragment.format.valign()) {
                 resultFormat.setValign(VerticalAlignment::AlignUndefined);
             }
+
+            column += fragCols;
         }
     }
 
-    return resultFormat;
+    if (!allBlocksEmpty) {
+        return resultFormat;
+    }
+
+    CharFormat defaultFormat;
+    defaultFormat.setStyle(FontStyle(m_text->propertyDefault(Pid::FONT_STYLE).value<int>()));
+    defaultFormat.setFontFamily(m_text->propertyDefault(Pid::FONT_FACE).value<String>());
+    defaultFormat.setFontSize(m_text->propertyDefault(Pid::FONT_SIZE).toDouble());
+    defaultFormat.setValign(VerticalAlignment(m_text->propertyDefault(Pid::TEXT_SCRIPT_ALIGN).toInt()));
+
+    return defaultFormat;
 }
 
 //---------------------------------------------------------
@@ -826,6 +852,7 @@ bool TextFragment::operator ==(const TextFragment& f) const
     return format == f.format && text == f.text;
 }
 
+#if 0
 //---------------------------------------------------------
 //   draw
 //---------------------------------------------------------
@@ -833,7 +860,7 @@ bool TextFragment::operator ==(const TextFragment& f) const
 void TextFragment::draw(Painter* p, const TextBase* t) const
 {
     Font f(font(t));
-    f.setPointSizeF(f.pointSizeF() * MScore::pixelRatio);
+//    f.setPointSizeF(f.pointSizeF() * MScore::pixelRatio);
 #if !(defined(Q_OS_MACOS) || defined(Q_OS_IOS))
     TextBase::drawTextWorkaround(p, f, pos, text);
 #else
@@ -856,6 +883,7 @@ void TextBase::drawTextWorkaround(Painter* p, Font& f, const PointF& pos, const 
         p->drawText(pos, text);
     }
 }
+#endif
 
 //---------------------------------------------------------
 //   font
@@ -869,70 +897,47 @@ Font TextFragment::font(const TextBase* t) const
     double spatiumScaling = 0.0;
 
     if (t->isInstrumentName()) {
-        spatiumScaling = toInstrumentName(t)->largestStaffSpatium() / SPATIUM20;
+        spatiumScaling = toInstrumentName(t)->largestStaffSpatium() / t->defaultSpatium();
     } else {
-        spatiumScaling = t->spatium() / SPATIUM20;
+        spatiumScaling = t->spatium() / t->defaultSpatium();
     }
 
     if (t->sizeIsSpatiumDependent()) {
         m *= spatiumScaling;
     }
     if (format.valign() != VerticalAlignment::AlignNormal) {
-        m *= subScriptSize;
+        m *= SUBSCRIPT_SIZE;
     }
 
     String family;
     Font::Type fontType = Font::Type::Unknown;
     if (format.fontFamily() == "ScoreText") {
-        if (t->isDynamic()
-            || t->isStringTunings()
-            || t->isPlayTechAnnotation()
-            || t->textStyleType() == TextStyleType::OTTAVA
-            || t->textStyleType() == TextStyleType::HARP_PEDAL_DIAGRAM
-            || t->textStyleType() == TextStyleType::TUPLET
-            || t->textStyleType() == TextStyleType::PEDAL
-            ) {
+        if (t->hasSymbolScale()) {
             std::string fontName = engravingFonts()->fontByName(t->style().styleSt(Sid::musicalSymbolFont).toStdString())->family();
             family = String::fromStdString(fontName);
             fontType = Font::Type::MusicSymbol;
-            if (!t->isStringTunings()) {
-                m = MUSICAL_SYMBOLS_DEFAULT_FONT_SIZE;
-                if (t->isDynamic()) {
-                    m *= t->getProperty(Pid::DYNAMICS_SIZE).toDouble() * spatiumScaling;
-                    if (t->style().styleB(Sid::dynamicsOverrideFont)) {
-                        std::string fontName2 = engravingFonts()->fontByName(t->style().styleSt(Sid::dynamicsFont).toStdString())->family();
-                        family = String::fromStdString(fontName2);
-                    }
-                } else {
-                    for (const auto& a : *textStyle(t->textStyleType())) {
-                        if (a.type == TextStylePropertyType::MusicalSymbolsScale) {
-                            m *= t->style().styleD(a.sid);
-                            if (t->sizeIsSpatiumDependent()) {
-                                m *= spatiumScaling;
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-            // We use a default font size of 10pt for historical reasons,
-            // but SMuFL standard is 20pt so multiply x2 here.
-            m *= 2;
-        } else if (t->isTempoText()) {
-            family = t->style().styleSt(Sid::musicalTextFont);
-            fontType = Font::Type::MusicSymbolText;
-            // to keep desired size ratio (based on 20pt symbol size to 12pt text size)
-            m *= 5.0 / 3.0;
-        } else if (t->isMarker()) {
-            family = t->style().styleSt(Sid::musicalTextFont);
-            fontType = Font::Type::MusicSymbolText;
-            m = t->getProperty(Pid::MARKER_SYMBOL_SIZE).toDouble();
+
+            m = MUSICAL_SYMBOLS_DEFAULT_FONT_SIZE;
+            m *= t->getProperty(Pid::MUSICAL_SYMBOLS_SCALE).toDouble();
             if (t->sizeIsSpatiumDependent()) {
                 m *= spatiumScaling;
             }
-        } else {
+
+            if (t->style().styleB(Sid::dynamicsOverrideFont)) {
+                std::string fontName2 = engravingFonts()->fontByName(t->style().styleSt(Sid::dynamicsFont).toStdString())->family();
+                family = String::fromStdString(fontName2);
+            }
+
+            // We use a default font size of 10pt for historical reasons,
+            // but SMuFL standard is 20pt so multiply x2 here.
+            m *= 2;
+        } else if (t->hasSymbolSize()) {
             family = t->style().styleSt(Sid::musicalTextFont);
             fontType = Font::Type::MusicSymbolText;
+            m = t->getProperty(Pid::MUSIC_SYMBOL_SIZE).toDouble();
+            if (t->sizeIsSpatiumDependent()) {
+                m *= spatiumScaling;
+            }
         }
         // check if all symbols are available
         font.setFamily(family, fontType);
@@ -949,12 +954,12 @@ Font TextFragment::font(const TextBase* t) const
                 const Char& c2 = text.at(i + 1);
                 ++i;
                 char32_t v = Char::surrogateToUcs4(c, c2);
-                if (!fm.inFontUcs4(v)) {
+                if (!fm.inFont(v)) {
                     fail = true;
                     break;
                 }
             } else {
-                if (!fm.inFont(c)) {
+                if (!fm.inFont(c.unicode())) {
                     fail = true;
                     break;
                 }
@@ -984,168 +989,7 @@ Font TextFragment::font(const TextBase* t) const
 }
 
 //---------------------------------------------------------
-//   draw
-//---------------------------------------------------------
 
-void TextBlock::draw(Painter* p, const TextBase* t) const
-{
-    p->translate(0.0, m_y);
-    for (const TextFragment& f : m_fragments) {
-        f.draw(p, t);
-    }
-    p->translate(0.0, -m_y);
-}
-
-//---------------------------------------------------------
-//   layout
-//---------------------------------------------------------
-
-void TextBlock::layout(const TextBase* t)
-{
-    m_shape.clear();
-    double x      = 0.0;
-    m_lineSpacing = 0.0;
-    double lm     = 0.0;
-
-    double layoutWidth = 0;
-    EngravingItem* e = t->parentItem();
-    // TODO - remove when position is implemented for all text items
-    if (e && t->layoutToParentWidth()) {
-        layoutWidth = e->width();
-        switch (e->type()) {
-        case ElementType::HBOX:
-        case ElementType::VBOX:
-        case ElementType::TBOX: {
-            Box* b = toBox(e);
-            layoutWidth -= ((b->leftMargin() + b->rightMargin()) * DPMM);
-            lm = b->leftMargin() * DPMM;
-        }
-        break;
-        case ElementType::PAGE: {
-            Page* p = toPage(e);
-            layoutWidth -= (p->lm() + p->rm());
-            lm = p->lm();
-        }
-        break;
-        case ElementType::MEASURE: {
-            // ignore courtesy keysig, timesig, but fall back if needed
-            Measure* m = toMeasure(e);
-            const BarLine* bl = m->endBarLine();
-            layoutWidth = bl ? bl->segment()->x() + bl->ldata()->bbox().width() : m->width();
-        }
-        break;
-        default:
-            break;
-        }
-    }
-
-    if (m_fragments.empty()) {
-        FontMetrics fm = t->fontMetrics();
-        m_shape.add(RectF(0.0, -fm.ascent(), 1.0, fm.descent()), t);
-        m_lineSpacing = fm.lineSpacing();
-    } else if (m_fragments.size() == 1 && m_fragments.front().text.isEmpty()) {
-        auto fi = m_fragments.begin();
-        TextFragment& f = *fi;
-        f.pos.setX(x);
-        FontMetrics fm(f.font(t));
-        if (f.format.valign() != VerticalAlignment::AlignNormal) {
-            double voffset = fm.xHeight() / subScriptSize;   // use original height
-            if (f.format.valign() == VerticalAlignment::AlignSubScript) {
-                voffset *= subScriptOffset;
-            } else {
-                voffset *= superScriptOffset;
-            }
-
-            f.pos.setY(voffset);
-        } else {
-            f.pos.setY(0.0);
-        }
-
-        RectF temp(0.0, -fm.ascent(), 1.0, fm.descent());
-        m_shape.add(temp, t);
-        m_lineSpacing = std::max(m_lineSpacing, fm.lineSpacing());
-    } else {
-        const auto fiLast = --m_fragments.end();
-        for (auto fi = m_fragments.begin(); fi != m_fragments.end(); ++fi) {
-            TextFragment& f = *fi;
-            f.pos.setX(x);
-            Font fragmentFont = f.font(t);
-            FontMetrics fm(fragmentFont);
-            if (f.format.valign() != VerticalAlignment::AlignNormal) {
-                double voffset = fm.xHeight() / subScriptSize;           // use original height
-                if (f.format.valign() == VerticalAlignment::AlignSubScript) {
-                    voffset *= subScriptOffset;
-                } else {
-                    voffset *= superScriptOffset;
-                }
-                f.pos.setY(voffset);
-            } else {
-                f.pos.setY(0.0);
-            }
-
-            // Optimization: don't calculate character position
-            // for the next fragment if there is no next fragment
-            if (fi != fiLast) {
-                const double w  = fm.width(f.text);
-                x += w;
-            }
-
-            double yOffset = musicSymbolBaseLineAdjust(t, f, fi);
-            f.pos.ry() -= yOffset;
-
-            RectF textBRect = fm.tightBoundingRect(f.text).translated(f.pos);
-            bool useDynamicSymShape = fragmentFont.type() == Font::Type::MusicSymbol && t->isDynamic();
-            if (useDynamicSymShape) {
-                const Dynamic* dyn = toDynamic(t);
-                SymId symId = TConv::symId(dyn->dynamicType());
-                if (symId != SymId::noSym) {
-                    m_shape.add(dyn->symShapeWithCutouts(symId).translated(f.pos));
-                } else {
-                    m_shape.add(textBRect, t);
-                }
-            } else {
-                m_shape.add(textBRect, t);
-            }
-            if (fragmentFont.type() == Font::Type::MusicSymbol || fragmentFont.type() == Font::Type::MusicSymbolText) {
-                // SEMI-HACK: Music fonts can have huge linespacing because of tall symbols, so instead of using the
-                // font linespacing value we just use the height of the individual fragment with some added margin
-
-                m_lineSpacing = std::max(m_lineSpacing, 1.25 * (m_shape.bbox().height() - m_shape.bbox().bottom()) + yOffset);
-            } else {
-                m_lineSpacing = std::max(m_lineSpacing, fm.lineSpacing());
-            }
-        }
-    }
-
-    // Apply style/custom line spacing
-    m_lineSpacing *= t->textLineSpacing();
-
-    // OLD ALIGN TEXT
-    // TODO - remove when position is implemented for all text items
-    if (!t->positionSeparateFromAlignment()) {
-        double rx = 0;
-        AlignH alignH = t->align().horizontal;
-        bool dynamicAlwaysCentered = t->isDynamic() && t->getProperty(Pid::CENTER_ON_NOTEHEAD).toBool();
-
-        RectF bbox = m_shape.bbox();
-        if (alignH == AlignH::HCENTER || dynamicAlwaysCentered) {
-            rx = (layoutWidth - (bbox.left() + bbox.right())) * .5;
-        } else if (alignH == AlignH::LEFT) {
-            rx = -bbox.left();
-        } else if (alignH == AlignH::RIGHT) {
-            rx = layoutWidth - bbox.right();
-        }
-
-        rx += lm;
-
-        for (TextFragment& f : m_fragments) {
-            f.pos.rx() += rx;
-        }
-        m_shape.translate(PointF(rx, 0.0));
-    }
-}
-
-//---------------------------------------------------------
 //   fragmentsWithoutEmpty
 //---------------------------------------------------------
 
@@ -1440,30 +1284,6 @@ void TextBlock::simplify()
     }
 }
 
-double TextBlock::musicSymbolBaseLineAdjust(const TextBase* t, const TextFragment& f, const std::list<TextFragment>::iterator fi)
-{
-    Font fragmentFont = f.font(t);
-    FontMetrics fm(fragmentFont);
-    const bool adjustSymbol = fragmentFont.type() == Font::Type::MusicSymbolText && t->isMarker();
-    if (!adjustSymbol) {
-        return 0.0;
-    }
-
-    // Align the x-height of the coda symbol to half the x-height of the surrounding text
-    Font refFont;
-    if (m_fragments.size() == 1) {
-        refFont = t->font();
-    } else {
-        TextFragment& refFragment = fi != m_fragments.begin() ? *(std::prev(fi)) : *(std::next(fi));
-        refFont = refFragment.font(t);
-    }
-    FontMetrics refFm(refFont);
-
-    const double middle = (fm.tightBoundingRect(f.text).height() / 2) - fm.tightBoundingRect(f.text).bottom();
-    const double refXHeight = refFm.capHeight() / 2;
-    return refXHeight - middle;
-}
-
 //---------------------------------------------------------
 //   remove
 //---------------------------------------------------------
@@ -1732,8 +1552,8 @@ TextBase::TextBase(const ElementType& type, EngravingItem* parent, TextStyleType
     m_frameColor             = Color::BLACK;
     m_align                  = { AlignH::LEFT, AlignV::TOP };
     m_frameType              = FrameType::NO_FRAME;
-    m_frameWidth             = Spatium(0.1);
-    m_paddingWidth           = Spatium(0.2);
+    m_frameWidth             = 0.1_sp;
+    m_paddingWidth           = 0.2_sp;
     m_frameRound             = 0;
 
     m_cursor                 = new TextCursor(this);
@@ -1764,6 +1584,8 @@ TextBase::TextBase(const TextBase& st)
     m_frameWidth                  = st.m_frameWidth;
     m_paddingWidth                = st.m_paddingWidth;
     m_frameRound                  = st.m_frameRound;
+    m_position                    = st.m_position;
+    m_symbolSize                  = st.m_symbolSize;
 
     m_voiceAssignment = st.m_voiceAssignment;
     m_direction = st.m_direction;
@@ -1788,9 +1610,9 @@ TextBase::~TextBase()
 //   textColor
 //---------------------------------------------------------
 
-Color TextBase::textColor() const
+Color TextBase::textColor(const rendering::PaintOptions& opt) const
 {
-    return curColor();
+    return curColor(opt);
 }
 
 //---------------------------------------------------------
@@ -2062,6 +1884,15 @@ void TextBase::layoutFrame(LayoutData* ldata) const
     w = 0.5 * frameWidth().val() * _spatium;
     ldata->setBbox(ldata->frame.adjusted(-w, -w, w, w));
 }
+
+// bool TextBase::positionRelativeToNoteheadRest() const
+// {
+//     if (!parent()) {
+//         return false;
+//     }
+
+//     return true;
+// }
 
 //---------------------------------------------------------
 //   lineSpacing
@@ -2566,6 +2397,7 @@ String TextBase::unEscape(String s)
     s.replace(u"&lt;", u"<");
     s.replace(u"&gt;", u">");
     s.replace(u"&amp;", u"&");
+    s.replace(u"&apos;", u"'");
     s.replace(u"&quot;", u"\"");
     return s;
 }
@@ -2579,6 +2411,7 @@ String TextBase::escape(String s)
     s.replace(u"<", u"&lt;");
     s.replace(u">", u"&gt;");
     s.replace(u"&", u"&amp;");
+    s.replace(u"'", u"&apos;");
     s.replace(u"\"", u"&quot;");
     return s;
 }
@@ -2731,7 +2564,7 @@ Font TextBase::font() const
 {
     double m = size();
     if (sizeIsSpatiumDependent()) {
-        m *= spatium() / SPATIUM20;
+        m *= spatium() / defaultSpatium();
     }
     Font f(family(), Font::Type::Unknown);
     f.setPointSizeF(m);
@@ -2820,6 +2653,10 @@ PropertyValue TextBase::getProperty(Pid propertyId) const
         return centerBetweenStaves();
     case Pid::VOICE_ASSIGNMENT:
         return voiceAssignment();
+    case Pid::MUSIC_SYMBOL_SIZE:
+        return symbolSize();
+    case Pid::MUSICAL_SYMBOLS_SCALE:
+        return symbolScale();
     default:
         return EngravingItem::getProperty(propertyId);
     }
@@ -2905,6 +2742,12 @@ bool TextBase::setProperty(Pid pid, const PropertyValue& v)
         break;
     case Pid::VOICE_ASSIGNMENT:
         setVoiceAssignment(v.value<VoiceAssignment>());
+        break;
+    case Pid::MUSIC_SYMBOL_SIZE:
+        setSymbolSize(v.toDouble());
+        break;
+    case Pid::MUSICAL_SYMBOLS_SCALE:
+        setSymbolScale(v.toDouble());
         break;
     default:
         rv = EngravingItem::setProperty(pid, v);
@@ -3245,9 +3088,30 @@ void TextBase::initTextStyleType(TextStyleType tid, bool preserveDifferent)
 
 void TextBase::initTextStyleType(TextStyleType tid)
 {
+    auto getTextPID = [&](Pid p) -> Pid {
+        static const std::vector<std::pair<Pid, Pid> > TEXT_LINE_PID_MAP = { { Pid::FONT_FACE, Pid::BEGIN_FONT_FACE },
+            { Pid::FONT_SIZE, Pid::BEGIN_FONT_SIZE },
+            { Pid::FONT_STYLE, Pid::BEGIN_FONT_STYLE },
+            { Pid::ALIGN, Pid::BEGIN_TEXT_ALIGN },
+            { Pid::POSITION, Pid::BEGIN_TEXT_POSITION },
+        };
+
+        const bool isTextLine = parent()->isTextLineBaseSegment();
+        for (const auto& pidPair : TEXT_LINE_PID_MAP) {
+            const Pid textPid = pidPair.first;
+            const Pid textLinePid = pidPair.second;
+
+            if (p == textLinePid || p == textPid) {
+                return isTextLine ? textLinePid : textPid;
+            }
+        }
+
+        return p;
+    };
+
     setTextStyleType(tid);
     for (const auto& p : *textStyle(tid)) {
-        setProperty(p.pid, styleValue(p.pid, p.sid));
+        setProperty(getTextPID(p.pid), styleValue(p.pid, p.sid));
     }
 }
 
@@ -3572,5 +3436,18 @@ void TextBase::undoChangeProperty(Pid id, const PropertyValue& v, PropertyFlags 
             break;
         }
     }
+}
+
+bool mu::engraving::TextBase::hasSymbolScale() const
+{
+    bool hasSymbolScale = isDynamic()
+                          || isStringTunings()
+                          || isPlayTechAnnotation()
+                          || (isHarpPedalDiagram() && toHarpPedalDiagram(this)->isDiagram())
+                          || (parent() && parent()->isOttavaSegment())
+                          || (parent() && parent()->isTuplet())
+                          || (parent() && parent()->isPedalSegment());
+
+    return hasSymbolScale;
 }
 }

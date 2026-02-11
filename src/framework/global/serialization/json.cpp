@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -602,22 +602,38 @@ bool JsonObject::isValid() const
 
 bool JsonObject::empty() const
 {
+    if (!isValid()) {
+        return true;
+    }
+
     return object_const(m_data).size() == 0;
 }
 
 size_t JsonObject::size() const
 {
+    if (!isValid()) {
+        return 0;
+    }
+
     return object_const(m_data).size();
 }
 
 bool JsonObject::contains(const std::string& key) const
 {
+    if (!isValid()) {
+        return false;
+    }
+
     const picojson::object& o = object_const(m_data);
     return o.find(key) != o.cend();
 }
 
 JsonValue JsonObject::value(const std::string& key, JsonValue def) const
 {
+    if (!isValid()) {
+        return def;
+    }
+
     const picojson::object& o = object_const(m_data);
     auto it = o.find(key);
     if (it != o.cend()) {

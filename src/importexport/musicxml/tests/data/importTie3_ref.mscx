@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -119,6 +119,8 @@ Arranged by [Arranger]</metaTag>
         </Staff>
       <trackName>Piano</trackName>
       <Instrument id="piano">
+        <longName>Piano</longName>
+        <shortName>Pno.</shortName>
         <trackName>Piano</trackName>
         <minPitchP>21</minPitchP>
         <maxPitchP>108</maxPitchP>
@@ -184,8 +186,7 @@ Arranged by [Arranger]</metaTag>
         <Text>
           <eid>G_G</eid>
           <style>composer</style>
-          <text>[COMPOSER]
-Arranged by [Arranger]</text>
+          <text>[COMPOSER]<br/>Arranged by [Arranger]</text>
           </Text>
         </VBox>
       <HBox>

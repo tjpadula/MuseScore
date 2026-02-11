@@ -21,14 +21,22 @@
  */
 #include "notationparts.h"
 
-#include "dom/barline.h"
 #include "translation.h"
 
-#include "engraving/dom/factory.h"
-#include "engraving/dom/undo.h"
+#include "engraving/dom/barline.h"
 #include "engraving/dom/excerpt.h"
+#include "engraving/dom/factory.h"
+#include "engraving/dom/instrchange.h"
+#include "engraving/dom/instrument.h"
 #include "engraving/dom/page.h"
 #include "engraving/dom/utils.h"
+#include "engraving/editing/addremoveelement.h"
+#include "engraving/editing/editexcerpt.h"
+#include "engraving/editing/editpart.h"
+#include "engraving/editing/editscoreproperties.h"
+#include "engraving/editing/editstaff.h"
+#include "engraving/editing/editsystemlocks.h"
+#include "engraving/editing/transpose.h"
 
 #include "igetscore.h"
 
@@ -282,7 +290,7 @@ void NotationParts::setPartVisible(const ID& partId, bool visible)
     part->undoChangeProperty(mu::engraving::Pid::VISIBLE, visible);
 
     if (visible) {
-        score()->removeSystemLocksContainingMMRests();
+        EditSystemLocks::removeSystemLocksContainingMMRests(score());
     }
 
     apply();
@@ -319,7 +327,7 @@ void NotationParts::setPartSharpFlat(const ID& partId, const SharpFlat& sharpFla
     mu::engraving::Interval oldTransposition = part->staff(0)->transpose(DEFAULT_TICK);
 
     part->undoChangeProperty(mu::engraving::Pid::PREFER_SHARP_FLAT, shartFlatInt);
-    score()->transpositionChanged(part, oldTransposition);
+    Transpose::transpositionChanged(score(), part, oldTransposition);
 
     apply();
 
@@ -374,8 +382,15 @@ void NotationParts::updatePartsAndSystemObjectStaves(const mu::engraving::ScoreC
     std::vector<Staff*> removedStaves;
     std::vector<Staff*> addedStaves;
 
-    for (auto& pair : changes.changedItems) {
-        if (!pair.first || !pair.first->isStaff()) {
+    bool stavesSorted = false;
+
+    for (auto& pair : changes.changedObjects) {
+        if (muse::contains(pair.second, CommandType::SortStaves)) {
+            stavesSorted = true;
+            break;
+        }
+
+        if (!pair.first->isStaff()) {
             continue;
         }
 
@@ -386,6 +401,11 @@ void NotationParts::updatePartsAndSystemObjectStaves(const mu::engraving::ScoreC
         } else if (muse::contains(pair.second, CommandType::InsertStaff)) {
             addedStaves.push_back(staff);
         }
+    }
+
+    if (stavesSorted && !partsChanged) {
+        m_partChangedNotifier.changed();
+        return;
     }
 
     for (Staff* staff : removedStaves) {
@@ -418,7 +438,7 @@ void NotationParts::setInstrumentName(const InstrumentKey& instrumentKey, const 
         return;
     }
 
-    std::list<StaffName> newNames { StaffName(name, 0) };
+    StaffNameList newNames { StaffName(name, 0) };
     if (instrument->longNames() == newNames) {
         return;
     }
@@ -522,7 +542,7 @@ void NotationParts::setStaffVisible(const ID& staffId, bool visible)
     doSetStaffConfig(staff, config);
 
     if (visible) {
-        score()->removeSystemLocksContainingMMRests();
+        EditSystemLocks::removeSystemLocksContainingMMRests(score());
     }
 
     apply();
@@ -656,7 +676,7 @@ void NotationParts::insertPart(Part* part, size_t index)
 
     startEdit(TranslatableString("undoableAction", "Add instrument"));
 
-    score()->removeSystemLocksContainingMMRests();
+    EditSystemLocks::removeSystemLocksContainingMMRests(score());
 
     doInsertPart(part, index);
 
@@ -1053,10 +1073,8 @@ void NotationParts::doInsertPart(Part* part, size_t index)
         part->setInstrument(new Instrument(*it->second), it->first);
     }
 
-    const MeasureBase* firstMeasure = score()->firstMeasure();
-    mu::engraving::Fraction startTick = firstMeasure->tick();
-    const MeasureBase* lastMeasure = score()->lastMeasure();
-    mu::engraving::Fraction endTick = lastMeasure->tick() + lastMeasure->ticks();
+    mu::engraving::Fraction startTick = score()->firstMeasure()->tick();
+    mu::engraving::Fraction endTick = score()->lastMeasure()->endTick();
 
     for (size_t staffIndex = 0; staffIndex < stavesCopy.size(); ++staffIndex) {
         Staff* staff = stavesCopy[staffIndex];
@@ -1290,8 +1308,8 @@ void NotationParts::insertNewParts(const PartInstrumentList& parts, const mu::en
         }
 
         Instrument instrument = Instrument::fromTemplate(&pi.instrumentTemplate);
-        const std::list<StaffName>& longNames = instrument.longNames();
-        const std::list<StaffName>& shortNames = instrument.shortNames();
+        const StaffNameList& longNames = instrument.longNames();
+        const StaffNameList& shortNames = instrument.shortNames();
 
         Part* part = new Part(score());
         part->setSoloist(pi.isSoloist);

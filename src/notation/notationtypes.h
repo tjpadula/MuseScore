@@ -23,7 +23,6 @@
 
 #include <QPixmap>
 #include <QDate>
-#include <unordered_set>
 
 #include "translation.h"
 
@@ -136,7 +135,7 @@ using InstrumentTrait = mu::engraving::Trait;
 using ScoreOrder = mu::engraving::ScoreOrder;
 using InstrumentGenre = mu::engraving::InstrumentGenre;
 using InstrumentGroup = mu::engraving::InstrumentGroup;
-using PageList = std::vector<const Page*>;
+using PageList = std::vector<Page*>;
 using PartList = std::vector<const Part*>;
 using InstrumentTemplateList = std::vector<const InstrumentTemplate*>;
 using InstrumentGenreList = std::vector<const InstrumentGenre*>;
@@ -368,17 +367,6 @@ struct PartInstrumentListScoreOrder
     ScoreOrder scoreOrder;
 };
 
-struct SearchCommand
-{
-    ElementType searchElementType = ElementType::INVALID;
-    std::string code;
-    std::string description;
-
-    SearchCommand(const ElementType& searchElementType, const std::string& code, const std::string& description)
-        : searchElementType(searchElementType), code(code), description(description) {}
-};
-using SearchCommands = QList<SearchCommand>;
-
 struct FilterElementsOptions
 {
     ElementType elementType = ElementType::INVALID;
@@ -463,13 +451,13 @@ struct TupletOptions
 
 struct LoopBoundaries
 {
-    int loopInTick = 0;
-    int loopOutTick = 0;
+    Fraction loopInTick;
+    Fraction loopOutTick;
     bool enabled = false;
 
     bool isNull() const
     {
-        return loopInTick == 0 && loopOutTick == 0;
+        return loopInTick.isZero() && loopOutTick.isZero();
     }
 
     bool operator==(const LoopBoundaries& boundaries) const

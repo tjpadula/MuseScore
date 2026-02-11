@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,10 +34,10 @@
 namespace muse::extensions {
 class ExtensionsProvider : public IExtensionsProvider, public Injectable, public async::Asyncable
 {
-    Inject<IExtensionsConfiguration> configuration = { this };
+    GlobalInject<IExtensionsConfiguration> configuration;
+    GlobalInject<io::IFileSystem> fileSystem;
     Inject<IExtensionsExecPointsRegister> execPointsRegister = { this };
     Inject<IInteractive> interactive = { this };
-    Inject<io::IFileSystem> fileSystem  = { this };
 
 public:
     ExtensionsProvider(const modularity::ContextPtr& iocCtx)

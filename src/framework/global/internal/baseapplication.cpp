@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -112,7 +112,7 @@ String BaseApplication::appRevision()
 }
 
 BaseApplication::BaseApplication(const modularity::ContextPtr& ctx)
-    : m_iocContext(ctx)
+    : muse::Injectable(ctx), m_iocContext(ctx)
 {
 }
 
@@ -189,4 +189,10 @@ void BaseApplication::removeIoC()
 {
     modularity::_ioc(m_iocContext)->reset();
     modularity::removeIoC(m_iocContext);
+}
+
+void BaseApplication::processEvents()
+{
+    qApp->processEvents();
+    tickerProvider()->forceSchedule();
 }

@@ -23,14 +23,19 @@
 
 #include <QPrinter>
 #include <QPrintDialog>
+#include <QWindow>
 
 #include "log.h"
 
-using namespace mu;
-using namespace mu::print;
 using namespace muse;
 using namespace muse::draw;
 using namespace mu::notation;
+
+namespace mu::print {
+PrintProvider::PrintProvider(const kors::modularity::ContextPtr& iocCtx)
+    : Injectable(iocCtx)
+{
+}
 
 Ret PrintProvider::printNotation(INotationPtr notation)
 {
@@ -49,15 +54,20 @@ Ret PrintProvider::printNotation(INotationPtr notation)
     //printerDev.setCreator("MuseScore Studio Version: " VERSION);
     printerDev.setFullPage(true);
     if (!printerDev.setPageMargins(QMarginsF())) {
-        LOGD() << "unable to clear printer margins";
+        LOGW() << "unable to clear printer margins";
     }
 
-    printerDev.setColorMode(QPrinter::Color);
     printerDev.setDocName(notation->projectWorkTitleAndPartName());
     printerDev.setOutputFormat(QPrinter::NativeFormat);
     printerDev.setFromTo(1, painting->pageCount());
 
-    QPrintDialog pd(&printerDev, 0);
+    QPrintDialog pd(&printerDev);
+    pd.setMinMax(1, painting->pageCount());
+
+    // HACK: ensure we have a valid windowHandle to which we can set a transient parent to
+    pd.winId();
+    // the print dialog needs a valid parent window to show the modern print dialog on Windows 11
+    pd.windowHandle()->setTransientParent(mainWindow()->qWindow());
     if (!pd.exec()) {
         return muse::make_ret(Ret::Code::Cancel);
     }
@@ -77,4 +87,5 @@ Ret PrintProvider::printNotation(INotationPtr notation)
     painter.endDraw();
 
     return muse::make_ok();
+}
 }

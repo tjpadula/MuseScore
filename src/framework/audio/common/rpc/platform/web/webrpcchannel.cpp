@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -28,7 +28,7 @@
 
 #include "log.h"
 
-#define RPC_LOGGING_ENABLED
+//#define RPC_LOGGING_ENABLED
 
 #ifdef RPC_LOGGING_ENABLED
 #define RPCLOG() LOGDA()
@@ -88,7 +88,7 @@ void WebRpcChannel::setupOnMain()
     };
 }
 
-void WebRpcChannel::setupOnWorker()
+void WebRpcChannel::setupOnEngine()
 {
     g_rpcListen = [this](const ByteArray& d) {
         receive(d);
@@ -209,6 +209,8 @@ void WebRpcChannel::listenAll(Handler h)
 
 void WebRpcChannel::addStream(std::shared_ptr<IRpcStream> s)
 {
+    s->init();
+
     m_data.streams.insert({ s->streamId(), s });
 }
 

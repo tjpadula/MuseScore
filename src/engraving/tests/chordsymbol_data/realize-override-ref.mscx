@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.60">
+<museScore version="4.70">
   <Score>
     <eid>B_B</eid>
     <Division>480</Division>
@@ -215,8 +215,7 @@
                 <eid>f_f</eid>
                 </Accidental>
               <pitch>40</pitch>
-              <tpc>18</tpc>
-              <tpc2>30</tpc2>
+              <tpc>30</tpc>
               </Note>
             </Chord>
           <Rest>
@@ -252,8 +251,7 @@
                 <eid>n_n</eid>
                 </Accidental>
               <pitch>38</pitch>
-              <tpc>16</tpc>
-              <tpc2>4</tpc2>
+              <tpc>4</tpc>
               </Note>
             </Chord>
           <Rest>

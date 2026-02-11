@@ -24,7 +24,7 @@
 #include "io/buffer.h"
 
 #include "compat/writescorehook.h"
-
+#include "editing/editmeasures.h"
 #include "rw/mscloader.h"
 #include "rw/xmlreader.h"
 #include "rw/rwregister.h"
@@ -33,17 +33,23 @@
 
 #include "engravingproject.h"
 
+#include "automation/internal/automationcontroller.h"
+
 #include "barline.h"
 #include "excerpt.h"
 #include "factory.h"
 #include "box.h"
+#include "clef.h"
+#include "key.h"
+#include "keysig.h"
 #include "linkedobjects.h"
+#include "part.h"
 #include "repeatlist.h"
 #include "rest.h"
 #include "sig.h"
+#include "staff.h"
 #include "tempo.h"
 #include "timesig.h"
-#include "undo.h"
 
 #include "log.h"
 
@@ -62,6 +68,7 @@ MasterScore::MasterScore(const muse::modularity::ContextPtr& iocCtx, std::weak_p
     m_undoStack   = new UndoStack();
     m_tempomap    = new TempoMap;
     m_sigmap      = new TimeSigMap();
+    m_automationController = new AutomationController();
     m_expandedRepeatList  = new RepeatList(this);
     m_nonExpandedRepeatList = new RepeatList(this);
     setMasterScore(this);
@@ -105,6 +112,7 @@ MasterScore::~MasterScore()
     delete m_sigmap;
     delete m_tempomap;
     delete m_undoStack;
+    delete m_automationController;
     muse::DeleteAll(m_excerpts);
 }
 
@@ -145,6 +153,11 @@ void MasterScore::setSaved(bool v)
 String MasterScore::name() const
 {
     return fileInfo()->displayName();
+}
+
+IAutomation* MasterScore::automation() const
+{
+    return m_automationController->automation();
 }
 
 //---------------------------------------------------------
@@ -251,7 +264,7 @@ MasterScore* MasterScore::clone()
     Buffer buffer;
     buffer.open(IODevice::WriteOnly);
 
-    rw::RWRegister::writer(iocContext())->writeScore(this, &buffer, false);
+    rw::RWRegister::writer(iocContext())->writeScore(this, &buffer);
 
     buffer.close();
 
@@ -325,7 +338,7 @@ void MasterScore::setUpdateAll()
 void MasterScore::setLayoutAll(staff_idx_t staff, const EngravingItem* e)
 {
     m_cmdState.setTick(Fraction(0, 1));
-    m_cmdState.setTick(measures()->last() ? measures()->last()->endTick() : Fraction(0, 1));
+    m_cmdState.setTick(Fraction::max());
 
     if (e && e->score() == this) {
         // TODO: map staff number properly
@@ -572,7 +585,7 @@ MeasureBase* MasterScore::insertMeasure(MeasureBase* beforeMeasure, const Insert
         std::vector<KeySig*> keySigList;
         std::vector<Clef*> initClefList;
         std::vector<Clef*> previousClefList;
-        std::list<Clef*> specialCaseClefs;
+        std::vector<Clef*> specialCaseClefs;
         std::vector<Clef*> afterBarlineClefs;
         std::vector<BarLine*> previousBarLinesList;
 

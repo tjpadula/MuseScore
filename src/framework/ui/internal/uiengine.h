@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,11 +20,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MUSE_UI_UIENGINE_H
-#define MUSE_UI_UIENGINE_H
+#pragma once
 
 #include <QObject>
 #include <memory>
+
+#include <qqmlintegration.h>
 
 #include "../iuiengine.h"
 #include "../api/themeapi.h"
@@ -39,10 +40,12 @@
 #include "../iuiconfiguration.h"
 
 namespace muse::ui {
-class QmlApiEngine;
 class UiEngine : public QObject, public IUiEngine, public Injectable
 {
     Q_OBJECT
+
+    QML_ELEMENT;
+    QML_UNCREATABLE("Must be created in C++ only");
 
     Q_PROPERTY(api::ThemeApi * theme READ theme NOTIFY themeChanged)
     Q_PROPERTY(QmlToolTip * tooltip READ tooltip CONSTANT)
@@ -96,6 +99,9 @@ public:
     bool isEffectsAllowed() const;
     bool isSystemDragSupported() const;
 
+    // dev
+    Q_INVOKABLE void sleep(int msec);
+
 public slots:
     void setRootItem(QQuickItem* rootItem);
 
@@ -106,7 +112,7 @@ signals:
 private:
 
     QQmlApplicationEngine* m_engine = nullptr;
-    QmlApiEngine* m_apiEngine = nullptr;
+    muse::api::JsApiEngine* m_apiEngine = nullptr;
     QStringList m_sourceImportPaths;
     api::ThemeApi* m_theme = nullptr;
     QmlTranslation* m_translation = nullptr;
@@ -120,5 +126,3 @@ private:
     mutable int m_isEffectsAllowed = -1;
 };
 }
-
-#endif // MUSE_UI_UIENGINE_H

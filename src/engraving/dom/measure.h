@@ -160,10 +160,6 @@ public:
     void setScore(Score* s) override;
     Measure* cloneMeasure(Score*, const Fraction& tick, TieMap*);
 
-    // Score Tree functions
-    EngravingObject* scanParent() const override;
-    EngravingObjectList scanChildren() const override;
-
     bool isEditable() const override { return false; }
     void checkMeasure(staff_idx_t idx, bool useGapRests = true);
 
@@ -177,7 +173,7 @@ public:
     bool hasVoices(staff_idx_t staffIdx) const;
     void setHasVoices(staff_idx_t staffIdx, bool v);
 
-    StaffLines* staffLines(staff_idx_t staffIdx);
+    StaffLines* staffLines(staff_idx_t staffIdx) const;
     Spacer* vspacerDown(staff_idx_t staffIdx) const;
     Spacer* vspacerUp(staff_idx_t staffIdx) const;
     void setStaffVisible(staff_idx_t staffIdx, bool visible);
@@ -197,8 +193,8 @@ public:
 
     void createStaves(staff_idx_t);
 
-    MeasureNumberMode measureNumberMode() const { return m_noMode; }
-    void setMeasureNumberMode(MeasureNumberMode v) { m_noMode = v; }
+    MeasureNumberMode measureNumberMode() const { return m_measureNumberMode; }
+    void setMeasureNumberMode(MeasureNumberMode v) { m_measureNumberMode = v; }
 
     Fraction timesig() const { return m_timesig; }
     void setTimesig(const Fraction& f) { m_timesig = f; }
@@ -225,8 +221,9 @@ public:
     Fraction anacrusisOffset() const;
     Fraction maxTicks() const;
 
-    bool showsMeasureNumber();
-    bool showsMeasureNumberInAutoMode();
+    bool showMeasureNumber() const;
+    bool showMeasureNumberInAutoMode() const;
+    bool showMeasureNumberOnStaff(staff_idx_t staffIdx) const;
 
     Chord* findChord(Fraction tick, track_idx_t track) const;
     ChordRest* findChordRest(Fraction tick, track_idx_t track) const;
@@ -274,7 +271,7 @@ public:
 
     void setEndBarLineType(BarLineType val, track_idx_t track, bool visible = true, Color color = Color());
 
-    void scanElements(void* data, void (* func)(void*, EngravingItem*), bool all=true) override;
+    void scanElements(std::function<void(EngravingItem*)> func) override;
     void createVoice(int track);
     void adjustToLen(Fraction, bool appendRestsIfNecessary = true);
 
@@ -359,6 +356,7 @@ public:
     BarLineType endBarLineType() const;
     bool endBarLineVisible() const;
     const BarLine* startBarLine() const;
+    const BarLine* startBarLine(staff_idx_t staffIdx, bool first = false) const;
     void triggerLayout() const override;
     void triggerLayout(staff_idx_t staffIdx) const;
 
@@ -406,7 +404,7 @@ private:
 
     int m_repeatCount = 0;      // end repeat marker and repeat count
 
-    MeasureNumberMode m_noMode = MeasureNumberMode::AUTO;
+    MeasureNumberMode m_measureNumberMode = MeasureNumberMode::AUTO;
     bool m_breakMultiMeasureRest = false;
 };
 } // namespace mu::engraving

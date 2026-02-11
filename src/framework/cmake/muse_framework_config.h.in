@@ -24,8 +24,8 @@
 #cmakedefine MUSE_APP_VERSION_LABEL "${MUSE_APP_VERSION_LABEL}"
 
 #cmakedefine MUSE_APP_INSTALL_SUFFIX "${MUSE_APP_INSTALL_SUFFIX}"
-#cmakedefine MUSE_APP_INSTALL_PREFIX ${MUSE_APP_INSTALL_PREFIX}
-#cmakedefine MUSE_APP_INSTALL_NAME ${MUSE_APP_INSTALL_NAME}
+#cmakedefine MUSE_APP_INSTALL_PREFIX "${MUSE_APP_INSTALL_PREFIX}"
+#cmakedefine MUSE_APP_INSTALL_NAME "${MUSE_APP_INSTALL_NAME}"
 
 #cmakedefine WIN_PORTABLE 1
 
@@ -38,6 +38,7 @@
 /* ============================================== */
 /* Enviropment                                    */
 /* ============================================== */
+#cmakedefine MUSE_CONFIGURATION_IS_WEB 1
 #cmakedefine MUSE_THREADS_SUPPORT 1
 
 /* ============================================== */
@@ -55,8 +56,15 @@
 #cmakedefine MUSE_MODULE_AUDIO 1
 #cmakedefine MUSE_MODULE_AUDIO_TESTS 1
 #cmakedefine MUSE_MODULE_AUDIO_API 1
+#cmakedefine MUSE_MODULE_AUDIO_ASIO 1
+#cmakedefine MUSE_MODULE_AUDIO_PIPEWIRE 1
 #cmakedefine MUSE_MODULE_AUDIO_JACK 1
 #cmakedefine MUSE_MODULE_AUDIO_EXPORT 1
+
+#define MUSE_MODULE_AUDIO_WORKER_MODE 1
+#define MUSE_MODULE_AUDIO_DRIVER_MODE 2
+#define MUSE_MODULE_AUDIO_WORKERRPC_MODE 3
+#define MUSE_MODULE_AUDIO_WORKMODE ${MUSE_MODULE_AUDIO_WORKMODE}
 
 #cmakedefine MUSE_MODULE_AUDIOPLUGINS 1
 
@@ -133,6 +141,7 @@
 #cmakedefine MUSE_MODULE_UI_DISABLE_MODALITY 1
 #cmakedefine MUSE_MODULE_UI_SYSTEMDRAG_SUPPORTED 1
 #cmakedefine MUSE_MODULE_UI_SYNCINTERACTIVE_SUPPORTED 1
+#cmakedefine MUSE_MODULE_UI_NAVIGATION_EXCLUDEPROJECT 1
 
 #cmakedefine MUSE_MODULE_UPDATE 1
 #cmakedefine MUSE_MODULE_UPDATE_TESTS 1
@@ -147,4 +156,3 @@
 #cmakedefine MUSE_MODULE_WORKSPACE_API 1
 
 #cmakedefine MUSE_ENABLE_UNIT_TESTS 1
-

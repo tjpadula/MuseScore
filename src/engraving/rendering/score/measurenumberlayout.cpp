@@ -23,6 +23,7 @@
 #include "measurenumberlayout.h"
 #include "measurelayout.h"
 #include "tlayout.h"
+#include "textlayout.h"
 
 #include "dom/measure.h"
 #include "dom/score.h"
@@ -67,7 +68,7 @@ void MeasureNumberLayout::layoutMeasureNumber(MeasureNumber* item, MeasureNumber
             if (measure->header()) {
                 ldata->setPosX(measure->firstNoteRestSegmentX(true) - measure->systemPos().x());
             } else {
-                double xRef = refBarline->pageX() - measure->pageX();
+                double xRef = refBarline ? refBarline->pageX() - measure->pageX() : 0.0;
                 ldata->setPosX(xRef);
             }
         } else if (hPlacement == AlignH::HCENTER) {
@@ -119,13 +120,16 @@ void MeasureNumberLayout::layoutMeasureNumberBase(MeasureNumberBase* item, Measu
 {
     ldata->setPos(PointF());
 
-    TLayout::layoutBaseTextBase1(item, ldata);
+    TextLayout::layoutBaseTextBase1(item, ldata);
+
+    staff_idx_t effectiveStaffIdx = item->effectiveStaffIdx();
+    Staff* staff = item->score()->staff(effectiveStaffIdx);
 
     if (item->placeBelow()) {
         double yoff = ldata->bbox().height();
 
         // If there is only one line, the barline spans outside the staff lines, so the default position is not correct.
-        if (item->staff()->constStaffType(item->measure()->tick())->lines() == 1) {
+        if (staff && staff->lines(item->tick()) == 1) {
             yoff += 2.0 * item->spatium();
         } else {
             yoff += item->staff()->staffHeight();
@@ -136,7 +140,7 @@ void MeasureNumberLayout::layoutMeasureNumberBase(MeasureNumberBase* item, Measu
         double yoff = 0.0;
 
         // If there is only one line, the barline spans outside the staff lines, so the default position is not correct.
-        if (item->staff()->constStaffType(item->measure()->tick())->lines() == 1) {
+        if (staff && staff->lines(item->tick()) == 1) {
             yoff -= 2.0 * item->spatium();
         }
 
@@ -155,7 +159,7 @@ const Segment* MeasureNumberLayout::refBarlineSegment(const MeasureNumber* item,
     Measure* measure = item->measure();
     if (alignToBarline || hPlacement == AlignH::LEFT) {
         for (Segment* seg = measure->first(); seg && seg->tick() == measure->tick() && seg->system() == measure->system();
-             seg = seg->prev1enabled()) {
+             seg = seg->prev1MMenabled()) {
             if (seg->isType(SegmentType::BarLineType) && seg->isActive()) {
                 barlineSeg = seg;
                 break;
@@ -195,11 +199,11 @@ void MeasureNumberLayout::checkBarlineCollisions(const MeasureNumber* item, cons
     }
 
     const double minBarLineDistance = 0.25 * item->spatium();
-    if (!barlineSeg || (barlineSeg->segmentType() != SegmentType::BeginBarLine && item->score()->staff(barlineStaff)->barLineSpan() < 1)) {
+    if (!barlineSeg || (barlineSeg->segmentType() != SegmentType::BeginBarLine && !item->score()->staff(barlineStaff)->barLineSpan())) {
         return;
     }
 
-    BarLine* barline = toBarLine(barlineSeg->elementAt(staff2track(barlineStaff)));
+    BarLine* barline = toBarLine(barlineSeg->element(staff2track(barlineStaff)));
     if (!barline) {
         return;
     }

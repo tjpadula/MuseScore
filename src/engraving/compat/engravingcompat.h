@@ -40,6 +40,8 @@ private:
     static void resetMarkerLeftFontSize(MasterScore* masterScore);
     static void resetRestVerticalOffsets(MasterScore* masterScore);
     static void adjustVBoxDistances(MasterScore* masterScore);
+    static void adjustTextOffset(MasterScore* masterScore);
+    static void migrateNoteParens(MasterScore* masterScore);
 
     static bool relayoutUserModifiedCrossStaffBeams(MasterScore* score);
     static bool resetHookHeightSign(MasterScore* masterScore);

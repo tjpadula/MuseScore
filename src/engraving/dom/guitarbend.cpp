@@ -20,10 +20,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../editing/editdata.h"
+#include "../editing/elementeditdata.h"
+#include "../editing/transpose.h"
+
 #include "accidental.h"
+#include "actionicon.h"
 #include "chord.h"
-#include "editdata.h"
 #include "guitarbend.h"
+#include "navigate.h"
 #include "note.h"
 #include "part.h"
 #include "rest.h"
@@ -31,6 +36,7 @@
 #include "staff.h"
 #include "tie.h"
 #include "utils.h"
+#include "whammybar.h"
 
 namespace mu::engraving {
 /****************************************
@@ -45,7 +51,8 @@ GuitarBend::GuitarBend(EngravingItem* parent)
 GuitarBend::GuitarBend(const GuitarBend& g)
     : SLine(g)
 {
-    _type = g.type();
+    m_bendType = g.bendType();
+    _bendAmountInQuarterTones = g.bendAmountInQuarterTones();
 }
 
 GuitarBend::~GuitarBend()
@@ -59,7 +66,7 @@ LineSegment* GuitarBend::createLineSegment(System* parent)
 {
     GuitarBendSegment* seg = new GuitarBendSegment(this, parent);
     seg->setTrack(track());
-    seg->setColor(color());
+    seg->setColor(lineColor());
     return seg;
 }
 
@@ -93,6 +100,40 @@ Note* GuitarBend::endNote() const
     return toNote(endEl);
 }
 
+void GuitarBend::changeBendAmount(int bendAmount)
+{
+    if (bendAmount == SLACK_BEND_AMOUNT) {
+        undoChangeProperty(Pid::GUITAR_DIVE_IS_SLACK, true);
+        if (endNote()) {
+            endNote()->undoChangeProperty(Pid::HEAD_GROUP, NoteHeadGroup::HEAD_CROSS);
+        }
+        return;
+    } else if (isSlack()) {
+        undoResetProperty(Pid::GUITAR_DIVE_IS_SLACK);
+        if (endNote()) {
+            endNote()->undoResetProperty(Pid::HEAD_GROUP);
+        }
+    }
+
+    if (bendType() == GuitarBendType::DIP) {
+        // Dips and slack have no end note so set bend amount directly
+        undoChangeProperty(Pid::GUITAR_BEND_AMOUNT, bendAmount);
+        return;
+    }
+
+    // All other bends: set bend amount by transposing end note appropriately
+    int pitch = bendAmount / 2 + startNoteOfChain()->pitch();
+    QuarterOffset quarterOff = bendAmount % 2 == 1 ? QuarterOffset::QUARTER_SHARP
+                               : bendAmount % 2 == -1 ? QuarterOffset::QUARTER_FLAT : QuarterOffset::NONE;
+    if (pitch == startNote()->pitch() && quarterOff == QuarterOffset::QUARTER_SHARP) {
+        // Because a flat second is more readable than a sharp unison
+        pitch += 1;
+        quarterOff = QuarterOffset::QUARTER_FLAT;
+    }
+
+    setEndNotePitch(pitch, quarterOff);
+}
+
 void GuitarBend::setEndNotePitch(int pitch, QuarterOffset quarterOff)
 {
     Note* note = endNote();
@@ -108,7 +149,7 @@ void GuitarBend::setEndNotePitch(int pitch, QuarterOffset quarterOff)
     interval.flip();
 
     int targetTpc1 = pitch2tpc(pitch, key, Prefer::NEAREST);
-    int targetTpc2 = transposeTpc(targetTpc1, interval, true);
+    int targetTpc2 = Transpose::transposeTpc(targetTpc1, interval, true);
 
     score()->undoChangePitch(note, pitch, targetTpc1, targetTpc2);
 
@@ -165,7 +206,7 @@ void GuitarBend::setEndNotePitch(int pitch, QuarterOffset quarterOff)
 
 bool GuitarBend::isReleaseBend() const
 {
-    return endNote()->pitch() < startNote()->pitch();
+    return bendAmountInQuarterTones() < 0;
 }
 
 bool GuitarBend::isFullRelease() const
@@ -177,7 +218,25 @@ bool GuitarBend::angledPreBend() const
 {
     Note* endN = endNote();
     Chord* endChord = endNote()->chord();
-    return type() == GuitarBendType::PRE_BEND && endN->string() > endChord->upString();
+    return bendType() == GuitarBendType::PRE_BEND && endN->string() > endChord->upString();
+}
+
+bool GuitarBend::isDive() const
+{
+    switch (bendType()) {
+    case GuitarBendType::DIVE:
+    case GuitarBendType::PRE_DIVE:
+    case GuitarBendType::DIP:
+    case GuitarBendType::SCOOP:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool GuitarBend::isFullReleaseDive() const
+{
+    return isDive() && totBendAmountIncludingPrecedingBends() == 0;
 }
 
 void GuitarBend::fixNotesFrettingForStandardBend(Note* startNote, Note* endNote)
@@ -206,7 +265,7 @@ void GuitarBend::fixNotesFrettingForStandardBend(Note* startNote, Note* endNote)
     }
 }
 
-Note* GuitarBend::createEndNote(Note* startNote)
+Note* GuitarBend::createEndNote(Note* startNote, GuitarBendType bendType)
 {
     track_idx_t track = startNote->track();
     Chord* startChord = startNote->chord();
@@ -217,7 +276,7 @@ Note* GuitarBend::createEndNote(Note* startNote)
         return nullptr;
     }
 
-    EngravingItem* item = endSegment->elementAt(track);
+    EngravingItem* item = endSegment->element(track);
     if (!item) {
         return nullptr;
     }
@@ -231,7 +290,7 @@ Note* GuitarBend::createEndNote(Note* startNote)
         Fraction duration = std::min(startChord->ticks(), rest->ticks());
 
         endSegment = score->setNoteRest(endSegment, track, noteVal, duration);
-        Chord* endChord = endSegment ? toChord(endSegment->elementAt(track)) : nullptr;
+        Chord* endChord = endSegment ? toChord(endSegment->element(track)) : nullptr;
         endNote = endChord ? endChord->upNote() : nullptr;
     } else { // isChord
         Chord* chord = toChord(item);
@@ -239,7 +298,7 @@ Note* GuitarBend::createEndNote(Note* startNote)
     }
 
     if (endNote) {
-        endNote->transposeDiatonic(1, true, false);
+        endNote->transposeDiatonic(bendType == GuitarBendType::BEND ? 1 : -1, true, false);
     }
 
     return endNote;
@@ -280,6 +339,14 @@ PropertyValue GuitarBend::getProperty(Pid id) const
         return startTimeFactor();
     case Pid::BEND_END_TIME_FACTOR:
         return endTimeFactor();
+    case Pid::GUITAR_DIVE_TAB_POS:
+        return isDive() ? m_diveTabPos : DirectionV::AUTO;
+    case Pid::GUITAR_BEND_AMOUNT:
+        return bendAmountInQuarterTones();
+    case Pid::VIBRATO_LINE_TYPE:
+        return dipVibratoType();
+    case Pid::GUITAR_DIVE_IS_SLACK:
+        return isSlack();
     default:
         return SLine::getProperty(id);
     }
@@ -300,6 +367,32 @@ bool GuitarBend::setProperty(Pid propertyId, const PropertyValue& v)
     case Pid::BEND_END_TIME_FACTOR:
         setEndTimeFactor(v.toReal());
         break;
+    case Pid::COLOR:
+        setColor(v.value<Color>());
+        setLineColor(v.value<Color>());
+        break;
+    case Pid::GUITAR_DIVE_TAB_POS:
+    {
+        IF_ASSERT_FAILED(isDive()) {
+            return false;
+        }
+        setDiveTabPos(v.value<DirectionV>());
+        break;
+    }
+    case Pid::GUITAR_BEND_AMOUNT:
+        setBendAmountInQuarterTones(v.toInt());
+        break;
+    case Pid::VIBRATO_LINE_TYPE:
+    {
+        IF_ASSERT_FAILED(bendType() == GuitarBendType::DIP) {
+            return false;
+        }
+        setDipVibratoType(v.value<VibratoType>());
+        break;
+    }
+    case Pid::GUITAR_DIVE_IS_SLACK:
+        setIsSlack(v.toBool());
+        break;
     default:
         return SLine::setProperty(propertyId, v);
     }
@@ -315,13 +408,26 @@ PropertyValue GuitarBend::propertyDefault(Pid id) const
     case Pid::BEND_SHOW_HOLD_LINE:
         return static_cast<int>(GuitarBendShowHoldLine::AUTO);
     case Pid::BEND_START_TIME_FACTOR:
+        if (m_bendType == GuitarBendType::DIP) {
+            return DIP_DEFAULT_START_TIME_FACTOR;
+        }
         return 0.f;
     case Pid::BEND_END_TIME_FACTOR:
-        if (_type == GuitarBendType::GRACE_NOTE_BEND) {
+        if (m_bendType == GuitarBendType::GRACE_NOTE_BEND) {
             return GRACE_NOTE_BEND_DEFAULT_END_TIME_FACTOR;
         }
-
+        if (m_bendType == GuitarBendType::DIP) {
+            return DIP_DEFAULT_END_TIME_FACTOR;
+        }
         return 1.f;
+    case Pid::GUITAR_DIVE_TAB_POS:
+        return DirectionV::AUTO;
+    case Pid::GUITAR_BEND_AMOUNT:
+        return -2;
+    case Pid::VIBRATO_LINE_TYPE:
+        return VibratoType::NONE;
+    case Pid::GUITAR_DIVE_IS_SLACK:
+        return false;
     default:
         return SLine::propertyDefault(id);
     }
@@ -329,13 +435,37 @@ PropertyValue GuitarBend::propertyDefault(Pid id) const
 
 void GuitarBend::computeBendAmount()
 {
-    if (type() == GuitarBendType::SLIGHT_BEND) {
+    if (isSlack()) {
+        int prevAmount = 0;
+        if (GuitarBend* prevBend = findPrecedingBend()) {
+            prevAmount = prevBend->totBendAmountIncludingPrecedingBends();
+        }
+        setBendAmountInQuarterTones(SLACK_BEND_AMOUNT - prevAmount);
+        computeBendText();
+        return;
+    }
+
+    if (bendType() == GuitarBendType::DIP) {
+        computeBendText();
+        return;
+    }
+
+    if (bendType() == GuitarBendType::SCOOP) {
+        setBendAmountInQuarterTones(-2);
+        computeBendText();
+        return;
+    }
+
+    if (bendType() == GuitarBendType::SLIGHT_BEND) {
         setBendAmountInQuarterTones(1);
         computeBendText();
         return;
     }
 
-    Note* startN = startNote();
+    GuitarBend* prevBend = findPrecedingBend();
+    GuitarBend* prevSlack = prevBend && prevBend->isSlack() ? prevBend : nullptr;
+
+    Note* startN = prevSlack ? prevSlack->startNote() : startNote();
     Note* endN = endNote();
 
     int startPitch = startN->pitch();
@@ -353,6 +483,10 @@ void GuitarBend::computeBendAmount()
 
     pitchDiffInQuarterTones += endOffInQuarterTones - startOffInQuarterTones;
 
+    if (prevSlack) {
+        pitchDiffInQuarterTones -= SLACK_BEND_AMOUNT;
+    }
+
     setBendAmountInQuarterTones(pitchDiffInQuarterTones);
 
     computeBendText();
@@ -363,10 +497,16 @@ void GuitarBend::computeBendAmount()
 int GuitarBend::totBendAmountIncludingPrecedingBends() const
 {
     int bendAmount = bendAmountInQuarterTones();
+    if (bendType() == GuitarBendType::PRE_DIVE) {
+        return bendAmount;
+    }
 
     GuitarBend* prevBend = findPrecedingBend();
     while (prevBend) {
         bendAmount += prevBend->bendAmountInQuarterTones();
+        if (prevBend->bendType() == GuitarBendType::PRE_DIVE) {
+            return bendAmount;
+        }
         prevBend = prevBend->findPrecedingBend();
     }
 
@@ -375,15 +515,33 @@ int GuitarBend::totBendAmountIncludingPrecedingBends() const
 
 void GuitarBend::computeBendText()
 {
+    if (isSlack()) {
+        mutldata()->setBendDigit(String(u"slack"));
+        return;
+    }
+
+    if (bendType() == GuitarBendType::PRE_DIVE && findPrecedingBend()) {
+        mutldata()->setBendDigit(u"");
+        return;
+    }
+
     int quarters = totBendAmountIncludingPrecedingBends();
 
     int fulls = quarters / 4;
     int quarts = quarters % 4;
+    if (fulls == 0 && quarters == 0) {
+        mutldata()->setBendDigit(String());
+        return;
+    }
 
-    String string = bendAmountToString(fulls, quarts);
+    String string = bendAmountToString(fulls, quarts, style().styleB(Sid::useFractionCharacters));
 
-    if (string == u"0") {
-        string = u"";
+    if (isDive()) {
+        if (quarters > 0) {
+            string.insert(0, u"+");
+        } else if (quarters < 0 && fulls == 0) {
+            string.insert(0, u"-");
+        }
     }
 
     if (string == u"1" && style().styleB(Sid::guitarBendUseFull)) {
@@ -398,8 +556,16 @@ void GuitarBend::computeIsInvalidOrNeedsWarning()
     int totBendAmount = totBendAmountIncludingPrecedingBends();
     static constexpr int UNPLAYABLE_THRESHOLD = 14;
     static constexpr int WARNING_THRESHOLD = 8;
-    m_isInvalid = totBendAmount < 0 || totBendAmount > UNPLAYABLE_THRESHOLD || bendAmountInQuarterTones() == 0;
-    m_isBorderlineUnplayable =  totBendAmount > WARNING_THRESHOLD && totBendAmount <= UNPLAYABLE_THRESHOLD;
+    static constexpr int DIVE_MAX = 16;
+    static constexpr int DIVE_MIN = -32;
+
+    if (isDive()) {
+        m_isInvalid = bendAmountInQuarterTones() == 0 || totBendAmount < DIVE_MIN || totBendAmount > DIVE_MAX;
+        m_isBorderlineUnplayable = false;
+    } else {
+        m_isInvalid = totBendAmount < 0 || totBendAmount > UNPLAYABLE_THRESHOLD || bendAmountInQuarterTones() == 0;
+        m_isBorderlineUnplayable =  totBendAmount > WARNING_THRESHOLD && totBendAmount <= UNPLAYABLE_THRESHOLD;
+    }
 }
 
 GuitarBend* GuitarBend::findPrecedingBend() const
@@ -410,8 +576,95 @@ GuitarBend* GuitarBend::findPrecedingBend() const
     }
 
     GuitarBend* precedingBend = startN->bendBack();
-    if (precedingBend && precedingBend->type() != GuitarBendType::SLIGHT_BEND) {
+    if (precedingBend && precedingBend->isDive() == isDive()
+        && precedingBend->bendType() != GuitarBendType::SLIGHT_BEND
+        && precedingBend->bendType() != GuitarBendType::DIP
+        && precedingBend->bendType() != GuitarBendType::SCOOP) {
         return precedingBend;
+    }
+
+    if (bendType() == GuitarBendType::PRE_DIVE) {
+        ChordRest* prevCR = prevChordRest(startN->chord());
+        if (prevCR && prevCR->isRest()) {
+            WhammyBar* whammyBar = findOverlappingWhammyBar(prevCR->tick(), tick2());
+            if (whammyBar) {
+                while (prevCR && prevCR->isRest() && prevCR->tick() > whammyBar->tick()) {
+                    prevCR = prevChordRest(prevCR);
+                }
+            }
+        }
+        if (!prevCR || !prevCR->isChord()) {
+            return nullptr;
+        }
+        Chord* prevChord = toChord(prevCR);
+        for (Note* note : prevChord->notes()) {
+            while (note->tieBack() && note->tieBack()->startNote()) {
+                note = note->tieBack()->startNote();
+            }
+            GuitarBend* prevBend = note->bendBack();
+            if (prevBend
+                && (prevBend->bendType() == GuitarBendType::DIVE || prevBend->bendType() == GuitarBendType::PRE_DIVE)
+                && prevBend->totBendAmountIncludingPrecedingBends() == bendAmountInQuarterTones()) {
+                return prevBend;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+GuitarBend* GuitarBend::findFollowingPreDive() const
+{
+    if (!isDive()) {
+        return nullptr;
+    }
+
+    Note* endN = endNote();
+    while (endN->tieFor() && endN->tieFor()->endNote()) {
+        endN = endN->tieFor()->endNote();
+    }
+
+    ChordRest* nextCR = nextChordRest(endN->chord());
+    if (nextCR->isRest()) {
+        WhammyBar* whammyBar = findOverlappingWhammyBar(tick(), nextCR->endTick());
+        if (whammyBar) {
+            while (nextCR && nextCR->isRest() && nextCR->tick() < whammyBar->tick2()) {
+                nextCR = nextChordRest(nextCR);
+            }
+        }
+    }
+
+    if (!nextCR || !nextCR->isChord()) {
+        return nullptr;
+    }
+
+    Chord* nextChord = toChord(nextCR);
+    for (Note* note : nextChord->notes()) {
+        while (note->tieFor() && note->tieFor()->endNote()) {
+            note = note->tieFor()->endNote();
+        }
+        GuitarBend* bend = note->bendFor();
+        if (bend && bend->bendType() == GuitarBendType::PRE_DIVE
+            && bend->bendAmountInQuarterTones() == totBendAmountIncludingPrecedingBends()) {
+            return bend;
+        }
+    }
+
+    return nullptr;
+}
+
+WhammyBar* GuitarBend::findOverlappingWhammyBar(Fraction startTick, Fraction endTick) const
+{
+    const auto& spanners = score()->spannerMap().findOverlapping(startTick.ticks(), endTick.ticks());
+    for (const auto& item : spanners) {
+        Spanner* spanner = item.value;
+        if (spanner->isWhammyBar() && spanner->tick() < startTick && spanner->tick2() >= endTick) {
+            Staff* spannerStaff = spanner->staff();
+            Staff* thisStaff = staff();
+            if (spannerStaff == thisStaff || spannerStaff->isLinked(thisStaff)) {
+                return toWhammyBar(spanner);
+            }
+        }
     }
 
     return nullptr;
@@ -422,19 +675,31 @@ void GuitarBend::updateHoldLine()
     Note* startOfHold = nullptr;
     Note* endOfHold = nullptr;
 
+    bool isDipWithVibrato = bendType() == GuitarBendType::DIP && dipVibratoType() != VibratoType::NONE;
+    bool canHaveHoldLine = isDipWithVibrato || (staffType()->isTabStaff() && !isFullRelease() && bendType() != GuitarBendType::SCOOP
+                                                && bendType() != GuitarBendType::DIP);
+    if (isDive()) {
+        canHaveHoldLine &= startNote() && startNote() == startNote()->chord()->upNote();
+    }
+
     bool needsHoldLine = false;
-    if (!isFullRelease()) {
+    if (canHaveHoldLine) {
         startOfHold = endNote();
         endOfHold = startOfHold;
 
-        while (endOfHold->tieFor() && endOfHold->tieFor()->endNote()) {
-            endOfHold = endOfHold->tieFor()->endNote();
+        GuitarBend* followingPreDive = findFollowingPreDive();
+        endOfHold = followingPreDive ? followingPreDive->startNote() : startOfHold;
+
+        if (endOfHold == startOfHold) {
+            while (endOfHold->tieFor() && endOfHold->tieFor()->endNote()) {
+                endOfHold = endOfHold->tieFor()->endNote();
+            }
         }
 
         if (showHoldLine() == GuitarBendShowHoldLine::AUTO) {
             needsHoldLine = endOfHold != startOfHold;
         } else {
-            needsHoldLine = showHoldLine() == GuitarBendShowHoldLine::SHOW;
+            needsHoldLine = showHoldLine() == GuitarBendShowHoldLine::SHOW || isDipWithVibrato;
         }
     }
 
@@ -478,6 +743,12 @@ void GuitarBend::updateHoldLine()
 
 double GuitarBend::lineWidth() const
 {
+    if (isDive()) {
+        return (staffType() && staffType()->isTabStaff())
+               ? style().styleMM(Sid::guitarDiveLineWidthTab)
+               : style().styleMM(Sid::guitarDiveLineWidth);
+    }
+
     return (staffType() && staffType()->isTabStaff())
            ? style().styleMM(Sid::guitarBendLineWidthTab)
            : style().styleMM(Sid::guitarBendLineWidth);
@@ -519,17 +790,17 @@ std::vector<PointF> GuitarBendSegment::gripsPositions(const EditData&) const
     return grips;
 }
 
-void GuitarBendSegment::startEditDrag(EditData& ed)
+void GuitarBendSegment::startDragGrip(EditData& ed)
 {
     ElementEditDataPtr eed = ed.getData(this);
     if (!eed) {
         return;
     }
     eed->pushProperty(Pid::BEND_VERTEX_OFF);
-    LineSegment::startEditDrag(ed);
+    LineSegment::startDragGrip(ed);
 }
 
-void GuitarBendSegment::editDrag(EditData& ed)
+void GuitarBendSegment::dragGrip(EditData& ed)
 {
     PointF delta = ed.evtDelta;
 
@@ -550,6 +821,7 @@ void GuitarBendSegment::editDrag(EditData& ed)
         setOffsetChanged(true);
         break;
     default:
+        UNREACHABLE;
         break;
     }
 
@@ -589,16 +861,18 @@ PropertyValue GuitarBendSegment::propertyDefault(Pid id) const
     }
 }
 
-EngravingItem* GuitarBendSegment::propertyDelegate(Pid id)
+EngravingObject* GuitarBendSegment::propertyDelegate(Pid id) const
 {
     switch (id) {
     case Pid::DIRECTION:
     case Pid::BEND_SHOW_HOLD_LINE:
     case Pid::POSITION_LINKED_TO_MASTER:
     case Pid::APPEARANCE_LINKED_TO_MASTER:
+    case Pid::GUITAR_DIVE_TAB_POS:
+    case Pid::VIBRATO_LINE_TYPE:
         return guitarBend();
     default:
-        return nullptr;
+        return LineSegment::propertyDelegate(id);
     }
 }
 
@@ -614,10 +888,10 @@ double GuitarBendSegment::lineWidth() const
     return guitarBend()->lineWidth();
 }
 
-void GuitarBendSegment::scanElements(void* data, void (* func)(void*, EngravingItem*), bool all)
+void GuitarBendSegment::scanElements(std::function<void(EngravingItem*)> func)
 {
-    func(data, m_text);
-    LineSegment::scanElements(data, func, all);
+    func(m_text);
+    LineSegment::scanElements(func);
 }
 
 bool GuitarBendSegment::isUserModified() const
@@ -626,22 +900,19 @@ bool GuitarBendSegment::isUserModified() const
     return modified || LineSegment::isUserModified();
 }
 
-Color GuitarBend::uiColor() const
+Color GuitarBend::curColor(const rendering::PaintOptions& opt) const
 {
-    if (score()->printing() || !MScore::warnGuitarBends) {
-        return curColor();
+    if (!opt.isPrinting && MScore::warnGuitarBends) {
+        if (m_isInvalid) {
+            return selected() ? configuration()->criticalSelectedColor() : configuration()->criticalColor();
+        }
+
+        if (m_isBorderlineUnplayable) {
+            return selected() ? configuration()->warningSelectedColor() : configuration()->warningColor();
+        }
     }
 
-    auto engravingConfig = configuration();
-    if (m_isInvalid) {
-        return selected() ? engravingConfig->criticalSelectedColor() : engravingConfig->criticalColor();
-    }
-
-    if (m_isBorderlineUnplayable) {
-        return selected() ? engravingConfig->warningSelectedColor() : engravingConfig->warningColor();
-    }
-
-    return curColor();
+    return EngravingItem::curColor(opt);
 }
 
 void GuitarBend::adaptBendsFromTabToStandardStaff(const Staff* staff)
@@ -667,7 +938,7 @@ void GuitarBend::adaptBendsFromTabToStandardStaff(const Staff* staff)
             continue;
         }
         for (track_idx_t track = startTrack; track < endTrack; ++track) {
-            EngravingItem* item = segment->elementAt(track);
+            EngravingItem* item = segment->element(track);
             if (!item || !item->isChord()) {
                 continue;
             }
@@ -680,6 +951,31 @@ void GuitarBend::adaptBendsFromTabToStandardStaff(const Staff* staff)
     }
 }
 
+GuitarBendType GuitarBend::bendTypeFromActionIcon(ActionIconType actionIconType)
+{
+    switch (actionIconType) {
+    case ActionIconType::STANDARD_BEND: return GuitarBendType::BEND;
+    case ActionIconType::PRE_BEND: return GuitarBendType::PRE_BEND;
+    case ActionIconType::GRACE_NOTE_BEND: return GuitarBendType::GRACE_NOTE_BEND;
+    case ActionIconType::SLIGHT_BEND: return GuitarBendType::SLIGHT_BEND;
+    case ActionIconType::DIVE: return GuitarBendType::DIVE;
+    case ActionIconType::PRE_DIVE: return GuitarBendType::PRE_DIVE;
+    case ActionIconType::DIP: return GuitarBendType::DIP;
+    case ActionIconType::SCOOP: return GuitarBendType::SCOOP;
+    default:
+        return GuitarBendType::BEND;
+    }
+}
+
+void GuitarBend::setBendType(GuitarBendType t)
+{
+    m_bendType = t;
+
+    resetProperty(Pid::GUITAR_BEND_AMOUNT);
+    resetProperty(Pid::BEND_START_TIME_FACTOR);
+    resetProperty(Pid::BEND_END_TIME_FACTOR);
+}
+
 /****************************************
  *            GuitarBendHold
  * **************************************/
@@ -687,6 +983,7 @@ void GuitarBend::adaptBendsFromTabToStandardStaff(const Staff* staff)
 GuitarBendHold::GuitarBendHold(GuitarBend* parent)
     : SLine(ElementType::GUITAR_BEND_HOLD, parent, ElementFlag::MOVABLE)
 {
+    resetProperty(Pid::LINE_STYLE);
 }
 
 GuitarBendHold::GuitarBendHold(const GuitarBendHold& h)
@@ -698,8 +995,18 @@ LineSegment* GuitarBendHold::createLineSegment(System* parent)
 {
     GuitarBendHoldSegment* seg = new GuitarBendHoldSegment(this, parent);
     seg->setTrack(track());
-    seg->setColor(color());
+    seg->setColor(lineColor());
     return seg;
+}
+
+PropertyValue GuitarBendHold::propertyDefault(Pid id) const
+{
+    switch (id) {
+    case Pid::LINE_STYLE:
+        return LineType::DASHED;
+    default:
+        return SLine::propertyDefault(id);
+    }
 }
 
 Note* GuitarBendHold::startNote() const
@@ -718,7 +1025,7 @@ Note* GuitarBendHold::endNote() const
 
 double GuitarBendHold::lineWidth() const
 {
-    return style().styleMM(Sid::guitarBendLineWidthTab);
+    return style().styleMM(parent() && toGuitarBend(parent())->isDive() ? Sid::guitarDiveLineWidthTab : Sid::guitarBendLineWidthTab);
 }
 
 /****************************************
@@ -726,12 +1033,12 @@ double GuitarBendHold::lineWidth() const
  * **************************************/
 
 GuitarBendHoldSegment::GuitarBendHoldSegment(GuitarBendHold* sp, System* parent)
-    : LineSegment(ElementType::GUITAR_BEND_HOLD_SEGMENT, sp, parent, ElementFlag::MOVABLE)
+    : LineSegment(ElementType::GUITAR_BEND_HOLD_SEGMENT, sp, parent, ElementFlag::MOVABLE | ElementFlag::ON_STAFF)
 {
     setFlag(ElementFlag::ON_STAFF, true);
 }
 
-void GuitarBendHoldSegment::editDrag(EditData& ed)
+void GuitarBendHoldSegment::dragGrip(EditData& ed)
 {
     PointF delta = ed.evtDelta;
 

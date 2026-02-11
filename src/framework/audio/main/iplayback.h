@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -43,6 +43,10 @@ public:
     virtual ~IPlayback() = default;
 
     // A quick guide how to playback something:
+
+    // 0. Check is audio system started
+    virtual bool isAudioStarted() const = 0;
+    virtual async::Channel<bool> isAudioStartedChanged() const = 0;
 
     // 1. Add Sequence
     virtual async::Promise<TrackSequenceId> addSequence() = 0;

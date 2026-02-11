@@ -19,8 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_PROJECT_PROJECTTYPES_H
-#define MU_PROJECT_PROJECTTYPES_H
+
+#pragma once
 
 #include <variant>
 
@@ -52,6 +52,14 @@ struct ProjectCreateOptions
     notation::ScoreCreateOptions scoreOptions;
 };
 
+struct OpenParams {
+    OpenParams() {}
+
+    muse::io::path_t stylePath;
+    bool forceMode = false;
+    bool unrollRepeats = false;
+};
+
 struct MigrationOptions
 {
     // common
@@ -72,15 +80,22 @@ enum class SaveMode
     SaveAs,
     SaveCopy,
     SaveSelection,
-    AutoSave
+    AutoSave,
+    SavePage,
 };
 
-enum class SaveLocationType
+namespace _SaveLocationType {
+Q_NAMESPACE;
+enum class Type
 {
     Undefined,
     Local,
     Cloud
 };
+Q_ENUM_NS(Type)
+}
+
+using SaveLocationType = _SaveLocationType::Type;
 
 struct CloudProjectInfo {
     QUrl sourceUrl;
@@ -109,24 +124,9 @@ struct CloudAudioInfo {
 
 struct ExportInfo {
     QString id;
-    muse::io::path_t projectPath;
     muse::io::path_t exportPath;
     INotationWriter::UnitType unitType;
-    std::vector<notation::INotationPtr> notations;
-
-    bool operator==(const ExportInfo& other) const
-    {
-        return id == other.id
-               && projectPath == other.projectPath
-               && exportPath == other.exportPath
-               && unitType == other.unitType
-               && notations == other.notations;
-    }
-
-    bool operator!=(const ExportInfo other) const
-    {
-        return !(*this == other);
-    }
+    std::vector<notation::INotationWeakPtr> notations;
 };
 
 struct SaveLocation
@@ -306,36 +306,32 @@ struct ProjectBeingDownloaded {
     muse::ProgressPtr progress;
 };
 
-class GenerateAudioTimePeriod
-{
-    Q_GADGET
+namespace _GenerateAudioTimePeriodType {
+Q_NAMESPACE;
 
-public:
-    enum class Type {
-        Never = 0,
-        Always,
-        AfterCertainNumberOfSaves
-    };
-    Q_ENUM(Type)
+enum class Type {
+    Never = 0,
+    Always,
+    AfterCertainNumberOfSaves
 };
+Q_ENUM_NS(Type)
+}
 
-using GenerateAudioTimePeriodType = GenerateAudioTimePeriod::Type;
+using GenerateAudioTimePeriodType = _GenerateAudioTimePeriodType::Type;
 
-class Migration
+namespace _MigrationType {
+Q_NAMESPACE;
+
+enum class Type
 {
-    Q_GADGET
-
-public:
-    enum class Type
-    {
-        Unknown,
-        Pre_3_6,
-        Ver_3_6
-    };
-    Q_ENUM(Type)
+    Unknown,
+    Pre_3_6,
+    Ver_3_6
 };
+Q_ENUM_NS(Type)
+}
 
-using MigrationType = Migration::Type;
+using MigrationType = _MigrationType::Type;
 
 inline std::vector<MigrationType> allMigrationTypes()
 {
@@ -347,5 +343,3 @@ inline std::vector<MigrationType> allMigrationTypes()
     return types;
 }
 }
-
-#endif // MU_PROJECT_PROJECTTYPES_H

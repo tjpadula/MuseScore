@@ -96,7 +96,7 @@ RetVal<muse::io::path_t> ExportProjectScenario::askExportPath(const INotationPtr
     return exportPath;
 }
 
-bool ExportProjectScenario::exportScores(const notation::INotationPtrList& notations, const muse::io::path_t destinationPath,
+bool ExportProjectScenario::exportScores(notation::INotationPtrList notations, const muse::io::path_t destinationPath,
                                          INotationWriter::UnitType unitType, bool openDestinationFolderOnExport) const
 {
     std::string suffix = io::suffix(destinationPath);
@@ -153,7 +153,7 @@ bool ExportProjectScenario::exportScores(const notation::INotationPtrList& notat
         writerProgress->progressChanged().onReceive(this, [this, &currentFileNum, fileCount](int64_t current, int64_t total,
                                                                                              const std::string& status) {
             m_exportProgress.progress(currentFileNum * total + current, fileCount * total, status);
-        });
+        }, async::Asyncable::Mode::SetReplace);
 
         m_exportProgress.canceled().onNotify(this, [writer]() {
             writer->abort();
@@ -166,8 +166,8 @@ bool ExportProjectScenario::exportScores(const notation::INotationPtrList& notat
 
         if (writerProgress) {
             m_exportProgress.finish(muse::make_ok());
-            writerProgress->progressChanged().resetOnReceive(this);
-            m_exportProgress.finished().resetOnReceive(this);
+            writerProgress->progressChanged().disconnect(this);
+            m_exportProgress.finished().disconnect(this);
         }
     };
 
@@ -228,6 +228,9 @@ bool ExportProjectScenario::exportScores(const notation::INotationPtrList& notat
     } break;
     case INotationWriter::UnitType::MULTI_PART: {
         auto exportFunction = [writer, notations, options](IODevice& destinationDevice) {
+                if (notations.size() == 1) {
+                    return writer->write(notations.front(), destinationDevice, options);
+                }
                 return writer->writeList(notations, destinationDevice, options);
             };
 
@@ -252,10 +255,6 @@ const ExportInfo& ExportProjectScenario::exportInfo() const
 
 void ExportProjectScenario::setExportInfo(const ExportInfo& exportInfo)
 {
-    if (m_exportInfo == exportInfo) {
-        return;
-    }
-
     m_exportInfo = exportInfo;
 }
 
@@ -444,7 +443,7 @@ void ExportProjectScenario::showExportProgress(bool isAudioExport) const
 {
     std::string title = isAudioExport ? muse::trc("project/export", "Exporting audio…") : muse::trc("project/export", "Exporting…");
 
-    interactive()->showProgress(title, &m_exportProgress);
+    interactive()->showProgress(title, m_exportProgress);
 }
 
 void ExportProjectScenario::openFolder(const muse::io::path_t& path) const

@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore BVBA and others
+ * Copyright (C) 2024 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -31,8 +31,8 @@ using namespace muse::async;
 using namespace muse::audio;
 using namespace muse::audio::rpc;
 
-Player::Player(const TrackSequenceId sequenceId)
-    : m_sequenceId(sequenceId)
+Player::Player(const TrackSequenceId sequenceId, const muse::modularity::ContextPtr& iocCtx)
+    : Injectable(iocCtx), m_sequenceId(sequenceId)
 {
 }
 
@@ -96,10 +96,15 @@ void Player::play(const secs_t delay)
     channel()->send(msg);
 }
 
-void Player::seek(const secs_t newPosition)
+void Player::seek(const secs_t newPosition, const bool flushSound)
 {
     ONLY_AUDIO_MAIN_THREAD;
-    Msg msg = rpc::make_request(Method::Seek, RpcPacker::pack(m_sequenceId, newPosition));
+
+    if (m_playbackPosition == newPosition) {
+        return;
+    }
+
+    Msg msg = rpc::make_request(Method::Seek, RpcPacker::pack(m_sequenceId, newPosition, flushSound));
     channel()->send(msg);
 }
 

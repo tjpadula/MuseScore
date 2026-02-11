@@ -60,6 +60,7 @@
 #include "engraving/dom/tuplet.h"
 #include "engraving/dom/utils.h"
 #include "engraving/dom/volta.h"
+#include "engraving/editing/transpose.h"
 
 #include "engraving/engravingerrors.h"
 #include "engraving/infrastructure/messagebox.h"
@@ -234,7 +235,7 @@ static void processBasicDrawObj(QList<BasicDrawObj*> objects, Segment* s, int tr
                         break;
                     case 181:                         // caesura
                     {
-                        Segment* seg = s->measure()->getSegment(SegmentType::Breath, s->tick() + (cr ? cr->actualTicks() : Fraction(0, 1)));
+                        Segment* seg = s->measure()->getSegment(SegmentType::Breath, cr ? cr->endTick() : s->tick());
                         Breath* b = Factory::createBreath(seg);
                         b->setTrack(track);
                         b->setSymId(SymId::caesura);
@@ -244,7 +245,7 @@ static void processBasicDrawObj(QList<BasicDrawObj*> objects, Segment* s, int tr
                     default:
                         break;
                     }
-                    if (cr && cr->type() == ElementType::CHORD) {
+                    if (cr && cr->isChord()) {
                         switch (code) {
                         case 172:                           // arpeggio (short)
                         case 173:                           // arpeggio (long)
@@ -263,7 +264,7 @@ static void processBasicDrawObj(QList<BasicDrawObj*> objects, Segment* s, int tr
                         {
                             Arpeggio* a = Factory::createArpeggio(toChord(cr));
                             a->setArpeggioType(ArpeggioType::UP);
-                            if ((static_cast<Chord*>(cr))->arpeggio()) {                           // there can be only one
+                            if ((toChord(cr))->arpeggio()) {                           // there can be only one
                                 delete a;
                                 a = 0;
                             } else {
@@ -275,7 +276,7 @@ static void processBasicDrawObj(QList<BasicDrawObj*> objects, Segment* s, int tr
                         {
                             Arpeggio* a = Factory::createArpeggio(toChord(cr));
                             a->setArpeggioType(ArpeggioType::DOWN);
-                            if ((static_cast<Chord*>(cr))->arpeggio()) {                           // there can be only one
+                            if ((toChord(cr))->arpeggio()) {                           // there can be only one
                                 delete a;
                                 a = 0;
                             } else {
@@ -544,11 +545,11 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
     //
     Fraction startTick = tick;
 
-    Tuplet* tuplet                = nullptr;
+    Tuplet* tuplet            = nullptr;
     int tupletNotesSpanned    = 0;     // Total number of notes/rests in the tuplet
     int tupletCurrentSequence = 0;     // Current sequence number after adding to the tuplet (1 => first note/rest)
-    bool tuplettrp             = false;
-    bool tupletprol            = false;
+    bool tuplettrp            = false;
+    bool tupletprol           = false;
     Fraction tupletTick = Fraction(0, 1);
     ClefType pclef = score->staff(staffIdx)->defaultClefType().concertClef;
 
@@ -567,7 +568,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
             TDuration d;
             d.setVal(ticks.ticks());
             if (o->tupletDenominator) {
-                if (tuplet == nullptr) {
+                if (!tuplet) {
                     tupletCurrentSequence     = 0; // reset tuplet counter
                     tupletNotesSpanned = (o->tupletCount) ? o->tupletCount + 1 : o->tupletDenominator;
                     tuplettrp   = o->tripartite;
@@ -628,7 +629,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
 
             if (tuplet) {
                 if (o->tupletEnd) {
-                    tick = tupletTick + tuplet->actualTicks();
+                    tick = tuplet->endTick();
                     //! NOTE If the tuplet is not added anywhere, then delete it
                     if (tuplet->elements().empty()) {
                         delete tuplet;
@@ -793,10 +794,9 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
                 }
                 pitch += n.alteration;
                 pitch += score->staff(staffIdx)->part()->instrument()->transpose().chromatic;               // assume not in concert pitch
-                pitch = std::clamp(pitch, 0, 127);
 
                 chord->add(note);
-                note->setPitch(pitch);
+                note->setPitch(clampPitch(pitch));
                 note->setHeadGroup(NoteHeadGroup(n.headGroup));
                 // TODO: compute tpc from pitch & line
                 note->setTpcFromPitch();
@@ -814,7 +814,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
                 if (v.hyphen) {
                     l->setSyllabic(LyricsSyllabic::BEGIN);
                 }
-                l->setNo(v.num);
+                l->setVerse(v.num);
                 l->initTextStyleType(l->isEven() ? TextStyleType::LYRICS_EVEN : TextStyleType::LYRICS_ODD, /*preserveDifferent*/ true);
                 chord->add(l);
             }
@@ -831,7 +831,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
 
             if (tuplet) {
                 if (o->tupletEnd) {
-                    tick = tupletTick + tuplet->actualTicks();
+                    tick = tuplet->endTick();
                     //! NOTE If the tuplet is not added anywhere, then delete it
                     if (tuplet->elements().empty()) {
                         delete tuplet;
@@ -881,7 +881,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
             Key cKey = tKey;
             Interval v = score->staff(staffIdx)->part()->instrument(tick)->transpose();
             if (!v.isZero() && !score->style().styleB(mu::engraving::Sid::concertPitch)) {
-                cKey = transposeKey(tKey, v);
+                cKey = Transpose::transposeKey(tKey, v);
                 // if there are more than 6 accidentals in transposing key, it cannot be PreferSharpFlat::AUTO
                 Part* part = score->staff(staffIdx)->part();
                 if ((tKey > 6 || tKey < -6) && part->preferSharpFlat() == PreferSharpFlat::AUTO) {
@@ -920,7 +920,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
             Segment* s = m->findSegment(SegmentType::TimeSig, tick);
             if (s) {
                 EngravingItem* e = s->element(trackZeroVoice(track));
-                if (e && static_cast<TimeSig*>(e)->sig() == f) {
+                if (e && toTimeSig(e)->sig() == f) {
                     break;
                 }
             }
@@ -1039,7 +1039,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
                 //               to->relPos.x(), to->relPos.y(), to->width, to->yxRatio, qPrintable(ss));
                 s->setXmlText(ss);
 
-                if (measure->type() != ElementType::VBOX) {
+                if (!measure->isVBox()) {
                     MeasureBase* mb = Factory::createVBox(score->dummy()->system());
                     mb->setTick(Fraction(0, 1));
                     score->addMeasure(mb, measure);
@@ -1069,7 +1069,7 @@ static Fraction readCapVoice(Score* score, CapVoice* cvoice, int staffIdx, const
                         volta->setVoltaType(Volta::Type::OPEN);
                     }
                     volta->setTick(cr1->measure()->tick());
-                    volta->setTick2(cr2->measure()->tick() + cr2->measure()->ticks());
+                    volta->setTick2(cr2->measure()->endTick());
                     score->addElement(volta);
                 }
             }
@@ -1188,8 +1188,8 @@ void convertCapella(Score* score, Capella* cap, bool capxMode)
     score->style().set(Sid::measureSpacing, 1.0);
     score->style().setSpatium(cap->normalLineDist * DPMM);
     score->style().set(Sid::smallStaffMag, cap->smallLineDist / cap->normalLineDist);
-    score->style().set(Sid::minSystemDistance, Spatium(8));
-    score->style().set(Sid::maxSystemDistance, Spatium(12));
+    score->style().set(Sid::minSystemDistance, 8_sp);
+    score->style().set(Sid::maxSystemDistance, 12_sp);
 
     for (CapSystem* csys : cap->systems) {
         CAPELLA_TRACE("System:");
@@ -1255,7 +1255,7 @@ void convertCapella(Score* score, Capella* cap, bool capxMode)
 
         // ClefType clefType = CapClef::clefType(cl->form, cl->line, cl->oct);
         // s->setClef(0, clefType);
-        s->setBarLineSpan(0);
+        s->setBarLineSpan(false);
         if (bstaff == 0) {
             bstaff = s;
             span = 0;
@@ -1336,7 +1336,7 @@ void convertCapella(Score* score, Capella* cap, bool capxMode)
     if (cap->topDist) {
         VBox* mb = 0;
         MeasureBaseList* mbl = score->measures();
-        if (mbl->size() && mbl->first()->type() == ElementType::VBOX) {
+        if (mbl->size() && mbl->first()->isVBox()) {
             mb = static_cast<VBox*>(mbl->first());
         } else {
             VBox* vb = Factory::createTitleVBox(score->dummy()->system());

@@ -34,23 +34,29 @@
 #include "async/asyncable.h"
 
 namespace mu::project {
-class ExportProjectScenario : public IExportProjectScenario, public muse::async::Asyncable
+class ExportProjectScenario : public IExportProjectScenario, public muse::async::Asyncable, public muse::Injectable
 {
-    INJECT(IProjectConfiguration, configuration)
-    INJECT(muse::IInteractive, interactive)
-    INJECT(INotationWritersRegister, writers)
-    INJECT(iex::imagesexport::IImagesExportConfiguration, imagesExportConfiguration)
-    INJECT(context::IGlobalContext, context)
-    INJECT(muse::io::IFileSystem, fileSystem)
+    muse::GlobalInject<muse::io::IFileSystem> fileSystem;
+    muse::GlobalInject<IProjectConfiguration> configuration;
+    muse::GlobalInject<iex::imagesexport::IImagesExportConfiguration> imagesExportConfiguration;
+    muse::Inject<muse::IInteractive> interactive = { this };
+    muse::Inject<INotationWritersRegister> writers = { this };
+    muse::Inject<context::IGlobalContext> context = { this };
 
 public:
+
+    ExportProjectScenario(const muse::modularity::ContextPtr& iocCtx)
+        : muse::Injectable(iocCtx)
+    {
+    }
+
     std::vector<INotationWriter::UnitType> supportedUnitTypes(const ExportType& exportType) const override;
 
     muse::RetVal<muse::io::path_t> askExportPath(const notation::INotationPtrList& notations, const ExportType& exportType,
                                                  INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
                                                  muse::io::path_t defaultPath = "") const override;
 
-    bool exportScores(const notation::INotationPtrList& notations, const muse::io::path_t destinationPath,
+    bool exportScores(notation::INotationPtrList notations, const muse::io::path_t destinationPath,
                       INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
                       bool openDestinationFolderOnExport = false) const override;
 
@@ -58,8 +64,6 @@ public:
     void setExportInfo(const ExportInfo& exportInfo) override;
 
 private:
-    ExportInfo m_exportInfo;
-
     enum class FileConflictPolicy {
         Undefined,
         SkipAll,
@@ -94,6 +98,7 @@ private:
 
     mutable FileConflictPolicy m_fileConflictPolicy = FileConflictPolicy::Undefined;
     mutable muse::Progress m_exportProgress;
+    ExportInfo m_exportInfo;
 };
 }
 
