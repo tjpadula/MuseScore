@@ -65,6 +65,9 @@
 
 #ifdef Q_OS_MAC
 #include "view/appmenumodel.h"
+#if defined(Q_OS_IOS)
+#include "view/navigableappmenumodel.h"
+#endif
 #include "view/internal/platform/macos/macosappmenumodelhook.h"
 #include "view/internal/platform/macos/macosscrollinghook.h"
 #else
@@ -155,8 +158,11 @@ void AppShellModule::registerUiTypes()
     qmlRegisterType<CommonAudioApiConfigurationModel>("MuseScore.Preferences", 1, 0, "CommonAudioApiConfigurationModel");
     qmlRegisterType<BraillePreferencesModel>("MuseScore.Preferences", 1, 0, "BraillePreferencesModel");
 
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_MAC)
     qmlRegisterType<AppMenuModel>("MuseScore.AppShell", 1, 0, "PlatformAppMenuModel");
+#if defined(Q_OS_IOS)
+    qmlRegisterType<NavigableAppMenuModel>("MuseScore.AppShell", 1, 0, "AppMenuModel");
+#endif
 #elif defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
     qmlRegisterType<AppMenuModel>("MuseScore.AppShell", 1, 0, "PlatformAppMenuModel");
     qmlRegisterType<NavigableAppMenuModel>("MuseScore.AppShell", 1, 0, "AppMenuModel");
@@ -208,7 +214,7 @@ void AppShellModule::onAllInited(const IApplication::RunMode& mode)
     }
 
     //! NOTE: process QEvent::FileOpen as early as possible if it was postponed
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS) || defined(Q_OS_IOS)
     qApp->processEvents();
 #endif
 }
