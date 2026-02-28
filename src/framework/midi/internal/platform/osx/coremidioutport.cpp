@@ -23,7 +23,11 @@
 
 #include <QString>
 
+#if defined(Q_OS_IOS)
+#include <CoreVideo/CVHostTime.h>
+#else
 #include <CoreAudio/HostTime.h>
+#endif
 #include <CoreServices/CoreServices.h>
 #include <CoreMIDI/CoreMIDI.h>
 
@@ -287,8 +291,12 @@ Ret CoreMidiOutPort::sendEvent(const Event& e)
         return make_ret(Err::MidiNotConnected);
     }
 
-    OSStatus result;
+    OSStatus result = noErr;
+#if defined(Q_OS_IOS)
+    MIDITimeStamp timeStamp = CVGetCurrentHostTime();
+#else
     MIDITimeStamp timeStamp = AudioGetCurrentHostTime();
+#endif
 
     // Note: there could be three cases: MIDI2+MIDIEventList, MIDI1+MIDIEventList, MIDI1+MIDIPacketList.
     //       But we only maintain 2 code paths and may drop configuration()->useMIDI20Output() and MIDIPacketList later.
@@ -315,6 +323,8 @@ Ret CoreMidiOutPort::sendEvent(const Event& e)
             MIDIEventListAdd(&eventList, sizeof(eventList), packet, timeStamp, wordCount, e.rawData());
 
             result = MIDISendEventList(m_core->outputPort, m_core->destinationId, &eventList);
+        } else {
+            __builtin_unreachable();
         }
     } else {
         const std::vector<Event> events = e.toMIDI10();
