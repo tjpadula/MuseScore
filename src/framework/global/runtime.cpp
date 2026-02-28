@@ -24,7 +24,7 @@
 
 #include "log.h"
 
-#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS) || defined(Q_OS_IOS)
 #include <pthread.h>
 #endif
 #if defined(Q_OS_FREEBSD)
@@ -45,7 +45,7 @@ void muse::runtime::setThreadName(const std::string& name)
     if (pthread_setname_np(pthread_self(), truncated_name.c_str()) > 0) {
         LOGW() << "Couldn't set thread name through pthreads";
     }
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MACOS) || defined(Q_OS_IOS)
     pthread_setname_np(name.c_str());
 #endif
 }
