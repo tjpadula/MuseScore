@@ -8,6 +8,11 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+# IOS_CONFIG_BUG
+# We removed LinguistTools from this list, as it's not available on iOS.
+# We removed PrintSupport because there's no real printing from iOS. Perhaps at some
+# point when we will want to print to PDF, we may need it then.
+
 set(_components
     Core
     Gui
@@ -21,12 +26,18 @@ set(_components
     QuickWidgets
     Xml
     Svg
-    PrintSupport
     OpenGL
-    LinguistTools
 
     Core5Compat
 )
+
+if (NOT (OS_IS_MAC AND IOS))
+    set(_components
+        ${_components}
+        LinguistTools
+        PrintSupport
+    )
+endif()
 
 if (NOT OS_IS_WASM)
     set(_components
@@ -57,7 +68,11 @@ if (QT_ADD_WEBSOCKET)
 endif()
 
 foreach(_component ${_components})
-    find_package(Qt6${_component} REQUIRED)
+    
+    message(STATUS "    CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+    find_package(Qt6${_component} REQUIRED NO_CMAKE_FIND_ROOT_PATH)
+    message(STATUS "    Qt6${_component}_DIR: ${Qt6${_component}_DIR}")
+
     list(APPEND QT_LIBRARIES ${Qt6${_component}_LIBRARIES})
     list(APPEND QT_INCLUDES ${Qt6${_component}_INCLUDE_DIRS})
     add_definitions(${Qt6${_component}_DEFINITIONS})
