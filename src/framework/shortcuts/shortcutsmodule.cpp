@@ -27,7 +27,7 @@
 
 #include "modularity/ioc.h"
 
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_MAC)
 #include "internal/platform/macos/macosshortcutsinstancemodel.h"
 #else
 #include "internal/shortcutsinstancemodel.h"
