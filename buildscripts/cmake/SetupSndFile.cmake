@@ -68,10 +68,89 @@ elseif (OS_IS_WASM)
 
     setup_module()
 
+elseif (IOS)
+
+    # IOS_CONFIG_BUG
+    # For the moment, we are going to presume a pre-built libsndfile.a. It will be found at
+    # ${PROJECT_SOURCE_DIR}/ios_libs/[iphoneos|iphonesimulator]/[arm64|x86_64]/ as appropriate.
+    # The header is at ${PROJECT_SOURCE_DIR}/ios_libs/include.
+    
+    if(CMAKE_OSX_SYSROOT MATCHES "imulator")
+        set(LIBSNDFILE_TARGET_OS "iphonesimulator")
+    elseif(CMAKE_OSX_SYSROOT MATCHES "phone")
+        set(LIBSNDFILE_TARGET_OS "iphoneos")
+else()
+        message(FATAL_ERROR "Unable to determine iOS target for libsndfile.")
+    endif()
+
+    if (ARCH_IS_X86_64)
+        if (LIBSNDFILE_TARGET_OS MATCHES "iphoneos")
+            set(LIBSNDFILE_ARCHITECTURE "arm64")
+        else()
+            set(LIBSNDFILE_ARCHITECTURE "x86_64")
+        endif()
+    elseif(ARCH_IS_AARCH64)
+        set(LIBSNDFILE_ARCHITECTURE "arm64")
+    else()
+        message(FATAL_ERROR "Unable to determine iOS processor architecture for libsndfile.")
+    endif()
+
+    # Include dir
+    set (LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH ${PROJECT_SOURCE_DIR}/ios_libs/include/)
+    message(STATUS "LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH: ${LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH}")
+    
+    if(FALSE)
+        find_path(LIBSNDFILE_INCLUDE_DIR
+            NAMES sndfile.h
+            PATHS ${LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH}
+            NO_DEFAULT_PATH
+        )
+        if (NOT LIBSNDFILE_INCLUDE_DIR)
+            message(FATAL_ERROR "Failed to find libsndfile header in ${LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH}.")
+        endif()
+    endif()
+    
+    # The above find_path() simply doesn't work. We're done wasting time on it. Do it the dumb way:
+    set(LIBSNDFILE_INCLUDE_DIR ${LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH})
+
+    # Library
+    set (LIBSNDFILE_LIBRARY_SEARCH_PATH ${PROJECT_SOURCE_DIR}/ios_libs/${LIBSNDFILE_TARGET_OS}/${LIBSNDFILE_ARCHITECTURE}/)
+    message(STATUS "LIBSNDFILE_LIBRARY_SEARCH_PATH: ${LIBSNDFILE_LIBRARY_SEARCH_PATH}")
+    
+    if (FALSE)
+        find_library(LIBSNDFILE_LIBRARY
+            NAMES sndfile libsndfile libsndfile.a
+            PATHS ${LIBSNDFILE_LIBRARY_SEARCH_PATH}
+            NO_DEFAULT_PATH
+        )
+        if (NOT LIBSNDFILE_LIBRARY)
+            message(FATAL_ERROR "Failed to find libsndfile lib in ${LIBSNDFILE_LIBRARY_SEARCH_PATH}.")
+        endif()
+    endif()
+    
+    # ...and find_library isn't working, either. It must think the paths are relative or something.
+    set(LIBSNDFILE_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libsndfile.a")
+
+    if (LIBSNDFILE_LIBRARY AND LIBSNDFILE_INCLUDE_DIR)
+        message(STATUS "Found libsndfile in ${LIBSNDFILE_LIBRARY_SEARCH_PATH}")
+        message(STATUS "Found libsndfile include dir ${LIBSNDFILE_INCLUDE_DIR_SEARCH_PATH}")
+        set(SNDFILE_LIB ${LIBSNDFILE_LIBRARY})
+        set(SNDFILE_INCDIR ${LIBSNDFILE_INCLUDE_DIR})
+        set(SNDFILE_FOUND 1)
+    endif()
+    
+    # We need the ogg library, perhaps this will work:
+#    set(LIBOGG_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libogg.a")
+#    target_link_libraries(MuseScoreStudio PRIVATE ${LIBOGG_LIBRARY})
+
 else()
     find_package(SndFile)
 
     if (SNDFILE_FOUND)
+    # IOS_CONFIG_BUG
+    # Fixme: When building for iOS, we hit this one, which has instead found the library
+    # for the host Mac. This needs to be aware of cross-compiling someday.
+        message(STATUS "find_package(SndFile) succeeded.")
         set(SNDFILE_LIB ${SNDFILE_LIBRARY})
         set(SNDFILE_INCDIR ${SNDFILE_INCLUDE_DIR})
     else()
@@ -96,6 +175,7 @@ else()
         )
 
         if (LIBSNDFILE_LIBRARY)
+            message(STATUS "find_package(SndFile) failed, had to dig for it.")
             set(SNDFILE_LIB ${LIBSNDFILE_LIBRARY})
             set(SNDFILE_INCDIR ${LIBSNDFILE_INCLUDE_DIR})
         endif()
