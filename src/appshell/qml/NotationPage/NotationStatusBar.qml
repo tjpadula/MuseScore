@@ -224,7 +224,7 @@ Item {
                     model.handleAction(model.concertPitchItem.code)
                     break
                 case model.currentWorkspaceItem.id:
-                    model.handleAction(model.concertPitchItem.code)
+                    model.handleAction(model.currentWorkspaceItem.code)
                     break
                 }
             }
