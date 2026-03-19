@@ -49,7 +49,7 @@ Item {
     Connections {
         target: root.provider
 
-        function onFireOpen(data) {
+/*        function onFireOpen(data) {
 
             var page = data.data()
             var uri = data.value("uri")
@@ -80,7 +80,7 @@ Item {
                 dialogObj.object.show()
             }
         }
-
+*/
         function onFireClose(objectId) {
             var obj = root.findObject(objectId)
             if (obj) {
