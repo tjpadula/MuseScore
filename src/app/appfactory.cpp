@@ -494,7 +494,6 @@ std::shared_ptr<muse::IApplication> AppFactory::newConsoleApp(const CmdOptions& 
     app->addModule(new mu::palette::PaletteModule());
     app->addModule(new mu::playback::PlaybackModule());
     app->addModule(new muse::extensions::ExtensionsModule());
-
 #ifdef MUE_BUILD_PRINT_MODULE
     app->addModule(new mu::print::PrintModule());
 #endif
