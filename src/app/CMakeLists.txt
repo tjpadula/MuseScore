@@ -68,7 +68,14 @@ elseif(OS_IS_MAC)
     set(MACOSX_BUNDLE_BUNDLE_NAME ${MUSE_APP_TITLE})
     set(MACOSX_BUNDLE_LONG_VERSION_STRING ${MUSE_APP_VERSION})
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${MUSE_APP_VERSION})
-    set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_BUILD_NUMBER})
+    
+    if (IOS)
+	#   CMAKE_BUILD_NUMBER is blank, use MUSE_APP_VERSION
+	    set(MACOSX_BUNDLE_BUNDLE_VERSION ${MUSE_APP_VERSION})
+    else(IOS)
+	    set(MACOSX_BUNDLE_BUNDLE_VERSION ${CMAKE_BUILD_NUMBER})
+	endif(IOS)
+	
     set(MACOSX_BUNDLE_COPYRIGHT "Copyright © 1999-2025 MuseScore Limited. Published under the GNU General Public License version 3.")
 
     set(CMAKE_INSTALL_RPATH ${QT_INSTALL_LIBS})
@@ -76,7 +83,25 @@ elseif(OS_IS_MAC)
         list(PREPEND CMAKE_INSTALL_RPATH "${MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH}/lib")
     endif()
 
-    message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
+    if (IOS)
+
+        # Additional source files
+        list(APPEND IOS_SOURCES 
+            utils/StIntervalTimer.cpp
+            utils/StIntervalTimer.h
+            ios/IOSNotificationListener.mm
+            ios/IOSNotificationListener.h
+            )
+        
+        list(APPEND IOS_PATHS
+            ${PROJECT_SOURCE_DIR}/src/app/utils
+            ${PROJECT_SOURCE_DIR}/src/app/ios
+            )
+
+		message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
+    else(IOS)
+	    message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
+	endif(IOS)
 
 elseif(OS_IS_WASM)
 
@@ -238,6 +263,7 @@ qt_add_executable(MuseScoreStudio
     ${APP_RCC_SOURCES}
     ${MSCORE_APPEND_SRC}
     ${APP_SRC}
+    ${IOS_SOURCES}
 )
 
 ###########################################
@@ -254,9 +280,71 @@ if (MUSE_ENABLE_UNIT_TESTS_CODE_COVERAGE)
 endif()
 
 if (OS_IS_MAC)
+    # IOS_CONFIG_BUG
+    
+    if (IOS)
     set_target_properties(MuseScoreStudio PROPERTIES
+            MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "com.Humble-Earth-Productions-Inc.MuseScore"
+            OUTPUT_NAME "${PROJECT_NAME}"
+            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY 1,2
+            XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET 15.0
+
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+            
+            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "9DSE6N75KE"
+            XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic
+            )
+
+#            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "V9R6W356UT"
+#            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "HUMBLE EARTH PRODUCTIONS INC"
+
+        # Attempt to get cmake to create the Copy Bundle Resources build phase.
+        set(RESOURCES_IOS_PATH "${PROJECT_SOURCE_DIR}/ios_resources/ResourcesiOS")
+        target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH})
+
+        FILE(GLOB RESOURCES_IOS_CONTENTS RELATIVE ${RESOURCES_IOS_PATH} ${RESOURCES_IOS_PATH}/*)
+
+        message(STATUS "RESOURCES_IOS_CONTENTS: ${RESOURCES_IOS_CONTENTS}")
+
+        foreach (RESOURCE_ITEM ${RESOURCES_IOS_CONTENTS})
+
+            if (RESOURCE_ITEM MATCHES "icns")
+                target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
+                #set_target_properties(MuseScoreStudio PROPERTIES RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
+                
+                # This may be how to append to the RESOURCE property, set_target_properties only replaces. We have
+                # multiple files as RESOURCEs.
+                set_property(TARGET MuseScoreStudio
+                    APPEND
+                    PROPERTY
+                        RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
+
+                #message(STATUS "Put item ${RESOURCE_ITEM} at top level.")
+
+            else()
+                target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
+                set_source_files_properties("${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}" PROPERTIES MACOSX_PACKAGE_LOCATION ResourcesiOS)
+                message(STATUS "Put item ${RESOURCE_ITEM} into ResourcesiOS.")
+            endif()
+
+        endforeach()
+
+        if(PROJECT_VERSION)
+            set_target_properties(MuseScoreStudio PROPERTIES
+                  MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
+        endif()
+
+        set_target_properties(MuseScoreStudio PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/iOS/Info.plist.in
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
+        
+    else(IOS)
+        set_target_properties(MuseScoreStudio PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/macOS/Info.plist.in
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
+    endif(IOS)
 endif (OS_IS_MAC)
 
 if (CC_IS_MINGW)
@@ -281,6 +369,8 @@ target_include_directories(MuseScoreStudio PRIVATE
 
     ${PROJECT_SOURCE_DIR}/src
 
+    ${IOS_PATHS}
+
     ${MUSE_FRAMEWORK_PATH}
     ${MUSE_FRAMEWORK_PATH}/framework
     ${MUSE_FRAMEWORK_PATH}/framework/global
@@ -298,7 +388,97 @@ target_include_directories(MuseScoreStudio PRIVATE
 
 target_link_libraries(MuseScoreStudio PRIVATE ${LINK_LIB} ${COVERAGE_LINK_FLAGS})
 
-if (CC_IS_EMCC)
+# IOS_CONFIG_BUG
+if(IOS)
+
+    message(STATUS "Adding MuseScoreStudio target_link_libraries: ${LINK_LIB}")
+    target_link_libraries(MuseScoreStudio PUBLIC ${LINK_LIB} )
+
+    # This might be how to get frameworks in the link list.
+    find_library(IOKit_Framework NAMES IOKit)
+    find_library(CoreVideo_Framework NAMES CoreVideo)
+    find_library(AVFAudio_Framework NAMES AVFAudio)
+    set(MODULE_LINK ${MODULE_LINK} ${IOKit_Framework} ${CoreVideo_Framework} ${AVFAudio_Framework})
+    message(STATUS "Adding MuseScoreStudio target_link_libraries: ${MODULE_LINK}")
+    target_link_libraries(MuseScoreStudio PUBLIC ${MODULE_LINK} )
+    
+    # This might be how to get the Qt pieces into a static app.
+    message(STATUS "Adding MuseScoreStudio target_link_libraries: ${QT_LIBRARIES}")
+    target_link_libraries(MuseScoreStudio PUBLIC ${QT_LIBRARIES})
+    
+    # Plugins also need to be built-in for a static app.
+    list(APPEND MODULE_LINK Qt::Qml Qt::Network Qt::NetworkAuth)
+
+#    find_package(Qt6QmlImportScanner REQUIRED)
+	find_package(Qt6 REQUIRED COMPONENTS Qml)
+	find_package(Qt6 REQUIRED COMPONENTS Core)
+	
+	qt_import_plugins(MuseScoreStudio INCLUDE qtquick2plugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::Quick Qt6::Qml)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquick2plugin)
+	
+	qt_import_plugins(MuseScoreStudio INCLUDE qtquickcontrols2plugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QuickControls2)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2plugin)
+	
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2implplugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2basicstyleplugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2fusionstyleplugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2fusionstyleimplplugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2basicstyleimplplugin)
+
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qquicklayoutsplugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::Core5Compat)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtgraphicaleffectsplugin)
+	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtgraphicaleffectsprivate)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtlabsplatformplugin)
+
+# Can't find the name of this one, why the heck are these names top secret?
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qwidgetplugin)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtqmlmodelsplugin)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtqmlworkerscriptplugin)
+
+#	qt_import_plugins(MuseScoreStudio INCLUDE qtquickcontrolsplugin)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QuickControls)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrolsplugin)
+
+	qt_import_plugins(MuseScoreStudio INCLUDE qtquickplugin)
+	qt_import_plugins(MuseScoreStudio INCLUDE fredflintstone)		# does this fail?
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickplugin)
+
+# This looks like it might have generated builds/blah/src/app/muse_iocomponents_qmlapiplugin_init.cpp,
+# which simply is, in it's entirety:
+# #include <QtPlugin>
+# Q_IMPORT_PLUGIN(MuseApi_ControlsPlugin)
+
+qt_add_qml_module(muse_uicomponents_qmlapi
+    URI MuseApi.Controls
+    VERSION 1.0
+    QML_FILES
+        ${UICOMPONENTS_FILES}
+
+    IMPORTS
+        QtQuick
+)
+
+#fixup_qml_module_dependencies(muse_uicomponents_qmlapi)
+
+target_link_libraries(MuseScoreStudio PRIVATE Qt::Widgets Qt::QmlIntegration)
+
+	qt_import_plugins(MuseScoreStudio INCLUDE QQuickControls2BasicStylePlugin)
+	qt_import_plugins(MuseScoreStudio INCLUDE QQuickControls2FusionStylePlugin)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QQuickControls2BasicStylePlugin)
+#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QQuickControls2FusionStylePlugin)
+
+    qt_import_qml_plugins(MuseScoreStudio)
+
+    # Set iOS to use 8MB as its stack size, like MacOS does. If we don't do this,
+    # the liblouis initialization will blow the stack.
+    set_target_properties(MuseScoreStudio PROPERTIES LINK_FLAGS "-Xlinker -stack_size -Xlinker 0x800000")
+
+elseif (NOT CC_IS_EMCC)
+    target_link_libraries(MuseScoreStudio ${LINK_LIB} ${COVERAGE_LINK_FLAGS})
+else()
     include(exported_functions.cmake)
     target_link_options(MuseScoreStudio PRIVATE ${EMCC_LINKER_FLAGS})
     target_link_options(MuseScoreStudio PRIVATE ${EXPORTED_FUNCTIONS})
