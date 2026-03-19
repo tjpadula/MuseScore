@@ -80,9 +80,9 @@ DockPage {
 
             readonly property int maxFixedWidth: 260
             readonly property int minFixedWidth: 76
-            readonly property bool iconsOnly: root.window
+            readonly property bool iconsOnly: /*root.window
                                                 ? root.window.width < (root.window.minimumWidth + maxFixedWidth - minFixedWidth)
-                                                : false
+                                                : */ false
             readonly property int currentFixedWidth: iconsOnly ? minFixedWidth : maxFixedWidth
 
             width: currentFixedWidth
