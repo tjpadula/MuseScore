@@ -132,7 +132,9 @@ if (OS_IS_MAC)
         )
 endif(OS_IS_MAC)
 
-if (NOT OS_IS_MAC)
+# Note this is MacOS, we want this class for iOS since it does not have a
+# system menu bar.
+if (NOT OS_IS_MACOS)
     set(MODULE_SRC ${MODULE_SRC}
         ${CMAKE_CURRENT_LIST_DIR}/view/navigableappmenumodel.cpp
         ${CMAKE_CURRENT_LIST_DIR}/view/navigableappmenumodel.h
@@ -140,7 +142,7 @@ if (NOT OS_IS_MAC)
 
     # we use QKeyMapper to fix https://github.com/musescore/MuseScore/issues/10181
     set(MODULE_INCLUDE_PRIVATE ${Qt6Gui_PRIVATE_INCLUDE_DIRS} )
-endif(NOT OS_IS_MAC)
+endif(NOT OS_IS_MACOS)
 
 if (QT_SUPPORT)
     list(APPEND MODULE_LINK Qt::Core5Compat Qt::Quick Qt::Svg Qt::Widgets)
