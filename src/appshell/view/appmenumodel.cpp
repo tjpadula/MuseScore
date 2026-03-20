@@ -123,15 +123,17 @@ void AppMenuModel::setupConnections()
     });
 #endif
 
-    extensionsProvider()->manifestListChanged().onNotify(this, [this]() {
-        MenuItem& pluginsMenu = findMenu("menu-plugins");
-        pluginsMenu.setSubitems(makePluginsMenuSubitems());
-    });
-
-    extensionsProvider()->manifestChanged().onReceive(this, [this](const Manifest&) {
-        MenuItem& pluginsItem = findMenu("menu-plugins");
-        pluginsItem.setSubitems(makePluginsMenuSubitems());
-    });
+    if (extensionsProvider()) {
+		extensionsProvider()->manifestListChanged().onNotify(this, [this]() {
+			MenuItem& pluginsMenu = findMenu("menu-plugins");
+			pluginsMenu.setSubitems(makePluginsMenuSubitems());
+		});
+	
+		extensionsProvider()->manifestChanged().onReceive(this, [this](const Manifest&) {
+			MenuItem& pluginsItem = findMenu("menu-plugins");
+			pluginsItem.setSubitems(makePluginsMenuSubitems());
+		});
+	}
 
     globalContext()->currentNotationChanged().onNotify(this, [this]() {
         auto stack = undoStack();
@@ -781,6 +783,10 @@ MenuItemList AppMenuModel::makeShowItems()
 MenuItemList AppMenuModel::makePluginsItems()
 {
     MenuItemList result;
+    
+    if (!extensionsProvider()) {
+        return result;
+    }
 
     KnownCategories categories = extensionsProvider()->knownCategories();
     ManifestList enabledExtensions = extensionsProvider()->manifestList(Filter::Enabled);

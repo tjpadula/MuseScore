@@ -20,9 +20,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <targetconditionals.h>
+
 #include "macosappmenumodelhook.h"
 
+#if TARGET_OS_IOS
+#include <Foundation/Foundation.h>
+#else
 #include <Cocoa/Cocoa.h>
+#endif
 
 using namespace mu::appshell;
 

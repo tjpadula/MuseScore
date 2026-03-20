@@ -13,7 +13,7 @@ check_include_file("stdbool.h" HAVE_STDBOOL_H)
 check_include_file("arm_neon.h" FLAC__HAS_NEONINTRIN)
 
 if(NOT HAVE_STDINT_H OR NOT HAVE_STDBOOL_H)
-    message(SEND_ERROR "Header stdint.h and/or stdbool.h not found")
+#    message(SEND_ERROR "Header stdint.h and/or stdbool.h not found")
 endif()
 
 if(MSVC)

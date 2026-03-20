@@ -24,7 +24,14 @@ set(MUSE_APP_NAME_MACHINE_READABLE "MuseScoreStudio")
 set(MUSE_APP_NAME_HUMAN_READABLE_COMPAT "MuseScore")
 set(MUSE_APP_NAME_MACHINE_READABLE_COMPAT "MuseScore")
 
-set(MUSE_APP_GUI_IDENTIFIER org.musescore.${MUSE_APP_NAME_MACHINE_READABLE_COMPAT})
+# IOS_CONFIG_BUG
+# We use our company identifier so we can set things up to run on a real device
+# for now. Obviously this will someday be org.musescore someday.
+if(IOS)
+	set(MUSE_APP_GUI_IDENTIFIER com.Humble-Earth-Productions-Inc.${MUSE_APP_NAME_MACHINE_READABLE_COMPAT})
+else(IOS)
+	set(MUSE_APP_GUI_IDENTIFIER org.musescore.${MUSE_APP_NAME_MACHINE_READABLE_COMPAT})
+endif(IOS)
 
 set(MUSE_APP_VERSION_MAJOR "4")
 set(MUSE_APP_VERSION_MINOR "6")

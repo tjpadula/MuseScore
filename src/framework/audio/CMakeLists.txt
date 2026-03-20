@@ -62,6 +62,18 @@ set(MODULE_LINK
     fluidsynth
     )
 
+# IOS_CONFIG_BUG
+# As a hack, add the ogg and vorbis libs here, since we have to do
+# the libsndfile.a build outside the Xcodebuild anyway.
+if (IOS)
+	set(LIBOGG_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libogg.a")
+	set(LIBVORBIS_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libvorbis.a")
+
+    set(MODULE_LINK
+        ${MODULE_LINK} ${LIBOGG_LIBRARY} ${LIBVORBIS_LIBRARY}
+        )
+endif (IOS)
+
 if (QT_ADD_CONCURRENT)
     list(APPEND MODULE_LINK Qt::Concurrent)
 endif()
