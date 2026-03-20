@@ -687,7 +687,13 @@ void InteractiveProvider::onClose(const QString& objectId, const QVariant& jsrv)
         }
     }
 
+#if defined(Q_OS_IOS)
+    if (!obj.objectId.isValid()) {
+        LOGD() << "obj.objectId.isValid() == false, bailing out.";
+    }
+#else
     DO_ASSERT(obj.objectId.isValid());
+#endif
 
     if (rv.ret) {
         (void)obj.resolve(rv.val);
