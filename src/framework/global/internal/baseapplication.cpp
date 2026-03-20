@@ -156,7 +156,10 @@ Qt::KeyboardModifiers BaseApplication::keyboardModifiers() const
 
 void BaseApplication::restart()
 {
-#ifdef QT_QPROCESS_SUPPORTED
+#if defined(Q_OS_IOS)
+    return;
+#else
+#ifndef NO_QT_SUPPORT
     QString program = qApp->arguments()[0];
 
     // NOTE: remove the first argument - the program name
@@ -168,6 +171,7 @@ void BaseApplication::restart()
 
 #else
     NOT_SUPPORTED;
+#endif
 #endif
 }
 

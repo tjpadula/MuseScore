@@ -19,7 +19,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+#include <targetconditionals.h>
+
+#if TARGET_OS_IOS
+#include <UIKit/UIKit.h>
+#else
 #include <Cocoa/Cocoa.h>
+#endif
 
 #include "macosrecentfilescontroller.h"
 
@@ -27,12 +34,16 @@ using namespace mu::project;
 
 void MacOSRecentFilesController::prependPlatformRecentFile(const muse::io::path_t& path)
 {
+#ifndef Q_OS_IOS
     NSString* string = path.toQString().toNSString();
     NSURL* url = [NSURL fileURLWithPath:string];
     [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:url];
+#endif
 }
 
 void MacOSRecentFilesController::clearPlatformRecentFiles()
 {
+#ifndef Q_OS_IOS
     [[NSDocumentController sharedDocumentController] clearRecentDocuments:nil];
+#endif
 }

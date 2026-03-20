@@ -43,6 +43,9 @@
 #include <shellapi.h>
 #endif
 
+#include <QtPlugin>
+//Q_IMPORT_PLUGIN(Widgets)
+
 #ifndef MUSE_MODULE_DIAGNOSTICS_CRASHPAD_CLIENT
 static void crashCallback(int signum)
 {
