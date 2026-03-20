@@ -54,7 +54,7 @@ void EngravingFontsController::scanAllDirectories() const
         QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).first(),
         qgetenv("CommonProgramFiles").replace("\\", "/")
     };
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MAC)
     // MacOS is correctly handled by Qt
     QStringList globalFontsPaths = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).first(2);
 #elif defined(Q_OS_LINUX)
