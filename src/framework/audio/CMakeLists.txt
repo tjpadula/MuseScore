@@ -43,3 +43,22 @@ target_link_libraries(muse_audio PRIVATE muse_audio_main muse_audio_engine muse_
 if (MUSE_MODULE_AUDIO_TESTS)
     add_subdirectory(tests)
 endif()
+
+# IOS_CONFIG_BUG
+# As a hack, add the ogg and vorbis libs here, since we have to do
+# the libsndfile.a build outside the Xcodebuild anyway.
+if (IOS)
+
+	# fluidsynth dependency, also sets up library search paths
+	include(SetupSndFile)
+
+	set(LIBOGG_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libogg.a")
+	set(LIBVORBIS_LIBRARY "${LIBSNDFILE_LIBRARY_SEARCH_PATH}libvorbis.a")
+
+	target_link_libraries(muse_audio PRIVATE ${LIBOGG_LIBRARY} ${LIBVORBIS_LIBRARY})
+	
+	message (STATUS "Added target_link_libraries to muse_audio:")
+	message (STATUS "    LIBOGG_LIBRARY: ${LIBOGG_LIBRARY}")
+	message (STATUS "    LIBVORBIS_LIBRARY: ${LIBVORBIS_LIBRARY}")
+	
+endif (IOS)
