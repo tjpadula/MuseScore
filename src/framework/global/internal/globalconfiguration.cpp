@@ -71,8 +71,12 @@ QString GlobalConfiguration::resolveAppDataPath() const
 #ifdef Q_OS_WIN
     QDir dir(QCoreApplication::applicationDirPath() + QString("/../"));
     return dir.absolutePath() + "/";
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
     QDir dir(QCoreApplication::applicationDirPath() + QString("/../Resources"));
+    return dir.absolutePath() + "/";
+#elif defined(Q_OS_IOS)
+    QDir dir(QCoreApplication::applicationDirPath() + QString("/ResourcesiOS"));
+    LOGD() << "Loading iOS resources from: " << dir.absolutePath();
     return dir.absolutePath() + "/";
 #elif defined(Q_OS_WASM)
     return "/files/share";
@@ -100,8 +104,22 @@ io::path_t GlobalConfiguration::userAppDataPath() const
     return m_userAppDataPath;
 }
 
+void dumpAllStandardPaths(void)
+{
+    // C++ still can't iterate through an enum? There has to be a way better than this.
+    for (int aLocation = (int)QStandardPaths::DesktopLocation; aLocation <= (int)QStandardPaths::GenericStateLocation; aLocation++) {
+        QStringList aList = QStandardPaths::standardLocations((QStandardPaths::StandardLocation)aLocation);
+        for (auto aString : aList) {
+            LOGD() << "dumpAllStandardPaths() Directory [" << aLocation << "]: " << aString;
+        }
+    }
+}
+
 QString GlobalConfiguration::resolveUserAppDataPath() const
 {
+#if defined(Q_OS_IOS)
+//    dumpAllStandardPaths();   // Is LOGD() not set up yet on the simulator?
+#endif
 #ifdef WIN_PORTABLE
     return QDir::cleanPath(QString("%1/../../../Data/settings").arg(QCoreApplication::applicationDirPath()));
 #elif defined(Q_OS_WASM)
@@ -119,6 +137,14 @@ io::path_t GlobalConfiguration::userBackupPath() const
 io::path_t GlobalConfiguration::userDataPath() const
 {
     static io::path_t p = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/" + QCoreApplication::applicationName();
+#if defined(Q_OS_IOS)
+    static bool sOnce = false;
+    if (!sOnce) {
+//        dumpAllStandardPaths();
+        LOGD() << "GlobalConfiguration::userDataPath() Document directory: " << p;
+        sOnce = true;
+    }
+#endif
     return p;
 }
 
@@ -136,7 +162,11 @@ io::path_t GlobalConfiguration::downloadsPath() const
 
 io::path_t GlobalConfiguration::genericDataPath() const
 {
-    static io::path_t p = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+#if defined(Q_OS_IOS)
+    static io::path_t p = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else
+	static io::path_t p = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+#endif
     return p;
 }
 
