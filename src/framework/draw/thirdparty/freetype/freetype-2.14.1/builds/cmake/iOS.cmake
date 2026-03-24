@@ -185,6 +185,9 @@ set(CMAKE_IOS_DEVELOPER_ROOT ${CMAKE_IOS_DEVELOPER_ROOT}
   CACHE PATH "Location of iOS Platform"
 )
 
+    message(STATUS "freetype/iOS.cmake start: CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
+    message(STATUS "freetype/iOS.cmake start: CMAKE_IOS_SDK_ROOT: ${CMAKE_IOS_SDK_ROOT}")
+
 # find and use the most recent iOS SDK unless specified manually with
 # CMAKE_IOS_SDK_ROOT
 if (NOT DEFINED CMAKE_IOS_SDK_ROOT)
@@ -206,9 +209,14 @@ set(CMAKE_IOS_SDK_ROOT ${CMAKE_IOS_SDK_ROOT}
 )
 
 # set the sysroot default to the most recent SDK
+if (NOT DEFINED CMAKE_OSX_SYSROOT)
 set(CMAKE_OSX_SYSROOT ${CMAKE_IOS_SDK_ROOT}
   CACHE PATH "Sysroot used for iOS support"
 )
+endif()
+
+    message(STATUS "freetype/iOS.cmake end: CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
+    message(STATUS "freetype/iOS.cmake end: CMAKE_IOS_SDK_ROOT: ${CMAKE_IOS_SDK_ROOT}")
 
 # set the architecture for iOS --
 # note that currently both ARCHS_STANDARD_32_BIT and
