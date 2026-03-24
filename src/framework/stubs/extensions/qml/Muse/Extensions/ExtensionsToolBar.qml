@@ -8,7 +8,7 @@ StyledToolBarView {
 
     property bool isEmpty: true
 
-    color: ui.theme.backgroundPrimaryColor
+//     color: ui.theme.backgroundPrimaryColor
 
     visible: false
 
