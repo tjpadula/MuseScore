@@ -44,7 +44,8 @@ public:
         Unknown,
         Windows,
         MacOS,
-        Linux
+        Linux,
+        iOS
     };
 
     virtual CpuArchitecture cpuArchitecture() const = 0;
