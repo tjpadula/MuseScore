@@ -60,8 +60,14 @@ else()
             SKIP_UNITY_BUILD_INCLUSION ON
             SKIP_PRECOMPILE_HEADERS ON
         )
-        find_library(AppKit NAMES AppKit)
-        target_link_libraries(muse_interactive PRIVATE ${AppKit})
+		# IOS_CONFIG_BUG
+		if(IOS)
+			find_library(UIKit NAMES UIKit)
+			target_link_libraries(muse_interactive PRIVATE ${UIKit})
+		else(IOS)
+			find_library(AppKit NAMES AppKit)
+			target_link_libraries(muse_interactive PRIVATE ${AppKit})
+		endif(IOS)
     elseif(OS_IS_WIN)
         target_sources(muse_interactive PRIVATE
             internal/platform/win/wininteractivehelper.cpp
