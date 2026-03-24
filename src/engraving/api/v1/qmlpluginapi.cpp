@@ -200,7 +200,9 @@ void PluginAPI::registerQmlTypes()
     qmlRegisterAnonymousType<OrnamentIntervalWrapper>("MuseScore", 3);
     qRegisterMetaType<OrnamentIntervalWrapper*>("OrnamentIntervalWrapper*");
 
+#if QT_QPROCESS_SUPPORTED
     qmlRegisterType<MsProcess>("MuseScore", 3, 0, "QProcess");
+#endif
     qmlRegisterType<FileIO, 1>("FileIO",    3, 0, "FileIO");
 
     qmlTypesRegistered = true;
@@ -449,6 +451,7 @@ void PluginAPI::log2(const QString& txt, const QString& txt2)
     LOGD() << txt << txt2;
 }
 
+#if QT_QPROCESS_SUPPORTED
 //---------------------------------------------------------
 //   newQProcess
 ///   Not enabled currently (so excluded from plugin docs)
@@ -459,6 +462,7 @@ MsProcess* PluginAPI::newQProcess()
     NOT_IMPLEMENTED;
     return nullptr;
 }
+#endif
 
 //---------------------------------------------------------
 //   PluginAPI::fraction
