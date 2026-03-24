@@ -44,6 +44,56 @@ set(MUSE_FRAMEWORK_PATH ${CMAKE_CURRENT_LIST_DIR})
 set(MUSE_FRAMEWORK_SRC_PATH ${CMAKE_CURRENT_LIST_DIR}/src/framework)
 
 ###########################################
+# See what has been set up so far
+###########################################
+
+function(dump_all_cmake_vars)
+    message(STATUS "---- All cmake vars: ----")
+    get_cmake_property(variable_names VARIABLES)
+    list(SORT variable_names)
+    foreach (variable_name ${variable_names})
+        message(STATUS "${variable_name}=${${variable_name}}")
+    endforeach ()
+    message(STATUS "---- End of all cmake vars ----")
+endfunction()
+
+###########################################
+# iOS specific setup.
+###########################################
+# IOS_CONFIG_BUG
+# This works.
+if(IOS)
+    message(STATUS "iOS build engaged, captain.")
+
+    set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
+    
+    dump_all_cmake_vars()
+
+    # variable_watch(CMAKE_PREFIX_PATH)
+    
+    message (STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
+    message (STATUS "ENV{QTDIR}=$ENV{QTDIR}")
+    
+    set(CMAKE_OBJC_STANDARD 99)
+    add_compile_options(
+      -fobjc-arc
+      -fobjc-weak
+      -fno-common
+      -fstrict-aliasing
+      -fpascal-strings
+      -fmodules)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      add_compile_definitions(DEBUG=1)
+    else()
+      add_compile_definitions(NS_BLOCK_ASSERTIONS=1)
+      add_compile_options(-fasm-blocks -Os)
+    endif()
+    
+    # -allowProvisioningUpdates
+    
+endif()
+
+###########################################
 # Setup option and build settings
 ###########################################
 include(GetPaths)
@@ -126,19 +176,32 @@ option(MUE_BUILD_PLAYBACK_QML "Build playback QML" ${MUE_BUILD_PLAYBACK_MODULE})
 option(MUE_BUILD_PLAYBACK_TESTS "Build playback tests" ${MUE_BUILD_PLAYBACK_MODULE})
 
 option(MUE_BUILD_PREFERENCES_MODULE "Build preferences module" ON)
-option(MUE_BUILD_PRINT_MODULE "Build print module" ON)
+if (IOS)
+	option(MUE_BUILD_PRINT_MODULE "Build print module" OFF)
+else()
+	option(MUE_BUILD_PRINT_MODULE "Build print module" ON)
+endif()
 
 option(MUE_BUILD_PROJECT_MODULE "Build project module" ON)
 option(MUE_BUILD_PROJECT_QML "Build project QML" ${MUE_BUILD_PROJECT_MODULE})
 option(MUE_BUILD_PROJECT_TESTS "Build project tests" ${MUE_BUILD_PROJECT_MODULE})
 
-option(MUE_BUILD_MACOS_INTEGRATION "Build macOS integration module" ON)
+if (IOS)
+	option(MUE_BUILD_MACOS_INTEGRATION "Build macOS integration module" OFF)
+	option(MUSE_MODULE_DOCKWINDOW_QML "Build dockwindow qml plugin" OFF)
+else (IOS)
+	option(MUE_BUILD_MACOS_INTEGRATION "Build macOS integration module" ON)
+endif (IOS)
 
 # === Setup ===
 option(MUE_DOWNLOAD_SOUNDFONT "Download the latest soundfont version as part of the build process" ON)
 
 # === Pack ===
-option(MUE_RUN_LRELEASE "Generate .qm files" ON)
+if (IOS)
+	option(MUE_RUN_LRELEASE "Generate .qm files" OFF)
+else()
+	option(MUE_RUN_LRELEASE "Generate .qm files" ON)
+endif()
 option(MUE_INSTALL_SOUNDFONT "Install sound font" ON)
 option(MUE_RUN_WINDEPLOYQT "Run windeployqt" ON)
 
@@ -176,12 +239,18 @@ option(MUE_ENABLE_ENGRAVING_LD_PASSES "Enable engraving layout by passes" OFF)
 ###########################################
 
 # default
-set(QT_ADD_LINGUISTTOOLS ON)
 set(QT_ADD_CONCURRENT ON)
 set(QT_ADD_WEBSOCKET OFF)
-set(QT_QPROCESS_SUPPORTED ON)
 set(QT_CONCURRENT_SUPPORTED ON)
 set(QT_NO_PRIVATE_MODULE_WARNING ON)
+
+if(IOS)
+	set(QT_ADD_LINGUISTTOOLS OFF)
+    set(QT_QPROCESS_SUPPORTED OFF)
+else()
+	set(QT_ADD_LINGUISTTOOLS ON)
+	set(QT_QPROCESS_SUPPORTED ON)
+endif()
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/SetupConfigure.local.cmake")
     include(${CMAKE_CURRENT_LIST_DIR}/SetupConfigure.local.cmake)
