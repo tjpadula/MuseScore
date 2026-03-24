@@ -76,8 +76,12 @@ Item {
         anchors.topMargin: root.topPadding
 
         width: {
-            if (root.model.length === 0) {
-                return 0
+        	if(root) {
+        		if(root.model) {
+        		    if (root.model.length === 0) {
+						return 0
+					}
+				}
             }
 
             var result = 0
