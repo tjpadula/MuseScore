@@ -26,6 +26,10 @@
 #include <QStyleHints>
 #include <QQuickWindow>
 
+#if defined(Q_OS_IOS)
+#include <QtPlugin>
+#endif
+
 #include "appfactory.h"
 #include "internal/commandlineparser.h"
 #include "global/iapplication.h"
