@@ -58,9 +58,9 @@ Ret MuseSoundsCheckUpdateService::needCheckForUpdate() const
     }
     
     static const std::string MUSEHUB_APP_IDENTIFIER = "com.muse.hub";
-    bool isMuseHubExists = interactive()->isAppExists(MUSEHUB_APP_IDENTIFIER);
+    bool isMuseHubExists = platformInteractive()->isAppExists(MUSEHUB_APP_IDENTIFIER);
     if (isMuseHubExists) {
-        bool canOpenMuseHubByUniversalUrl = interactive()->canOpenApp(MUSEHUB_APP_URI);
+        bool canOpenMuseHubByUniversalUrl = platformInteractive()->canOpenApp(MUSEHUB_APP_URI);
         return canOpenMuseHubByUniversalUrl;
     }
 
