@@ -103,28 +103,34 @@ void FoldersPreferencesModel::load()
         {
             FolderType::Templates, muse::qtrc("preferences", "Templates"), projectConfiguration()->userTemplatesPath().toQString(),
             projectConfiguration()->userTemplatesPath().toQString()
-        },
+        }
+    };
+    if (extensionsConfiguration() != nullptr) {
+        m_folders.append(
         {
             FolderType::Plugins, muse::qtrc("preferences", "Plugins"), extensionsConfiguration()->pluginsUserPath().toQString(),
             extensionsConfiguration()->pluginsUserPath().toQString()
-        },
+        });
+    }
+    m_folders.append(
         {
             FolderType::SoundFonts, muse::qtrc("preferences", "SoundFonts"), pathsToString(
                 audioConfiguration()->userSoundFontDirectories()),
             globalConfiguration()->userDataPath().toQString(), FolderValueType::MultiDirectories
-        },
+        });
+    m_folders.append(
         {
             FolderType::MusicFonts, muse::qtrc("preferences", "Musical symbol fonts"),
             notationConfiguration()->userMusicFontsPath().toQString(),
             notationConfiguration()->userMusicFontsPath().toQString()
-        },
+        });
 #ifdef MUSE_MODULE_VST
-        {
+     m_folders.append(
+		{
             FolderType::VST3, muse::qtrc("preferences", "VST3"), pathsToString(vstConfiguration()->userVstDirectories()),
             globalConfiguration()->userDataPath().toQString(), FolderValueType::MultiDirectories
-        }
+        });
 #endif
-    };
 
     endResetModel();
 
@@ -149,9 +155,11 @@ void FoldersPreferencesModel::setupConnections()
         setFolderPaths(FolderType::Templates, path.toQString());
     });
 
-    extensionsConfiguration()->pluginsUserPathChanged().onReceive(this, [this](const muse::io::path_t& path) {
-        setFolderPaths(FolderType::Plugins, path.toQString());
-    });
+    if (extensionsConfiguration() != nullptr) {
+		extensionsConfiguration()->pluginsUserPathChanged().onReceive(this, [this](const muse::io::path_t& path) {
+			setFolderPaths(FolderType::Plugins, path.toQString());
+		});
+    }
 
     audioConfiguration()->soundFontDirectoriesChanged().onReceive(this, [this](const io::paths_t&) {
         io::paths_t userSoundFontsPaths = audioConfiguration()->userSoundFontDirectories();
@@ -191,9 +199,11 @@ void FoldersPreferencesModel::saveFolderPaths(FoldersPreferencesModel::FolderTyp
         break;
     }
     case FolderType::Plugins: {
-        muse::io::path_t folderPath = paths.toStdString();
-        extensionsConfiguration()->setUserPluginsPath(folderPath);
-        break;
+        if (extensionsConfiguration() != nullptr) {
+			muse::io::path_t folderPath = paths.toStdString();
+			extensionsConfiguration()->setUserPluginsPath(folderPath);
+			break;
+		}
     }
     case FolderType::SoundFonts: {
         audioConfiguration()->setUserSoundFontDirectories(pathsFromString(paths));
