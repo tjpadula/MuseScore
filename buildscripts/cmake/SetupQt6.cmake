@@ -58,8 +58,10 @@ if(NOT OS_IS_WASM)
     list(APPEND qt_components NetworkAuth)
     list(APPEND QT_LIBRARIES Qt::NetworkAuth)
 
-    list(APPEND qt_components PrintSupport)
-    list(APPEND QT_LIBRARIES Qt::PrintSupport)
+	if (NOT (OS_IS_MAC AND IOS))
+		list(APPEND qt_components PrintSupport)
+		list(APPEND QT_LIBRARIES Qt::PrintSupport)
+	endif()
 endif()
 
 if(OS_IS_LIN)
@@ -72,7 +74,7 @@ if (QT_ADD_CONCURRENT)
     list(APPEND QT_LIBRARIES Qt::Concurrent)
 endif()
 
-if (QT_ADD_LINGUISTTOOLS)
+if (QT_ADD_LINGUISTTOOLS AND (NOT IOS))
     list(APPEND qt_components LinguistTools)
 endif()
 
