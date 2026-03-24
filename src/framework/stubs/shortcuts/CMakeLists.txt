@@ -33,6 +33,6 @@ target_sources(muse_shortcuts PRIVATE
     midiremotestub.h
 )
 
-if (MUSE_MODULE_SHORTCUTS_QML)
+if (MUSE_MODULE_SHORTCUTS_QML OR MUSE_MODULE_SHORTCUTS)
     add_subdirectory(qml/Muse/Shortcuts)
 endif()
