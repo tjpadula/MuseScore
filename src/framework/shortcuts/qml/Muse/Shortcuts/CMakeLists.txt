@@ -34,24 +34,41 @@ qt_add_qml_module(muse_shortcuts_qml
 fixup_qml_module_dependencies(muse_shortcuts_qml)
 
 if (OS_IS_MAC)
-    find_library(CARBON_LIBRARY Carbon)
-
-    target_sources(muse_shortcuts_qml PRIVATE
-        platform/macos/macosshortcutsinstancemodel.mm
-        platform/macos/macosshortcutsinstancemodel.h
-    )
-
-    set_source_files_properties(
-        platform/macos/macosshortcutsinstancemodel.mm
-        PROPERTIES
-        SKIP_UNITY_BUILD_INCLUSION ON
-        SKIP_PRECOMPILE_HEADERS ON
-    )
-
-    target_include_directories(muse_shortcuts_qml PRIVATE
-        ${CARBON_LIBRARY}
-    )
-
-    # Necessary for the auto-generated sources
-    target_include_directories(muse_shortcuts_qml PRIVATE platform/macos)
+	if(IOS)
+		target_sources(muse_shortcuts_qml PRIVATE
+			platform/ios/iosshortcutsinstancemodel.mm
+			platform/ios/iosshortcutsinstancemodel.h
+		)
+	
+		set_source_files_properties(
+			platform/ios/iosshortcutsinstancemodel.mm
+			PROPERTIES
+			SKIP_UNITY_BUILD_INCLUSION ON
+			SKIP_PRECOMPILE_HEADERS ON
+		)
+	
+		# Necessary for the auto-generated sources
+		target_include_directories(muse_shortcuts_qml PRIVATE platform/ios)
+	else(IOS)
+		find_library(CARBON_LIBRARY Carbon)
+	
+		target_sources(muse_shortcuts_qml PRIVATE
+			platform/macos/macosshortcutsinstancemodel.mm
+			platform/macos/macosshortcutsinstancemodel.h
+		)
+	
+		set_source_files_properties(
+			platform/macos/macosshortcutsinstancemodel.mm
+			PROPERTIES
+			SKIP_UNITY_BUILD_INCLUSION ON
+			SKIP_PRECOMPILE_HEADERS ON
+		)
+	
+		target_include_directories(muse_shortcuts_qml PRIVATE
+			${CARBON_LIBRARY}
+		)
+	
+		# Necessary for the auto-generated sources
+		target_include_directories(muse_shortcuts_qml PRIVATE platform/macos)
+    endif(IOS)
 endif(OS_IS_MAC)
