@@ -37,6 +37,11 @@ public:
 
 #include "log.h"
 
+#if defined(Q_OS_IOS)
+#include "IOSNotificationListener.h"
+#include "StIntervalTimer.h"
+#endif
+
 using namespace muse;
 using namespace muse::ui;
 using namespace mu;
@@ -57,15 +62,22 @@ void GuiApp::addModule(muse::modularity::IModuleSetup* module)
 
 void GuiApp::setup()
 {
+#if defined(Q_OS_IOS)
+    StIntervalTimer aTimer (std::string("GuiApp::perform enter."), std::string("Done GuiApp::perform."));
+#endif
     const CmdOptions& options = m_options;
-
+    
     IApplication::RunMode runMode = options.runMode;
     IF_ASSERT_FAILED(runMode == IApplication::RunMode::GuiApp) {
         return;
     }
-
+    
     setRunMode(runMode);
-
+    
+#if defined(Q_OS_IOS)
+    // See if we can hook in to the notifications.
+    iOSNotificationListenerConnect();
+#endif
     // ====================================================
     // Setup modules: Resources, Exports, Imports, UiTypes
     // ====================================================
@@ -74,16 +86,16 @@ void GuiApp::setup()
     m_globalModule->registerResources();
     m_globalModule->registerExports();
     m_globalModule->registerUiTypes();
-
+    
     for (modularity::IModuleSetup* m : m_modules) {
         m->setApplication(shared_from_this());
         m->registerResources();
     }
-
+    
     for (modularity::IModuleSetup* m : m_modules) {
         m->registerExports();
     }
-
+    
     m_globalModule->resolveImports();
     m_globalModule->registerApi();
     for (modularity::IModuleSetup* m : m_modules) {
@@ -91,12 +103,16 @@ void GuiApp::setup()
         m->resolveImports();
         m->registerApi();
     }
-
+    
+#if defined(Q_OS_IOS)
+    aTimer.Split(std::string("Done module register."));
+#endif
+    
     // ====================================================
     // Setup modules: apply the command line options
     // ====================================================
     applyCommandLineOptions(options);
-
+    
     // ====================================================
     // Setup modules: onPreInit
     // ====================================================
@@ -104,15 +120,18 @@ void GuiApp::setup()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onPreInit(runMode);
     }
-
+#if defined(Q_OS_IOS)
+    aTimer.Split(std::string("Done onPreInit."));
+#endif
+    
     // Process all pending events (see IpcSocket::onReadyRead())
     // so that we can use isFirstWindow() as early as possible
     muse::async::processMessages();
-
-//! FIXME
-//! The launch scenario is contextual, but there is no context here.
+    
+    //! FIXME
+    //! The launch scenario is contextual, but there is no context here.
 #undef MUE_ENABLE_SPLASHSCREEN
-
+    
 #ifdef MUE_ENABLE_SPLASHSCREEN
     if (multiwindowsProvider()->isFirstWindow()) {
         m_splashScreen = new SplashScreen(SplashScreen::Default);
@@ -131,20 +150,35 @@ void GuiApp::setup()
             m_splashScreen = new SplashScreen(SplashScreen::Default);
         }
     }
-
+    
     if (m_splashScreen) {
+#if defined(Q_OS_IOS)
+        m_splashScreen->showMaximized();
+#else
         m_splashScreen->show();
+#endif
     }
 #endif
-
+    
     // ====================================================
     // Setup modules: onInit
     // ====================================================
-    m_globalModule->onInit(runMode);
-    for (modularity::IModuleSetup* m : m_modules) {
-        m->onInit(runMode);
+    {
+#if defined(Q_OS_IOS)
+        StIntervalTimer anInitTimer (std::string("onInit enter."), std::string("Done onInit."));
+#endif
+        m_globalModule->onInit(runMode);
+        for (modularity::IModuleSetup* m : m_modules) {
+            m->onInit(runMode);
+#if defined(Q_OS_IOS)
+            anInitTimer.Split(m->moduleName());
+#endif
+        }
+#if defined(Q_OS_IOS)
+        aTimer.Split(std::string("Done onInit."));
+#endif
     }
-
+    
     // ====================================================
     // Setup modules: onAllInited
     // ====================================================
@@ -152,7 +186,10 @@ void GuiApp::setup()
     for (modularity::IModuleSetup* m : m_modules) {
         m->onAllInited(runMode);
     }
-
+#if defined(Q_OS_IOS)
+    aTimer.Split(std::string("Done onAllInited."));
+#endif
+    
     // ====================================================
     // Setup modules: onStartApp (on next event loop)
     // ====================================================
@@ -162,7 +199,7 @@ void GuiApp::setup()
             m->onStartApp();
         }
     }, Qt::QueuedConnection);
-
+    
     // ====================================================
     // Setup modules: onDelayedInit
     // ====================================================
@@ -175,36 +212,40 @@ void GuiApp::setup()
         }
     });
     m_delayedInitTimer.start();
-
+    
     // ====================================================
     // Run
     // ====================================================
-
+    
     // ====================================================
     // Setup Qml Engine
     // ====================================================
     //! Needs to be set because we use transparent windows for PopupView.
     //! Needs to be called before any QQuickWindows are shown.
     QQuickWindow::setDefaultAlphaBuffer(true);
-
+    
     //! NOTE Adjust GS Api
     //! We can hide this algorithm in GSApiProvider,
     //! but it is intentionally left here to illustrate what is happening.
     {
         GraphicsApiProvider* gApiProvider = new GraphicsApiProvider(BaseApplication::appVersion());
-
+        
         GraphicsApi required = gApiProvider->requiredGraphicsApi();
         if (required != GraphicsApi::Default) {
             LOGI() << "Setting required graphics api: " << GraphicsApiProvider::apiName(required);
             GraphicsApiProvider::setGraphicsApi(required);
         }
-
+        
         LOGI() << "Using graphics api: " << GraphicsApiProvider::graphicsApiName();
         LOGI() << "Gui platform: " << QGuiApplication::platformName();
-
+        
         if (GraphicsApiProvider::graphicsApi() == GraphicsApi::Software) {
             gApiProvider->destroy();
         } else {
+#if defined(Q_OS_IOS)
+            gApiProvider->destroy();
+            gApiProvider->setGraphicsApiStatus(required, GraphicsApiProvider::Status::Checked);
+#else
             LOGI() << "Detecting problems with graphics api";
             gApiProvider->listen([this, gApiProvider, required](bool res) {
                 if (res) {
@@ -213,14 +254,18 @@ void GuiApp::setup()
                 } else {
                     GraphicsApi next = gApiProvider->switchToNextGraphicsApi(required);
                     LOGE() << "Detected problems with graphics api; switching from " << GraphicsApiProvider::apiName(required)
-                           << " to " << GraphicsApiProvider::apiName(next);
-
+                    << " to " << GraphicsApiProvider::apiName(next);
+                    
                     this->restart();
                 }
                 gApiProvider->destroy();
             });
+#endif
         }
     }
+#if defined(Q_OS_IOS)
+    aTimer.Split(std::string("Done set up graphics api."));
+#endif
 }
 
 GuiApp::Context& GuiApp::context(const muse::modularity::ContextPtr& ctx)
@@ -312,8 +357,10 @@ muse::modularity::ContextPtr GuiApp::setupNewContext(const StringList& args)
     }
 
     // Load main window
-#if defined(Q_OS_MAC)
+#if defined(Q_OS_MACOS)
     QString platform = "mac";
+#elif defined(Q_OS_IOS)
+    QString platform = "ios";
 #elif defined(Q_OS_WIN)
     QString platform = "win";
 #else
@@ -417,6 +464,9 @@ muse::modularity::ContextPtr GuiApp::setupNewContext(const StringList& args)
         startupScenario->runAfterSplashScreen();
     }, Qt::QueuedConnection);
 
+#if defined(Q_OS_IOS)
+//    aTimer.Split(std::string("Done connecting."));
+#endif
     return ctxId;
 }
 
