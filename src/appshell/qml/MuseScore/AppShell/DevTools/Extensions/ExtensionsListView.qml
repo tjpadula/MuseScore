@@ -8,6 +8,7 @@ import Muse.Extensions
 Rectangle {
     color: ui.theme.backgroundSecondaryColor
 
+/*
     DevExtensionsListModel {
         id: devModel
     }
@@ -44,4 +45,5 @@ Rectangle {
             onClicked: devModel.clicked(itemDelegate.uri)
         }
     }
+*/
 }
