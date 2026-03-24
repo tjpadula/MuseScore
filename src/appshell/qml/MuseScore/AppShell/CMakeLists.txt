@@ -110,11 +110,25 @@ qt_add_qml_module(appshell_qml
         TARGET project_qml
 )
 
+# if (NOT IOS)
+#		qt_target_qml_sources(appshell_qml 
+#			IMPORTS TARGET
+#				muse_dockwindow_qml
+#		)
+# endif (NOT IOS)
+
 if (OS_IS_MAC)
-    qt_target_qml_sources(appshell_qml 
-        QML_FILES
-            platform/mac/Main.qml
-    )
+	if (IOS)
+		qt_target_qml_sources(appshell_qml 
+			QML_FILES
+				platform/ios/Main.qml
+		)
+	else (IOS)
+		qt_target_qml_sources(appshell_qml 
+			QML_FILES
+				platform/mac/Main.qml
+		)
+	endif (IOS)
 elseif(OS_IS_WIN)
     qt_target_qml_sources(appshell_qml 
         QML_FILES
@@ -131,7 +145,7 @@ else()
     message(FATAL_ERROR "Unsupported OS")
 endif()
 
-if (NOT OS_IS_MAC)
+if (NOT OS_IS_MACOS)
     target_sources(appshell_qml PRIVATE
         navigableappmenumodel.cpp
         navigableappmenumodel.h
@@ -140,7 +154,7 @@ if (NOT OS_IS_MAC)
     # we use QKeyMapper to fix https://github.com/musescore/MuseScore/issues/10181
     find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
     target_link_libraries(appshell_qml PRIVATE Qt6::GuiPrivate)
-endif(NOT OS_IS_MAC)
+endif(NOT OS_IS_MACOS)
 
 fixup_qml_module_dependencies(appshell_qml)
 
