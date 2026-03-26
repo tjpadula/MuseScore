@@ -216,9 +216,12 @@ MenuItem* AppMenuModel::makeFileMenu()
         makeMenuItem("project-properties"),
         makeMenuItem("parts", TranslatableString("action", "Parts…")),
         makeSeparator(),
-        makeMenuItem("print"),
+        makeMenuItem("print")
+#if !defined(Q_OS_IOS)
+        ,
         makeSeparator(),
         makeMenuItem("quit", MenuItemRole::QuitRole)
+#endif
     };
 
     return makeMenu(TranslatableString("appshell/menu/file", "&File"), fileItems, "menu-file");
