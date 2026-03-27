@@ -306,7 +306,7 @@ if (OS_IS_MAC)
 
         foreach (RESOURCE_ITEM ${RESOURCES_IOS_CONTENTS})
 
-            if (RESOURCE_ITEM MATCHES "icns")
+            if ((RESOURCE_ITEM MATCHES "icns") OR (RESOURCE_ITEM MATCHES "LoadingScreen24"))
                 target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
                 #set_target_properties(MuseScoreStudio PROPERTIES RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
                 
@@ -334,8 +334,11 @@ if (OS_IS_MAC)
 
         set_target_properties(MuseScoreStudio PROPERTIES
             MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/iOS/Info.plist.in
-            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
-        
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER}
+            QT_IOS_LAUNCH_SCREEN ${PROJECT_SOURCE_DIR}/src/app/platform/ios/Launch_Screen.storyboard
+ #           XCODE_ATTRIBUTE_UILAUNCHSTORYBOARDNAME "Launch_Screen.storyboard"
+            )
+                    
     else(IOS)
 
 		set_target_properties(MuseScoreStudio PROPERTIES

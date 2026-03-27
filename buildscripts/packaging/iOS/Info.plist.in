@@ -484,6 +484,8 @@
 	<true/>
     <key>LSRequiresCarbon</key>
     <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>Launch_Screen</string>
     <key>UIFileSharingEnabled</key>
     <true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
@@ -506,7 +508,7 @@
     <key>ATSApplicationFontsPath</key>
     <string>fonts/</string>
 	<key>QtRunLoopIntegrationStackSize</key>
-	<integer>8388608</integer>
+	<integer>524288</integer>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ar</string>
