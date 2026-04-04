@@ -39,6 +39,8 @@
 
 #include "log.h"
 
+#include <stdio.h>
+
 #ifndef MUSE_MODULE_DIAGNOSTICS_CRASHPAD_CLIENT
 static void crashCallback(int signum)
 {
@@ -60,6 +62,17 @@ static void crashCallback(int signum)
 
 #endif
 
+uint64_t PlatformStackSize = 1024 * 1024;
+static uint64_t getMainStackSizeFromRlimit()
+{
+    rlimit limit;
+    uint64_t aStackSize = (getrlimit(RLIMIT_STACK, &limit) == 0 && limit.rlim_cur != RLIM_INFINITY)
+    ? uint64_t(limit.rlim_cur)
+    : uint64_t(PlatformStackSize);
+    fprintf (stderr, "%s Stack size from getrlimit(): %lld\n", __PRETTY_FUNCTION__, aStackSize);
+    return aStackSize;
+}
+
 static void app_init_qrc()
 {
     Q_INIT_RESOURCE(app);
@@ -76,6 +89,9 @@ int main(int argc, char** argv)
     signal(SIGILL, crashCallback);
     signal(SIGFPE, crashCallback);
 #endif
+    
+    // We get 0x7FC000, which is ~ 8MB == 8372224.
+    getMainStackSizeFromRlimit();
 
     // ====================================================
     // Setup global Qt application variables
