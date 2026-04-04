@@ -51,7 +51,7 @@ Ret MuseSoundsCheckUpdateService::needCheckForUpdate() const
 
 #ifdef Q_OS_WIN
     return true;
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
     //! NOTE: If there is installed MuseHub, but we can't open it, then we shouldn't check update
     if (!interactive()) {   // iOS doesn't have this (yet)
         return false;

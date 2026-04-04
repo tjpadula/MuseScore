@@ -27,6 +27,7 @@
 
 #include "modularity/ioc.h"
 #include "../iengravingconfiguration.h"
+#include "../iengravingcontextconfiguration.h"
 #include "../rendering/iscorerenderer.h"
 #include "../rendering/paintoptions.h"
 
@@ -169,8 +170,9 @@ public:
     EngravingItem* parentItem(bool explicitParent = true) const;
     EngravingItemList childrenItems(bool all = false) const;
 
-    const muse::modularity::ContextPtr& iocContext() const;
     const std::shared_ptr<IEngravingConfiguration>& configuration() const;
+    const muse::modularity::ContextPtr& iocContext() const;
+    const std::shared_ptr<IEngravingContextConfiguration>& contextConfiguration() const;
     const std::shared_ptr<rendering::IScoreRenderer>& renderer() const;
 
     EngravingItem* findAncestor(ElementType t);
@@ -216,7 +218,7 @@ public:
     bool visible() const { return !flag(ElementFlag::INVISIBLE); }
     virtual void setVisible(bool f);
 
-    bool isInteractionAvailable() const;
+    virtual bool isInteractionAvailable() const;
 
     bool sizeIsSpatiumDependent() const override { return !flag(ElementFlag::SIZE_SPATIUM_DEPENDENT); }
     void setSizeIsSpatiumDependent(bool v) { setFlag(ElementFlag::SIZE_SPATIUM_DEPENDENT, !v); }

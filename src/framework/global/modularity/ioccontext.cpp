@@ -39,7 +39,7 @@ muse::Contextable::GetContext muse::iocCtxForQmlObject(const QObject* o)
             ctx = qmlContext(p);
         }
 
-        if (!ctx) {
+        IF_ASSERT_FAILED(ctx) {
             LOGW() << "QQmlContext is not set for QML Object: " << o->metaObject()->className();
             return modularity::ContextPtr();
         }
@@ -50,13 +50,16 @@ muse::Contextable::GetContext muse::iocCtxForQmlObject(const QObject* o)
 
 muse::modularity::ContextPtr muse::iocCtxForQmlContext(const QQmlContext* ctx)
 {
-    QmlIoCContext* qmlIoc = ctx->contextProperty("ioc_context").value<QmlIoCContext*>();
-    // IF_ASSERT_FAILED(qmlIoc) {
-    //     return modularity::ContextPtr();
-    // }
+    TRACEFUNC;
 
-    //! NOTE At the monent, it can be null, need add ioc context to extension qml engine
-    if (!qmlIoc) {
+    //! NOTE: Currently, each IoC context (window)
+    // has its own instance of the Qml Engine,
+    // and thus its own root Qml Context. We can use it directly.
+    const QQmlContext* rootContext = ctx->engine()->rootContext();
+
+    QmlIoCContext* qmlIoc = rootContext->contextProperty("ioc_context").value<QmlIoCContext*>();
+    IF_ASSERT_FAILED(qmlIoc) {
+        LOGW() << "QmlIoCContext is not set for QML Context: " << rootContext->objectName();
         return modularity::ContextPtr();
     }
 

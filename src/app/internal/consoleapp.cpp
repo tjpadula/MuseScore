@@ -75,6 +75,13 @@ void ConsoleApp::addModule(modularity::IModuleSetup* module)
     m_modules.push_back(module);
 }
 
+void ConsoleApp::showSplash()
+{
+    std::cout << "================================================" << std::endl;
+    std::cout << "The MuseScore console application is starting..." << std::endl;
+    std::cout << "================================================" << std::endl;
+}
+
 void ConsoleApp::setup()
 {
     const CmdOptions& options = m_options;
@@ -345,7 +352,7 @@ void ConsoleApp::applyCommandLineOptions(const CmdOptions& options, IApplication
         return;
     }
 
-    uiConfiguration()->setPhysicalDotsPerInch(options.ui.physicalDotsPerInch);
+    uiConfiguration()->setCustomPhysicalDotsPerInch(options.ui.physicalDotsPerInch);
 
     notationConfiguration()->setTemplateModeEnabled(options.notation.templateModeEnabled);
     notationConfiguration()->setTestModeEnabled(options.notation.testModeEnabled);

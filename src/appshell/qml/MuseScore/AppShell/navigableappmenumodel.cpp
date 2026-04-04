@@ -208,8 +208,56 @@ void NavigableAppMenuModel::setOpenedMenuAreaRect(QRect openedMenuAreaRect)
     emit openedMenuAreaRectChanged(m_openedMenuAreaRect);
 }
 
+// Let's see if this works, if so it should be in a utilities file someplace instead. This should
+// apply for any EnumType:
+template<typename EnumType>
+QString ToString(const EnumType& enumValue)
+{
+    const char* enumName = qt_getEnumName(enumValue);
+    const QMetaObject* metaObject = qt_getEnumMetaObject(enumValue);
+    if (metaObject)
+    {
+        const int enumIndex = metaObject->indexOfEnumerator(enumName);
+        return QString("%1::%2::%3").arg(metaObject->className(), enumName, metaObject->enumerator(enumIndex).valueToKey(enumValue));
+    }
+    
+    return QString("%1::%2").arg(enumName).arg(static_cast<int>(enumValue));
+}
+
 bool NavigableAppMenuModel::eventFilter(QObject* watched, QEvent* event)
 {
+#if defined (Q_OS_IOS) && 0
+    // This might work.
+    if (event->type() != QEvent::Type::Timer) {     // we get a lot of these, at least one per second.
+        std::stringstream aStream;
+        // I find it hard to believe that QString does not have at least an output stream operator,
+        // but it doesn't.
+        std::string anEventTypeString = (ToString(event->type())).toStdString();
+        if (anEventTypeString.compare("QEvent::Type::") == 0) {
+            aStream << __PRETTY_FUNCTION__ << " unknown event enum: " << event->type() << std::endl;
+        } else {
+            aStream << __PRETTY_FUNCTION__ << " incoming event: " << anEventTypeString << std::endl;
+        }
+        fprintf (stderr, "%s", aStream.str().c_str());
+    }
+    
+    /* Sometimes we get an unknown event type. What the heck is this? This constant (1002)
+       is up there in the user range, which starts at 1000.
+     
+     (lldb) p *event
+     (QEvent) {
+         t = 1002
+         m_posted = false
+         m_spont = false
+         m_accept = true
+         m_unused = false
+         m_reserved = 0
+         m_inputEvent = 0
+         m_pointerEvent = 0
+         m_singlePointEvent = 0
+     }
+     */
+#endif
     bool isMenuOpened = !m_openedMenuId.isEmpty();
     if (event->type() == QEvent::MouseButtonPress && watched == appWindow()) {
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);

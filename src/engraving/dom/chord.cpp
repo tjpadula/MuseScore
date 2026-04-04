@@ -29,6 +29,7 @@
 
 #include "../editing/addremoveelement.h"
 #include "../editing/editchord.h"
+#include "../editing/editnote.h"
 
 #include "accidental.h"
 #include "arpeggio.h"
@@ -1544,7 +1545,7 @@ EngravingItem* Chord::drop(EditData& data)
             if (m_articulations.empty()) {
                 score()->undoAddElement(atr);
             } else {
-                score()->toggleArticulation(this, atr);
+                EditChord::toggleArticulation(score(), this, atr);
             }
         }
         return atr;
@@ -1803,7 +1804,7 @@ void Chord::updateArticulations(const std::set<SymId>& newArticulationIds, Artic
                 newArticulation->setAnchor(artic->anchor());
                 newArticulation->setPropertyFlags(Pid::ARTICULATION_ANCHOR, artic->propertyFlags(Pid::ARTICULATION_ANCHOR));
                 if (!hasArticulation(newArticulation)) {
-                    score()->toggleArticulation(this, newArticulation);
+                    EditChord::toggleArticulation(score(), this, newArticulation);
                 } else {
                     delete newArticulation;
                 }
@@ -1855,7 +1856,7 @@ void Chord::updateArticulations(const std::set<SymId>& newArticulationIds, Artic
 
     // newArtics now contains the articulations in the correct direction
     if (updateMode == ArticulationsUpdateMode::Remove) {
-        // remove articulations from _articulations that are found in in newArtics
+        // remove articulations from _articulations that are found in newArtics
         for (const SymId& id : newArtics) {
             switch (id) {
             case SymId::articAccentAbove:
@@ -1892,7 +1893,7 @@ void Chord::updateArticulations(const std::set<SymId>& newArticulationIds, Artic
                 newArticulation->setPropertyFlags(Pid::ARTICULATION_ANCHOR, PropertyFlags::UNSTYLED);
             }
             if (!hasArticulation(newArticulation)) {
-                score()->toggleArticulation(this, newArticulation);
+                EditChord::toggleArticulation(score(), this, newArticulation);
             } else {
                 delete newArticulation;
             }
