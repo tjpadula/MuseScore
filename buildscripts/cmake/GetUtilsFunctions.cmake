@@ -137,16 +137,37 @@ endfunction(fn__require_program)
 function(fn__set_qt_variables
   QMAKE # Path to qmake executable
 )
-  get_filename_component(dir "${QMAKE}" DIRECTORY)
-  get_filename_component(dir "${dir}" DIRECTORY)
-  set(ENV{QTDIR} "${dir}")
-  get_filename_component(QT_COMPILER "${dir}" NAME)
-  get_filename_component(dir "${dir}" DIRECTORY)
-  get_filename_component(QT_VERSION "${dir}" NAME)
-  get_filename_component(dir "${dir}" DIRECTORY)
-  set(QT_LOCATION "${dir}" PARENT_SCOPE)
-  set(QT_VERSION "${QT_VERSION}" PARENT_SCOPE)
-  set(QT_COMPILER "${QT_COMPILER}" PARENT_SCOPE)
+    # Check before clobbering.
+    # Goofy syntazx because if can't handle ENV{QTDIR}:
+    string(COMPARE EQUAL "$ENV{QTDIR}" "" result)
+    if (result)
+
+        message (STATUS "fn__set_qt_variables entry:")
+        message (STATUS "    ENV{QTDIR}: $ENV{QTDIR}")
+        message (STATUS "    QT_COMPILER: ${QT_COMPILER}")
+        message (STATUS "    QT_VERSION: ${QT_VERSION}")
+        
+      get_filename_component(dir "${QMAKE}" DIRECTORY)
+      get_filename_component(dir "${dir}" DIRECTORY)
+      set(ENV{QTDIR} "${dir}")
+      get_filename_component(QT_COMPILER "${dir}" NAME)
+      get_filename_component(dir "${dir}" DIRECTORY)
+      get_filename_component(QT_VERSION "${dir}" NAME)
+      get_filename_component(dir "${dir}" DIRECTORY)
+      set(QT_LOCATION "${dir}" PARENT_SCOPE)
+      set(QT_VERSION "${QT_VERSION}" PARENT_SCOPE)
+      set(QT_COMPILER "${QT_COMPILER}" PARENT_SCOPE)
+      
+        message (STATUS "fn__set_qt_variables exit:")
+        message (STATUS "    ENV{QTDIR}: $ENV{QTDIR}")
+        message (STATUS "    QT_COMPILER: ${QT_COMPILER}")
+        message (STATUS "    QT_VERSION: ${QT_VERSION}")
+    else()
+        message (STATUS "fn__set_qt_variables leaving vars alone:")
+        message (STATUS "    ENV{QTDIR}: $ENV{QTDIR}")
+        message (STATUS "    QT_COMPILER: ${QT_COMPILER}")
+        message (STATUS "    QT_VERSION: ${QT_VERSION}")
+    endif()
 endfunction()
 
 function(fn__copy_during_build # copy a file at build time
