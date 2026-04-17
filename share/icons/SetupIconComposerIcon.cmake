@@ -38,31 +38,48 @@ function(target_setup_iconcomposer_icon target icon_path)
 
     get_actool_version(actool_version)
 
+    set (CMAKE_ACTOOL_IS_OLD false)
     if(NOT "${actool_version}" VERSION_GREATER_EQUAL "26.0")
         message(WARNING "Could not find actool with version 26.0 or greater."
-            " Icon Composer assets will not be generated.")
-        return()
+            " Will use cached AppIcon.icns and Assets.car.")
+        set (CMAKE_ACTOOL_IS_OLD true)
     endif()
 
     file(GLOB icon_files "${icon_path}/*")
 
     get_filename_component(icon_name ${icon_path} NAME_WE)
 
-    add_custom_command(OUTPUT Assets.car ${icon_name}.icns
-        COMMAND ${XCRUN} actool --output-format human-readable-text
-            --compile ${CMAKE_CURRENT_BINARY_DIR}
-            --notices --warnings --errors
-            --platform macosx
-            --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET}
-            --output-partial-info-plist /dev/null
-            --app-icon ${icon_name}
-            ${icon_path}
-        VERBATIM
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${icon_files}
-        MAIN_DEPENDENCY ${icon_path}/icon.json
-        COMMENT "Generating macOS app icon Assets.car and ${icon_name}.icns"
-    )
+    if (CMAKE_ACTOOL_IS_OLD)
+        add_custom_command(
+            OUTPUT
+                ${CMAKE_CURRENT_BINARY_DIR}/AppIcon.icns
+                ${CMAKE_CURRENT_BINARY_DIR}/Assets.car
+            COMMAND
+                cp ${icon_path}/../cache/AppIcon.icns ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND
+                cp ${icon_path}/../cache/Assets.car ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Using cached icon files since this version of actool cannot generate them."
+            # No DEPENDS line means "run if any OUTPUT is older or missing".
+        )
+    else (CMAKE_ACTOOL_IS_OLD)
+        add_custom_command(OUTPUT Assets.car ${icon_name}.icns
+            COMMAND ${XCRUN} actool --output-format human-readable-text
+                --compile ${CMAKE_CURRENT_BINARY_DIR}
+                --notices --warnings --errors
+                --platform macosx
+                --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET}
+                --output-partial-info-plist /dev/null
+                --app-icon ${icon_name}
+                ${icon_path}
+            VERBATIM
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            DEPENDS ${icon_files}
+            MAIN_DEPENDENCY ${icon_path}/icon.json
+            COMMENT "Generating macOS app icon Assets.car and ${icon_name}.icns"
+        )
+    endif (CMAKE_ACTOOL_IS_OLD)
 
     set(icon_resources
         ${CMAKE_CURRENT_BINARY_DIR}/Assets.car
