@@ -27,8 +27,9 @@
 #include "../iaudioengineconfiguration.h"
 #include "../ienginecontroller.h"
 #include "../isynthresolver.h"
-#include "../iaudioengine.h"
+#include "iaudioengine.h"
 #include "../iengineplayback.h"
+#include "../itransporteventsdispatcher.h"
 
 namespace muse::audio::rpc {
 class IRpcChannel;
@@ -38,14 +39,16 @@ namespace muse::audio::engine {
 class WebAudioChannel;
 class EngineRpcController;
 
-class EngineController : public IEngineController, public muse::Contextable
+class EngineController : public IEngineController
 {
     muse::GlobalInject<IAudioEngineConfiguration> configuration;
     muse::GlobalInject<synth::ISynthResolver> synthResolver;
-    muse::ContextInject<IAudioEngine> audioEngine = { this };
-    muse::ContextInject<IEnginePlayback> playback = { this };
+    muse::GlobalInject<IAudioEngine> audioEngine;
+    muse::GlobalInject<IEnginePlayback> playback;
+    muse::GlobalInject<ITransportEventsDispatcher> transportEventsDispatcher;
+
 public:
-    EngineController(std::shared_ptr<rpc::IRpcChannel> rpcChannel, const muse::modularity::ContextPtr& iocCtx);
+    EngineController(std::shared_ptr<rpc::IRpcChannel> rpcChannel);
 
     void onStartRunning() override;
     void init(const OutputSpec& outputSpec, const AudioEngineConfig& conf) override;
@@ -55,9 +58,6 @@ public:
     async::Channel<OutputSpec> outputSpecChanged() const;
 
     void process(float* stream, unsigned samplesPerChannel);
-
-    void process();
-    void popAudioData(float* stream, unsigned samplesPerChannel);
 
 private:
     std::shared_ptr<rpc::IRpcChannel> m_rpcChannel;

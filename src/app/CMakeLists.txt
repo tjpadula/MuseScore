@@ -81,23 +81,10 @@ elseif(OS_IS_MAC)
     endif()
 
     if (IOS)
-
-        # Additional source files
-        list(APPEND IOS_SOURCES 
-            platform/ios/StIntervalTimer.cpp
-            platform/ios/StIntervalTimer.h
-            platform/ios/IOSNotificationListener.mm
-            platform/ios/IOSNotificationListener.h
-            )
-        
-        list(APPEND IOS_PATHS
-            ${PROJECT_SOURCE_DIR}/src/app/platform/ios
-            )
-
-		message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
+	message("MACOSX_BUNDLE_BUNDLE_VERSION: ${MACOSX_BUNDLE_BUNDLE_VERSION}")
     else(IOS)
-    message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
-	endif(IOS)
+    	message("MACOSX_BUNDLE_VERSION: ${MACOSX_BUNDLE_LONG_VERSION_STRING}.${MACOSX_BUNDLE_BUNDLE_VERSION}")
+    endif()
 
 elseif(OS_IS_WASM)
 
@@ -144,7 +131,8 @@ add_to_link_if_exists(muse::accessibility)
 add_to_link_if_exists(muse::actions)
 add_to_link_if_exists(muse::audio)
 add_to_link_if_exists(muse::audioplugins)
-add_to_link_if_exists(muse::autobot)
+add_to_link_if_exists(muse::testflow)
+add_to_link_if_exists(muse::automation)
 add_to_link_if_exists(muse::cloud)
 add_to_link_if_exists(muse::diagnostics)
 add_to_link_if_exists(muse::dockwindow)
@@ -153,6 +141,7 @@ add_to_link_if_exists(muse::interactive)
 add_to_link_if_exists(muse::languages)
 add_to_link_if_exists(muse::learn)
 add_to_link_if_exists(muse::midi)
+add_to_link_if_exists(muse::midiremote)
 add_to_link_if_exists(muse::mpe)
 add_to_link_if_exists(muse::multiwindows)
 add_to_link_if_exists(muse::musesampler)
@@ -335,7 +324,7 @@ if (OS_IS_MAC)
         set_target_properties(MuseScoreStudio PROPERTIES
             MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/iOS/Info.plist.in
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER}
-            QT_IOS_LAUNCH_SCREEN ${PROJECT_SOURCE_DIR}/src/app/platform/ios/Launch_Screen.storyboard
+            QT_IOS_LAUNCH_SCREEN ${PROJECT_SOURCE_DIR}/src/framework/ui/internal/platform/ios/Launch_Screen.storyboard
  #           XCODE_ATTRIBUTE_UILAUNCHSTORYBOARDNAME "Launch_Screen.storyboard"
             )
                     

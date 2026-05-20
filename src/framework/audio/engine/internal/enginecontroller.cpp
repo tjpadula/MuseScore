@@ -40,9 +40,8 @@ using namespace muse::audio::engine;
 using namespace muse::audio::fx;
 using namespace muse::audio::synth;
 
-EngineController::EngineController(std::shared_ptr<rpc::IRpcChannel> rpcChannel,
-                                   const muse::modularity::ContextPtr& iocCtx)
-    : muse::Contextable(iocCtx), m_rpcChannel(rpcChannel)
+EngineController::EngineController(std::shared_ptr<rpc::IRpcChannel> rpcChannel)
+    : m_rpcChannel(rpcChannel)
 {
     m_rpcChannel->onMethod(rpc::Method::EngineInit, [this](const rpc::Msg& msg) {
         OutputSpec spec;
@@ -68,7 +67,7 @@ void EngineController::onStartRunning()
     //! NOTE After sending a EngineRunning,
     //! we may receive RPC messages, such as for example load a soundfont.
     //! Therefore, we need to subscribe to RPC messages.
-    m_rpcController  = std::make_shared<EngineRpcController>(iocContext());
+    m_rpcController = std::make_shared<EngineRpcController>();
     m_rpcController->init();
 
     //! NOTE We inform that the engine is running and can receive messages
@@ -86,9 +85,7 @@ void EngineController::init(const OutputSpec& outputSpec, const AudioEngineConfi
     synthResolver()->init(configuration()->defaultAudioInputParams(), outputSpec);
     // ------------------------------------------------------------
 
-    IAudioEngine::RenderConstraints consts;
-    consts.minSamplesToReserveWhenIdle = minSamplesToReserve(RenderMode::IdleMode);
-    consts.minSamplesToReserveInRealtime = minSamplesToReserve(RenderMode::RealTimeMode);
+    RenderConstraints consts;
     consts.desiredAudioThreadNumber = configuration()->desiredAudioThreadNumber();
     consts.minTrackCountForMultithreading = configuration()->minTrackCountForMultithreading();
 
@@ -96,6 +93,8 @@ void EngineController::init(const OutputSpec& outputSpec, const AudioEngineConfi
     audioEngine()->init(outputSpec, consts);
 
     playback()->init();
+
+    transportEventsDispatcher()->init();
 }
 
 void EngineController::deinit()
@@ -119,14 +118,4 @@ async::Channel<OutputSpec> EngineController::outputSpecChanged() const
 void EngineController::process(float* stream, unsigned samplesPerChannel)
 {
     audioEngine()->process(stream, samplesPerChannel);
-}
-
-void EngineController::process()
-{
-    audioEngine()->processAudioData();
-}
-
-void EngineController::popAudioData(float* stream, unsigned samplesPerChannel)
-{
-    audioEngine()->popAudioData(stream, samplesPerChannel);
 }

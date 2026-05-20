@@ -27,6 +27,10 @@
 #include <QScreen>
 #include <QStyle>
 
+#ifdef Q_OS_MACOS
+#include "internal/platform/macos/macoswindowlevelcontroller.h"
+#endif
+
 #include "log.h"
 
 using namespace Qt::Literals::StringLiterals;
@@ -83,17 +87,6 @@ void DialogView::beforeOpen()
     m_view->setTitle(m_title);
     m_view->setFlag(Qt::FramelessWindowHint, m_frameless);
 
-#ifdef Q_OS_MAC
-    if (m_alwaysOnTop) {
-        auto updateStayOnTopHint = [this]() {
-            bool stay = qApp->applicationState() == Qt::ApplicationActive;
-            m_view->setFlag(Qt::WindowStaysOnTopHint, stay);
-        };
-        updateStayOnTopHint();
-        connect(qApp, &QApplication::applicationStateChanged, this, updateStayOnTopHint);
-    }
-#endif
-
 #ifdef MUSE_MODULE_UI_DISABLE_MODALITY
     m_view->setModality(Qt::NonModal);
 #else
@@ -111,6 +104,15 @@ void DialogView::onHidden()
     WindowView::onHidden();
 
     windowsController()->unregWindow(m_view->winId());
+}
+
+void DialogView::afterShow()
+{
+#ifdef Q_OS_MACOS
+    if (m_alwaysAboveApp) {
+        MacOSWindowLevelController::setAlwaysAboveApp(m_view);
+    }
+#endif
 }
 
 void DialogView::updateGeometry()
@@ -255,19 +257,19 @@ void DialogView::setResizable(bool resizable)
     }
 }
 
-bool DialogView::alwaysOnTop() const
+bool DialogView::alwaysAboveApp() const
 {
-    return m_alwaysOnTop;
+    return m_alwaysAboveApp;
 }
 
-void DialogView::setAlwaysOnTop(bool alwaysOnTop)
+void DialogView::setAlwaysAboveApp(bool alwaysAbove)
 {
-    if (m_alwaysOnTop == alwaysOnTop) {
+    if (m_alwaysAboveApp == alwaysAbove) {
         return;
     }
 
-    m_alwaysOnTop = alwaysOnTop;
-    emit alwaysOnTopChanged();
+    m_alwaysAboveApp = alwaysAbove;
+    emit alwaysAboveAppChanged();
 }
 
 QVariantMap DialogView::ret() const

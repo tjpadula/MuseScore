@@ -38,7 +38,11 @@ if (MUSE_MODULE_INTERACTIVE)
 endif()
 
 if (MUSE_MODULE_DOCKWINDOW)
-    add_subdirectory(dockwindow)
+    if (MUSE_MODULE_DOCKWINDOW_KDDOCKWIDGETS_V2)
+        add_subdirectory(dockwindow_v2)
+    else()
+        add_subdirectory(dockwindow)
+    endif()
 endif()
 
 if (MUSE_MODULE_ACCESSIBILITY)
@@ -57,8 +61,12 @@ if (MUSE_MODULE_AUDIOPLUGINS)
     add_subdirectory(audioplugins)
 endif()
 
-if (MUSE_MODULE_AUTOBOT)
-    add_subdirectory(autobot)
+if (MUSE_MODULE_TESTFLOW)
+    add_subdirectory(testflow)
+endif()
+
+if (MUSE_MODULE_AUTOMATION)
+    add_subdirectory(automation)
 endif()
 
 if (MUSE_MODULE_CLOUD)
@@ -75,6 +83,10 @@ endif()
 
 if (MUSE_MODULE_MIDI)
     add_subdirectory(midi)
+endif()
+
+if (MUSE_MODULE_MIDIREMOTE)
+    add_subdirectory(midiremote)
 endif()
 
 if (MUSE_MODULE_MPE)

@@ -25,6 +25,7 @@
 #include <variant>
 #include <set>
 #include <string>
+#include <cmath>
 
 #include "global/types/number.h"
 #include "global/types/secs.h"
@@ -56,9 +57,6 @@ using volume_db_t = db_t;
 using volume_dbfs_t = db_t;
 using gain_t = float;
 using balance_t = float;
-
-using TrackSequenceId = int32_t;
-using TrackSequenceIdList = std::vector<TrackSequenceId>;
 
 using TrackId = int32_t;
 using TrackIdList = std::vector<TrackId>;
@@ -97,6 +95,62 @@ struct OutputSpec {
     }
 
     inline bool operator!=(const OutputSpec& other) const { return !this->operator==(other); }
+};
+
+struct TimePosition {
+    inline samples_t samples() const { return m_samples; }
+    inline sample_rate_t sampleRate() const { return m_sampleRate; }
+    inline secs_t time() const { return m_time; }
+
+    TimePosition() = default;
+    TimePosition(const TimePosition& other) = default;
+    TimePosition& operator=(const TimePosition& other) = default;
+
+    inline bool operator==(const TimePosition& other) const
+    {
+        return m_samples == other.m_samples && m_sampleRate == other.m_sampleRate;
+    }
+
+    inline bool operator!=(const TimePosition& other) const { return !this->operator==(other); }
+
+    static inline TimePosition fromSamples(samples_t samples, sample_rate_t sampleRate)
+    {
+        IF_ASSERT_FAILED(sampleRate > 0) {
+            return TimePosition();
+        }
+
+        return TimePosition(samples, sampleRate);
+    }
+
+    static inline TimePosition fromTime(secs_t time, sample_rate_t sampleRate)
+    {
+        IF_ASSERT_FAILED(sampleRate > 0) {
+            return TimePosition();
+        }
+
+        IF_ASSERT_FAILED(time >= 0.0) {
+            return TimePosition();
+        }
+
+        return TimePosition(static_cast<samples_t>(std::llround(time.raw() * sampleRate)), sampleRate);
+    }
+
+private:
+    inline TimePosition(samples_t samples, sample_rate_t sampleRate)
+        : m_samples(samples)
+        , m_sampleRate(sampleRate)
+        , m_time(sampleRate > 0 ? static_cast<double>(samples) / sampleRate : 0.0)
+    {}
+
+    samples_t m_samples = 0;
+    sample_rate_t m_sampleRate = 0;
+    secs_t m_time = 0.0; //cache
+};
+
+struct RenderConstraints {
+    // mixer
+    size_t desiredAudioThreadNumber = 0;
+    size_t minTrackCountForMultithreading = 0;
 };
 
 enum class SoundTrackType {
@@ -170,11 +224,11 @@ enum class AudioResourceType {
     Undefined = -1,
     FluidSoundfont,
     VstPlugin,
-    MusePlugin,
+    NativeEffect,
     MuseSamplerSoundPack,
     Lv2Plugin,
     AudioUnit,
-    NyquistPlugin
+    NyquistPlugin,
 };
 
 static const std::map<AudioResourceType, QString> RESOURCE_TYPE_MAP = {
@@ -182,7 +236,10 @@ static const std::map<AudioResourceType, QString> RESOURCE_TYPE_MAP = {
     { AudioResourceType::MuseSamplerSoundPack, "muse_sampler_sound_pack" },
     { AudioResourceType::FluidSoundfont, "fluid_soundfont" },
     { AudioResourceType::VstPlugin, "vst_plugin" },
-    { AudioResourceType::MusePlugin, "muse_plugin" },
+    { AudioResourceType::NativeEffect, "muse_plugin" },
+    { AudioResourceType::Lv2Plugin, "lv2_plugin" },
+    { AudioResourceType::AudioUnit, "audio_unit" },
+    { AudioResourceType::NyquistPlugin, "nyquist_plugin" },
 };
 
 struct AudioResourceMeta {
@@ -257,7 +314,26 @@ enum class AudioFxCategory {
     FxRestoration,
     FxReverb,
     FxSurround,
-    FxTools
+    FxTools,
+    FxOther,
+};
+
+inline const std::unordered_map<AudioFxCategory, String> AUDIO_FX_CATEGORY_TO_STRING_MAP {
+    { AudioFxCategory::FxEqualizer, u"EQ" },
+    { AudioFxCategory::FxAnalyzer, u"Analyzer" },
+    { AudioFxCategory::FxDelay, u"Delay" },
+    { AudioFxCategory::FxDistortion, u"Distortion" },
+    { AudioFxCategory::FxDynamics, u"Dynamics" },
+    { AudioFxCategory::FxFilter, u"Filter" },
+    { AudioFxCategory::FxGenerator, u"Generator" },
+    { AudioFxCategory::FxMastering, u"Mastering" },
+    { AudioFxCategory::FxModulation, u"Modulation" },
+    { AudioFxCategory::FxPitchShift, u"Pitch Shift" },
+    { AudioFxCategory::FxRestoration, u"Restoration" },
+    { AudioFxCategory::FxReverb, u"Reverb" },
+    { AudioFxCategory::FxSurround, u"Surround" },
+    { AudioFxCategory::FxTools, u"Tools" },
+    { AudioFxCategory::FxOther, u"Fx" },
 };
 
 using AudioFxCategories = std::set<AudioFxCategory>;
@@ -274,7 +350,7 @@ struct AudioFxParams {
     {
         switch (resourceMeta.type) {
         case AudioResourceType::VstPlugin: return AudioFxType::VstFx;
-        case AudioResourceType::MusePlugin: return AudioFxType::MuseFx;
+        case AudioResourceType::NativeEffect: return AudioFxType::MuseFx;
         case AudioResourceType::AudioUnit:
         case AudioResourceType::Lv2Plugin:
         case AudioResourceType::FluidSoundfont:
@@ -362,7 +438,7 @@ inline AudioSourceType sourceTypeFromResourceType(AudioResourceType type)
     case AudioResourceType::MuseSamplerSoundPack: return AudioSourceType::MuseSampler;
     case AudioResourceType::AudioUnit:
     case AudioResourceType::Lv2Plugin:
-    case AudioResourceType::MusePlugin:
+    case AudioResourceType::NativeEffect:
     case AudioResourceType::NyquistPlugin:
     case AudioResourceType::Undefined: break;
     }
@@ -532,4 +608,27 @@ enum SaveSoundTrackStage {
 };
 
 using SaveSoundTrackProgress = async::Channel<int64_t /*current*/, int64_t /*total*/, SaveSoundTrackStage>;
+
+struct TransportEvent {
+    enum class Type : unsigned char {
+        Unknown = 0,
+        Play,
+        Pause,
+        Stop,
+        Seek,
+    };
+
+    struct SeekData {
+        secs_t position = 0.;
+    };
+
+    static TransportEvent play() { return { Type::Play, {} }; }
+    static TransportEvent pause() { return { Type::Pause, {} }; }
+    static TransportEvent stop() { return { Type::Stop, {} }; }
+    static TransportEvent seek(secs_t pos) { return { Type::Seek, SeekData { pos } }; }
+
+    Type type = Type::Unknown;
+    std::variant<std::monostate, SeekData> data;
+};
+using TransportEvents = std::vector<TransportEvent>;
 }

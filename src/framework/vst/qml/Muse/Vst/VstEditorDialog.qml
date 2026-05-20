@@ -33,7 +33,7 @@ StyledDialogView {
     contentHeight: editor.implicitHeight
     contentWidth: editor.implicitWidth
 
-    alwaysOnTop: true
+    alwaysAboveApp: true
 
     VstEditor {
         id: editor

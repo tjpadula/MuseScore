@@ -26,7 +26,6 @@
 #include "audio/common/audiosanitizer.h"
 
 #include "dsp/audiomathutils.h"
-#include "igetplaybackposition.h"
 
 using namespace muse;
 using namespace muse::async;
@@ -34,20 +33,26 @@ using namespace muse::audio;
 using namespace muse::audio::engine;
 
 MixerChannel::MixerChannel(const TrackId trackId, const OutputSpec& outputSpec, IAudioSourcePtr source,
-                           const IGetPlaybackPosition* getPlaybackPosition)
+                           PlayheadPositionPtr playheadPosition)
     : m_trackId(trackId),
     m_outputSpec(outputSpec),
     m_audioSource(std::move(source)),
-    m_getPlaybackPosition(getPlaybackPosition)
+    m_playheadPosition(playheadPosition)
 {
     ONLY_AUDIO_ENGINE_THREAD;
 }
 
 MixerChannel::MixerChannel(const TrackId trackId, const OutputSpec& outputSpec,
-                           const IGetPlaybackPosition* getPlaybackPosition)
-    : MixerChannel(trackId, outputSpec, nullptr, getPlaybackPosition)
+                           PlayheadPositionPtr playheadPosition)
+    : MixerChannel(trackId, outputSpec, nullptr, playheadPosition)
 {
     ONLY_AUDIO_ENGINE_THREAD;
+}
+
+void MixerChannel::setPlayheadPosition(PlayheadPositionPtr playheadPosition)
+{
+    ONLY_AUDIO_ENGINE_THREAD;
+    m_playheadPosition = playheadPosition;
 }
 
 TrackId MixerChannel::trackId() const
@@ -84,14 +89,16 @@ void MixerChannel::applyOutputParams(const AudioOutputParams& requiredParams)
     }
 
     m_fxProcessors.clear();
-    m_fxProcessors = fxResolver()->resolveFxList(m_trackId, requiredParams.fxChain, m_outputSpec);
+    m_fxProcessors = audioFactory()->makeTrackFxList(m_trackId, requiredParams.fxChain);
 
     for (IFxProcessorPtr& fx : m_fxProcessors) {
         fx->setOutputSpec(m_outputSpec);
+        fx->setPlaying(isActive());
 
         fx->paramsChanged().onReceive(this, [this](const AudioFxParams& fxParams) {
             m_params.fxChain.insert_or_assign(fxParams.chainOrder, fxParams);
             m_paramsChanges.send(m_params);
+            updateShouldProcessDuringSilence();
         }, async::Asyncable::Mode::SetReplace);
     }
 
@@ -128,6 +135,8 @@ void MixerChannel::applyOutputParams(const AudioOutputParams& requiredParams)
     if (mutedChanged) {
         m_mutedChanged.notify();
     }
+
+    updateShouldProcessDuringSilence();
 }
 
 async::Channel<AudioOutputParams> MixerChannel::outputParamsChanged() const
@@ -153,6 +162,10 @@ void MixerChannel::setIsActive(bool arg)
 
     if (m_audioSource) {
         m_audioSource->setIsActive(arg);
+    }
+
+    for (IFxProcessorPtr& fx : m_fxProcessors) {
+        fx->setPlaying(arg);
     }
 }
 
@@ -204,9 +217,9 @@ samples_t MixerChannel::process(float* buffer, samples_t samplesPerChannel)
         return processedSamplesCount;
     }
 
+    const samples_t pos = m_playheadPosition ? m_playheadPosition->currentPosition().samples() : 0;
     for (IFxProcessorPtr& fx : m_fxProcessors) {
         if (fx->active()) {
-            const msecs_t pos = m_getPlaybackPosition ? m_getPlaybackPosition->playbackPosition() : 0;
             fx->process(buffer, samplesPerChannel, pos);
         }
     }
@@ -248,9 +261,35 @@ void MixerChannel::completeOutput(float* buffer, unsigned int samplesCount)
     m_isSilent = RealIsNull(globalPeak);
 }
 
+void MixerChannel::updateShouldProcessDuringSilence()
+{
+    bool shouldProcessDuringSilence = false;
+    for (const IFxProcessorPtr& fx : m_fxProcessors) {
+        if (fx->shouldProcessDuringSilence()) {
+            shouldProcessDuringSilence = true;
+            break;
+        }
+    }
+
+    if (shouldProcessDuringSilence != m_shouldProcessDuringSilence) {
+        m_shouldProcessDuringSilence = shouldProcessDuringSilence;
+        m_shouldProcessDuringSilenceChanged.send(shouldProcessDuringSilence);
+    }
+}
+
 bool MixerChannel::isSilent() const
 {
     return m_isSilent;
+}
+
+bool MixerChannel::shouldProcessDuringSilence() const
+{
+    return m_shouldProcessDuringSilence;
+}
+
+async::Channel<bool> MixerChannel::shouldProcessDuringSilenceChanged() const
+{
+    return m_shouldProcessDuringSilenceChanged;
 }
 
 AudioSignalsNotifier& MixerChannel::signalNotifier() const

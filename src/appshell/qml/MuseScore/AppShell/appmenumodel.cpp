@@ -551,8 +551,8 @@ MenuItem* AppMenuModel::makeDiagnosticsMenu()
             makeMenuItem("extensions-show-apidump"),
         };
 
-        MenuItemList autobotItems {
-            makeMenuItem("autobot-show-scripts"),
+        MenuItemList testflowItems {
+            makeMenuItem("testflow-show-scripts"),
         };
 
 #ifdef MUSE_MODULE_VST
@@ -563,16 +563,15 @@ MenuItem* AppMenuModel::makeDiagnosticsMenu()
 #endif
 
         MenuItemList audioItems {
-            makeMenuItem("action://audio/dev/use-workermode"),
             makeMenuItem("action://audio/dev/use-drivermode"),
-            makeMenuItem("action://audio/dev/use-workerrpcmode"),
+            makeMenuItem("action://audio/dev/use-hybridmode"),
         };
 
         items << makeMenu(TranslatableString("appshell/menu/diagnostics", "A&ctions"), actionsItems, "menu-actions")
               << makeMenu(TranslatableString("appshell/menu/diagnostics", "&Accessibility"), accessibilityItems, "menu-accessibility")
               << makeMenu(TranslatableString("appshell/menu/diagnostics", "&Engraving"), engravingItems, "menu-engraving")
               << makeMenu(TranslatableString("appshell/menu/diagnostics", "E&xtensions"), extensionsItems, "menu-extensions")
-              << makeMenu(TranslatableString("appshell/menu/diagnostics", "Auto&bot"), autobotItems, "menu-autobot");
+              << makeMenu(TranslatableString("appshell/menu/diagnostics", "&Testflow"), testflowItems, "menu-testflow");
 
 #ifdef MUSE_MODULE_VST
         items << makeMenu(TranslatableString("appshell/menu/diagnostics", "&VST"), vstItems, "menu-vst");

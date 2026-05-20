@@ -33,22 +33,16 @@ using namespace muse::actions;
 using namespace muse::audio;
 
 const UiActionList AudioUiActions::m_actions = {
-    UiAction("action://audio/dev/use-workermode",
-             muse::ui::UiCtxAny,
-             muse::shortcuts::CTX_ANY,
-             TranslatableString("action", "1. Worker mode"),
-             Checkable::Yes
-             ),
     UiAction("action://audio/dev/use-drivermode",
              muse::ui::UiCtxAny,
-             muse::shortcuts::CTX_ANY,
-             TranslatableString("action", "2. Driver mode"),
+             muse::shortcuts::CTX_DISABLED,
+             TranslatableString::untranslatable("Driver mode"),
              Checkable::Yes
              ),
-    UiAction("action://audio/dev/use-workerrpcmode",
+    UiAction("action://audio/dev/use-hybridmode",
              muse::ui::UiCtxAny,
-             muse::shortcuts::CTX_ANY,
-             TranslatableString("action", "3. Worker RPC mode"),
+             muse::shortcuts::CTX_DISABLED,
+             TranslatableString::untranslatable("Hybrid mode"),
              Checkable::Yes
              )
 };

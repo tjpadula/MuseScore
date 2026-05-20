@@ -1196,7 +1196,7 @@
     <message>
         <location filename="../../src/notationscene/widgets/editstyle.ui" line="172"/>
         <source>Bends &amp; dives</source>
-        <translation type="unfinished"/>
+        <translation>Bendy a tremolo páka</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/widgets/editstyle.ui" line="177"/>
@@ -5724,21 +5724,6 @@ u nepravidelných rytmických skupin</translation>
         <translation>Znovu ‘%1’</translation>
     </message>
     <message>
-        <location filename="../../src/framework/audio/main/internal/audiouiactions.cpp" line="39"/>
-        <source>1. Worker mode</source>
-        <translation>1. Režim pracovníka</translation>
-    </message>
-    <message>
-        <location filename="../../src/framework/audio/main/internal/audiouiactions.cpp" line="45"/>
-        <source>2. Driver mode</source>
-        <translation>2. Režim řidiče</translation>
-    </message>
-    <message>
-        <location filename="../../src/framework/audio/main/internal/audiouiactions.cpp" line="51"/>
-        <source>3. Worker RPC mode</source>
-        <translation>3. Režim RPC pracovníka</translation>
-    </message>
-    <message>
         <location filename="../../src/framework/autobot/internal/autobotactions.cpp" line="37"/>
         <source>Show &amp;scripts…</source>
         <translation>Zobrazit &amp;skripty...</translation>
@@ -5826,22 +5811,22 @@ u nepravidelných rytmických skupin</translation>
     <message>
         <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="84"/>
         <source>Show engraving &amp;undo stack</source>
-        <translation>Zobrazit zásobník kroků &amp;zpět v rozmístění</translation>
+        <translation>Zobrazit &amp;historii úprav notosazby</translation>
     </message>
     <message>
         <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="85"/>
         <source>Show engraving undo stack</source>
-        <translation>Zobrazit zásobník kroků zpět v rozmístění</translation>
+        <translation>Zobrazit historii úprav notosazby</translation>
     </message>
     <message>
         <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="90"/>
         <source>Show engraving &amp;style options list</source>
-        <translation>Zobrazit seznam voleb pro rozmístění a &amp;styly</translation>
+        <translation>Zobrazit seznam voleb pro notosazbu a &amp;styly</translation>
     </message>
     <message>
         <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="91"/>
         <source>Show engraving style options list</source>
-        <translation>Zobrazit seznam voleb pro rozmístění a styly</translation>
+        <translation>Zobrazit seznam voleb pro notosazbu a styly</translation>
     </message>
     <message>
         <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="96"/>
@@ -5852,21 +5837,6 @@ u nepravidelných rytmických skupin</translation>
         <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="97"/>
         <source>Show actions list</source>
         <translation>Zobrazit seznam akcí</translation>
-    </message>
-    <message>
-        <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="102"/>
-        <source>Test query action</source>
-        <translation>Testovací akce dotazu</translation>
-    </message>
-    <message>
-        <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="107"/>
-        <source>Test query action with params 1</source>
-        <translation>Testovací akce dotazu s parametry 1</translation>
-    </message>
-    <message>
-        <location filename="../../src/framework/diagnostics/internal/diagnosticsactions.cpp" line="112"/>
-        <source>Test query action with params 2</source>
-        <translation>Testovací akce dotazu s parametry 2</translation>
     </message>
     <message>
         <location filename="../../src/framework/extensions/internal/extensionsuiactions.cpp" line="39"/>
@@ -9374,7 +9344,7 @@ u nepravidelných rytmických skupin</translation>
         <location filename="../../src/notationscene/internal/notationuiactions.cpp" line="2747"/>
         <location filename="../../src/notationscene/internal/notationuiactions.cpp" line="2748"/>
         <source>Show gap rests</source>
-        <translation>Zobrazit pomlky mezer</translation>
+        <translation>Zobrazit odstraněné pomlky</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/internal/notationuiactions.cpp" line="2754"/>
@@ -9450,12 +9420,12 @@ u nepravidelných rytmických skupin</translation>
         <translation>Přehrát z výběru</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="56"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="70"/>
         <source>Stop</source>
         <translation>Zastavit</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="57"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="71"/>
         <source>Stop playback</source>
         <translation>Zastavit přehrávání</translation>
     </message>
@@ -9465,133 +9435,143 @@ u nepravidelných rytmických skupin</translation>
         <translation>Pozastavit a vybrat</translation>
     </message>
     <message>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="56"/>
+        <source>Pause</source>
+        <translation>Pozastavit</translation>
+    </message>
+    <message>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="57"/>
+        <source>Pause playback</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
         <location filename="../../src/playback/internal/playbackuiactions.cpp" line="64"/>
         <source>Pause and select playback position</source>
         <translation>Pozastavit a vybrat polohu přehrávání</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="70"/>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="71"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="77"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="78"/>
         <source>Rewind</source>
         <translation>Přetočit zpět</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="77"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="84"/>
         <source>Loop playback</source>
         <translation>Přehrávat ve smyčce</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="78"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="85"/>
         <source>Toggle ‘Loop playback’</source>
         <translation>Zapnout/Vypnout přehrávání ve smyčce</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="85"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="92"/>
         <source>Metronome</source>
         <translation>Metronom</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="86"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="93"/>
         <source>Toggle metronome playback</source>
         <translation>Zapnout/Vypnout metronom</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="93"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="100"/>
         <source>Playback setup</source>
         <translation>Nastavení přehrávání</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="94"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="101"/>
         <source>Open playback setup dialog</source>
         <translation>Otevřít dialog pro nastavení přehrávání</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="103"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="110"/>
         <source>Enable MIDI input</source>
         <translation>Zapnout vstup MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="104"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="111"/>
         <source>Toggle MIDI input</source>
         <translation>Zapnout/Vypnout MIDI vstup</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="114"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="121"/>
         <source>Written pitch</source>
         <translation>Psaná výška</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="115"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="122"/>
         <source>Input written pitch</source>
         <translation>Vložit psanou výšku</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="122"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="129"/>
         <source>Sounding pitch</source>
         <translation>Znějící výška</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="123"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="130"/>
         <source>Input sounding pitch</source>
         <translation>Vložit znějící výšku</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="133"/>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="134"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="140"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="141"/>
         <source>Play repeats</source>
         <translation>Přehrávat repetice</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="141"/>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="142"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="148"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="149"/>
         <source>Play chord symbols</source>
         <translation>Přehrávat akordové značky</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="149"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="156"/>
         <source>Hear playback when editing</source>
         <translation>Přehrávat během úprav</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="150"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="157"/>
         <source>Toggle hear playback when editing</source>
         <translation>Zapnout/Vypnout přehrávání během úprav</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="157"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="164"/>
         <source>Pan score automatically</source>
         <translation>Automaticky posouvat notový zápis</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="158"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="165"/>
         <source>Pan score automatically during playback</source>
         <translation>Posouvat notový zápis během přehrávání automaticky</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="165"/>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="166"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="172"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="173"/>
         <source>Enable count-in when playing</source>
         <translation>Zapnout odpočítávání při přehrávání</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="176"/>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="177"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="183"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="184"/>
         <source>Set loop marker left</source>
         <translation>Nastavit značku smyčky vlevo</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="183"/>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="184"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="190"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="191"/>
         <source>Set loop marker right</source>
         <translation>Nastavit značku smyčky vpravo</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="193"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="200"/>
         <source>Reload playback cache</source>
         <translation>Nahrát znovu vyrovnávací paměť přehrávání</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="201"/>
+        <location filename="../../src/playback/internal/playbackuiactions.cpp" line="208"/>
         <source>Clear online sounds cache for this score</source>
         <translation>Vymazat vyrovnávací paměť internetových zvukových knihoven pro tento notový zápis</translation>
     </message>
@@ -10012,12 +9992,12 @@ Tento krok neodstraní žádný vašich notových zápisů.
         <translation>Nahrává se notový zápis…</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="210"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="214"/>
         <source>Are you sure you want to reset preferences?</source>
         <translation>Určitě chcete obnovit nastavení?</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="211"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="215"/>
         <source>This action will reset all your app preferences and delete all custom shortcuts. It will not delete any of your scores.
 
 This action cannot be undone.</source>
@@ -10026,7 +10006,7 @@ This action cannot be undone.</source>
 Tuto akci nelze vrátit zpět.</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="221"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="225"/>
         <source>Reset preferences</source>
         <translation>Obnovit nastavení</translation>
     </message>
@@ -10681,9 +10661,9 @@ Publikováno pod &lt;a href=&quot;%1&quot;&gt;GNU General Public License verze 3
 <context>
     <name>debugOption</name>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8426"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8416"/>
         <source>Toggle show gap rests</source>
-        <translation>Zapnout/Vypnout zobrazení pomlky mezer</translation>
+        <translation>Přepnout zobrazení odstraněných pomlk</translation>
     </message>
 </context>
 <context>
@@ -11743,12 +11723,12 @@ Pražec %1 na strunách %2</translation>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="239"/>
         <source>chord bracket(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>závorka akordových značek</numerusform><numerusform>závorky akordových značek</numerusform><numerusform>závorek akordových značek</numerusform><numerusform>závorky akordových značek</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="240"/>
         <source>Chord bracket(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>Závorka akordových značek</numerusform><numerusform>Závorky akordových značek</numerusform><numerusform>Závorek akordových značek</numerusform><numerusform>Závorky akordových značek</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="242"/>
@@ -12324,12 +12304,12 @@ Pražec %1 na strunách %2</translation>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="413"/>
         <source>whammy bar segment(s)</source>
-        <translation><numerusform>segment whammy baru</numerusform><numerusform>segmenty whammy baru</numerusform><numerusform>segmentů whammy baru</numerusform><numerusform>segmentu whammy baru</numerusform></translation>
+        <translation><numerusform>segment tremolo páky</numerusform><numerusform>segmenty tremolo páky</numerusform><numerusform>segmentů tremolo páky</numerusform><numerusform>segmentu tremolo páky</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="414"/>
         <source>Whammy bar segment(s)</source>
-        <translation><numerusform>Segment whammy baru</numerusform><numerusform>Segmenty whammy baru</numerusform><numerusform>Segmentů whammy baru</numerusform><numerusform>Segmentu whammy baru</numerusform></translation>
+        <translation><numerusform>Segment tremolo páky</numerusform><numerusform>Segmenty tremolo páky</numerusform><numerusform>Segmentů tremolo páky</numerusform><numerusform>Segmentu tremolo páky</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="416"/>
@@ -12675,12 +12655,12 @@ Pražec %1 na strunách %2</translation>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="518"/>
         <source>whammy bar(s)</source>
-        <translation><numerusform>whammy bar</numerusform><numerusform>whammy bary</numerusform><numerusform>whammy barů</numerusform><numerusform>whammy baru</numerusform></translation>
+        <translation><numerusform>tremolo páka</numerusform><numerusform>tremolo páky</numerusform><numerusform>tremolo pák</numerusform><numerusform>tremolo páky</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="519"/>
         <source>Whammy bar(s)</source>
-        <translation><numerusform>Whammy bar</numerusform><numerusform>Whammy bary</numerusform><numerusform>Whammy barů</numerusform><numerusform>Whammy baru</numerusform></translation>
+        <translation><numerusform>Tremolo páka</numerusform><numerusform>Tremolo páky</numerusform><numerusform>Tremolo pák</numerusform><numerusform>Tremolo páky</numerusform></translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/engraving/types/typesconv.cpp" line="521"/>
@@ -13328,12 +13308,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/types/typesconv.cpp" line="1764"/>
         <source>Bends &amp; Dives</source>
-        <translation type="unfinished"/>
+        <translation>Bendy a tremolo páka</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/typesconv.cpp" line="1766"/>
         <source>Whammy bar</source>
-        <translation>Whammy bar</translation>
+        <translation>Tremolo páka</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/typesconv.cpp" line="1767"/>
@@ -15525,27 +15505,27 @@ Pražec %1 na strunách %2</translation>
 <context>
     <name>engraving/hairpintype</name>
     <message>
-        <location filename="../../src/engraving/dom/hairpin.cpp" line="830"/>
+        <location filename="../../src/engraving/dom/hairpin.cpp" line="839"/>
         <source>Crescendo hairpin</source>
         <translation>Crescendo (šipka)</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/hairpin.cpp" line="832"/>
+        <location filename="../../src/engraving/dom/hairpin.cpp" line="841"/>
         <source>Diminuendo hairpin</source>
         <translation>Diminuendo (šipka)</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/hairpin.cpp" line="834"/>
+        <location filename="../../src/engraving/dom/hairpin.cpp" line="843"/>
         <source>Crescendo line</source>
         <translation>Crescendo (linka)</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/hairpin.cpp" line="836"/>
+        <location filename="../../src/engraving/dom/hairpin.cpp" line="845"/>
         <source>Diminuendo line</source>
         <translation>Diminuendo (linka)</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/hairpin.cpp" line="838"/>
+        <location filename="../../src/engraving/dom/hairpin.cpp" line="847"/>
         <source>Custom</source>
         <translation>Vlastní</translation>
     </message>
@@ -16247,7 +16227,7 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="74"/>
         <source>cent offset</source>
-        <translation type="unfinished"/>
+        <translation>cent offset</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="76"/>
@@ -16335,7 +16315,7 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="93"/>
         <source>end of measure change</source>
-        <translation type="unfinished"/>
+        <translation>end of measure change</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="94"/>
@@ -16350,7 +16330,7 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="96"/>
         <source>hide generated parentheses</source>
-        <translation type="unfinished"/>
+        <translation>hide generated parentheses</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="97"/>
@@ -17410,7 +17390,7 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="349"/>
         <source>begin text position</source>
-        <translation type="unfinished"/>
+        <translation>begin text position</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="350"/>
@@ -17430,22 +17410,22 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="353"/>
         <source>begin line arrow height</source>
-        <translation type="unfinished"/>
+        <translation>begin line arrow height</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="354"/>
         <source>begin line arrow width</source>
-        <translation type="unfinished"/>
+        <translation>begin line arrow width</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="355"/>
         <source>begin filled arrow height</source>
-        <translation type="unfinished"/>
+        <translation>begin filled arrow height</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="356"/>
         <source>begin filled arrow width</source>
-        <translation type="unfinished"/>
+        <translation>begin filled arrow width</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="357"/>
@@ -17464,548 +17444,598 @@ Pražec %1 na strunách %2</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/property.cpp" line="360"/>
+        <source>begin text musical symbols scale</source>
+        <translation>begin text musical symbols scale</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="361"/>
+        <source>continue text musical symbols scale</source>
+        <translation>continue text musical symbols scale</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="362"/>
+        <source>end text musical symbols scale</source>
+        <translation>end text musical symbols scale</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="363"/>
+        <source>begin text music symbols size</source>
+        <translation>begin text music symbols size</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="364"/>
+        <source>continue text music symbols size</source>
+        <translation>continue text music symbols size</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="365"/>
+        <source>end text music symbols size</source>
+        <translation>end text music symbols size</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="366"/>
         <source>begin text offset</source>
         <translation>begin text offset</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="361"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="367"/>
         <source>gap between text and line</source>
         <translation>gap between text and line</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="363"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="369"/>
         <source>continue text</source>
         <translation>continue text</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="364"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="370"/>
         <source>continue text align</source>
         <translation>continue text align</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="365"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="371"/>
         <source>continue text position</source>
-        <translation type="unfinished"/>
+        <translation>continue text position</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="366"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="372"/>
         <source>continue text place</source>
         <translation>continue text place</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="367"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="373"/>
         <source>continue font face</source>
         <translation>continue font face</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="368"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="374"/>
         <source>continue font size</source>
         <translation>continue font size</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="369"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="375"/>
         <source>continue font style</source>
         <translation>continue font style</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="370"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="376"/>
         <source>continue text offset</source>
         <translation>continue text offset</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="372"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="378"/>
         <source>end text</source>
         <translation>end text</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="373"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="379"/>
         <source>end text align</source>
         <translation>end text align</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="374"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="380"/>
         <source>end text position</source>
-        <translation type="unfinished"/>
+        <translation>end text position</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="375"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="381"/>
         <source>end text place</source>
         <translation>end text place</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="376"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="382"/>
         <source>end hook type</source>
         <translation>end hook type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="377"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="383"/>
         <source>end hook height</source>
         <translation>end hook height</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="378"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="384"/>
         <source>end line arrow height</source>
-        <translation type="unfinished"/>
+        <translation>end line arrow height</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="379"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="385"/>
         <source>end line arrow width</source>
-        <translation type="unfinished"/>
+        <translation>end line arrow width</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="380"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="386"/>
         <source>end filled arrow height</source>
-        <translation type="unfinished"/>
+        <translation>end filled arrow height</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="381"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="387"/>
         <source>end filled arrow width</source>
-        <translation type="unfinished"/>
+        <translation>end filled arrow width</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="382"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="388"/>
         <source>end font face</source>
         <translation>end font face</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="383"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="389"/>
         <source>end font size</source>
         <translation>end font size</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="384"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="390"/>
         <source>end font style</source>
         <translation>end font style</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="385"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="391"/>
         <source>end text offset</source>
         <translation>end text offset</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="387"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="393"/>
         <source>note-anchored line placement</source>
         <translation>note-anchored line placement</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="389"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="395"/>
         <source>avoid barlines</source>
         <translation>avoid barlines</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="390"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="396"/>
         <source>dynamic size</source>
         <translation>dynamic size</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="391"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="397"/>
         <source>use text alignment</source>
         <translation>use text alignment</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="392"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="398"/>
         <source>anchor to end of previous</source>
         <translation>anchor to end of previous</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="394"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="400"/>
         <source>snap expression</source>
         <translation>snap expression</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="395"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="401"/>
         <source>snap before</source>
         <translation>snap before</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="396"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="402"/>
         <source>snap after</source>
         <translation>snap after</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="398"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="404"/>
         <source>voice assignment</source>
         <translation>voice assignment</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="399"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="405"/>
         <source>center between staves</source>
         <translation>center between staves</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="401"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="407"/>
         <source>position above</source>
         <translation>position above</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="403"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="409"/>
         <source>staves distance</source>
         <translation>staves distance</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="404"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="410"/>
         <source>voices distance</source>
         <translation>voices distance</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="405"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="411"/>
         <source>measures distance</source>
         <translation>measures distance</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="406"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="412"/>
         <source>position distance</source>
         <translation>position distance</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="407"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="413"/>
         <source>grace note index</source>
         <translation>grace note index</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="408"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="414"/>
         <source>note index</source>
         <translation>note index</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="410"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="416"/>
         <source>voice</source>
         <translation>voice</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="411"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="417"/>
         <source>position</source>
         <translation>position</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="413"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="419"/>
         <source>concert clef type</source>
         <translation>concert clef type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="414"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="420"/>
         <source>transposing clef type</source>
         <translation>transposing clef type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="415"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="421"/>
         <source>clef to barline position</source>
         <translation>clef to barline position</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="416"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="422"/>
         <source>is header</source>
         <translation>is header</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="417"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="423"/>
         <source>concert key</source>
         <translation>concert key</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="418"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="424"/>
         <source>key</source>
         <translation>key</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="420"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="426"/>
         <source>autoplace minimum distance</source>
         <translation>autoplace minimum distance</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="422"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="428"/>
         <source>arpeggio type</source>
         <translation>arpeggio type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="423"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="429"/>
         <source>chord line type</source>
         <translation>chord line type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="424"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="430"/>
         <source>straight chord line</source>
         <translation>straight chord line</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="425"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="431"/>
         <source>wavy chord line</source>
         <translation>wavy chord line</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="426"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="432"/>
         <source>tremolo type</source>
         <translation>tremolo type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="427"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="433"/>
         <source>tremolo style</source>
         <translation>tremolo style</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="428"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="434"/>
         <source>harmony type</source>
         <translation>harmony type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="430"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="436"/>
         <source>arpeggio span</source>
         <translation>arpeggio span</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="432"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="438"/>
         <source>bracket hook length</source>
-        <translation type="unfinished"/>
+        <translation>bracket hook length</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="433"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="439"/>
         <source>bracket hook position</source>
-        <translation type="unfinished"/>
+        <translation>bracket hook position</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="434"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="440"/>
         <source>bracket right side</source>
-        <translation type="unfinished"/>
+        <translation>bracket right side</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="437"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="443"/>
         <source>bend type</source>
         <translation>bend type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="438"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="444"/>
         <source>bend curve</source>
         <translation>bend curve</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="439"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="445"/>
         <source>bend vertex offset</source>
         <translation>bend vertex offset</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="440"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="446"/>
         <source>bend show hold line</source>
         <translation>bend show hold line</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="441"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="447"/>
         <source>bend start time factor</source>
         <translation>bend start time factor</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="442"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="448"/>
         <source>bend target time factor</source>
-        <translation type="unfinished"/>
+        <translation>bend target time factor</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="443"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="449"/>
         <source>bend end time factor</source>
         <translation>bend end time factor</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="444"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="450"/>
         <source>guitar dive tab pos</source>
-        <translation type="unfinished"/>
+        <translation>guitar dive tab pos</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="445"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="451"/>
         <source>guitar bend amount</source>
-        <translation type="unfinished"/>
+        <translation>guitar bend amount</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="446"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="452"/>
         <source>guitar dip tremolo line</source>
-        <translation type="unfinished"/>
+        <translation>guitar dip tremolo line</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="447"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="453"/>
         <source>guitar dive is slack</source>
-        <translation type="unfinished"/>
+        <translation>guitar dive is slack</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="449"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="455"/>
         <source>tremolobar type</source>
         <translation>tremolobar type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="450"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="456"/>
         <source>tremolobar curve</source>
         <translation>tremolobar curve</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="452"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="458"/>
         <source>start with long names</source>
         <translation>start with long names</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="453"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="459"/>
         <source>start with measure one</source>
         <translation>start with measure one</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="454"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="460"/>
         <source>first system indentation</source>
         <translation>first system indentation</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="456"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="462"/>
         <source>path</source>
         <translation>path</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="458"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="464"/>
         <source>prefer sharps or flats</source>
         <translation>prefer sharps or flats</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="460"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="466"/>
         <source>playing technique type</source>
         <translation>playing technique type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="462"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="468"/>
         <source>gradual tempo change type</source>
         <translation>gradual tempo change type</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="463"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="469"/>
         <source>tempo easing method</source>
         <translation>tempo easing method</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="464"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="470"/>
         <source>tempo change factor</source>
         <translation>tempo change factor</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="466"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="472"/>
         <source>is diagram</source>
         <translation>is diagram</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="468"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="474"/>
         <source>active</source>
         <translation>active</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="470"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="476"/>
         <source>fret position</source>
         <translation>fret position</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="471"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="477"/>
         <source>ignored strings</source>
         <translation>ignored strings</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="472"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="478"/>
         <source>automatically generate text</source>
         <translation>automatically generate text</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="473"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="479"/>
         <source>transposition behaviour</source>
-        <translation type="unfinished"/>
+        <translation>transposition behaviour</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="475"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="481"/>
         <source>tie placement</source>
         <translation>tie placement</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="476"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="482"/>
         <source>minimum length</source>
         <translation>minimum length</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="477"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="483"/>
         <source>partial spanner direction</source>
         <translation>partial spanner direction</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="479"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="485"/>
         <source>position linked to main score</source>
         <translation>position linked to main score</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="480"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="486"/>
         <source>appearance linked to main score</source>
         <translation>appearance linked to main score</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="481"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="487"/>
         <source>text linked to main score</source>
         <translation>text linked to main score</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="482"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="488"/>
         <source>exclude from parts</source>
         <translation>exclude from parts</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="484"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="490"/>
         <source>strings count</source>
         <translation>strings count</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="485"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="491"/>
         <source>strings preset</source>
         <translation>strings preset</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="486"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="492"/>
         <source>visible strings</source>
         <translation>visible strings</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="488"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="494"/>
         <source>score font</source>
         <translation>score font</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="489"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="495"/>
         <source>symbols size</source>
         <translation>symbols size</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="490"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="496"/>
         <source>symbol angle</source>
         <translation>symbol angle</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="492"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="498"/>
         <source>apply to all staves</source>
         <translation>apply to all staves</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="493"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="499"/>
         <source>is courtesy</source>
         <translation>is courtesy</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="494"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="500"/>
         <source>exclude vertical align</source>
         <translation>exclude vertical align</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="496"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="502"/>
         <source>show measure numbers</source>
-        <translation type="unfinished"/>
+        <translation>show measure numbers</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="497"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="503"/>
         <source>play count text setting</source>
         <translation>play count text setting</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="498"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="504"/>
         <source>play count text</source>
         <translation>play count text</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/dom/property.cpp" line="500"/>
+        <location filename="../../src/engraving/dom/property.cpp" line="506"/>
         <source>align with other rests in the same voice</source>
         <translation>align with other rests in the same voice</translation>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="508"/>
+        <source>cutaway</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="509"/>
+        <source>hide system barline</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="510"/>
+        <source>merge matching rests</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/engraving/dom/property.cpp" line="511"/>
+        <source>reflect transposition</source>
+        <translation type="unfinished"/>
     </message>
 </context>
 <context>
@@ -18041,7 +18071,7 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/dom/slurtie.cpp" line="443"/>
         <source>Wide dashed</source>
-        <translation>Široce čárkováno</translation>
+        <translation>Široce čárkovaná</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/slurtie.cpp" line="445"/>
@@ -18150,17 +18180,17 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="3216"/>
         <source>25 small diesis up, (25S, ~5:13S, ~37S, 5C plus 5C), 2° up [53 EDO]</source>
-        <translation type="unfinished"/>
+        <translation>25 small diesis up, (25S, ~5:13S, ~37S, 5C plus 5C), 2° up [53 EDO]</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="3224"/>
         <source>35 medium diesis up, (35M, ~13M, ~125M, 5C plus 7C), 2/9-tone up</source>
-        <translation type="unfinished"/>
+        <translation>35 medium diesis up, (35M, ~13M, ~125M, 5C plus 7C), 2/9-tone up</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="3254"/>
         <source>5:7 kleisma up, (5:7k, ~11:13k, 7C less 5C)</source>
-        <translation type="unfinished"/>
+        <translation>5:7 kleisma up, (5:7k, ~11:13k, 7C less 5C)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="3257"/>
@@ -19695,57 +19725,57 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4798"/>
         <source>Tempus perfectum cum prolatione perfecta (9/8)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus perfectum cum prolatione perfecta (9/8)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4799"/>
         <source>Tempus imperfectum cum prolatione imperfecta diminution 4</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione imperfecta diminution 4</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4800"/>
         <source>Tempus imperfectum cum prolatione imperfecta diminution 5</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione imperfecta diminution 5</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4801"/>
         <source>Tempus perfectum cum prolatione imperfecta (3/4)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus perfectum cum prolatione imperfecta (3/4)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4802"/>
         <source>Tempus perfectum cum prolatione imperfecta diminution 1 (3/8)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus perfectum cum prolatione imperfecta diminution 1 (3/8)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4803"/>
         <source>Tempus perfectum cum prolatione perfecta diminution 2 (9/16)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus perfectum cum prolatione perfecta diminution 2 (9/16)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4804"/>
         <source>Tempus imperfectum cum prolatione perfecta (6/8)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione perfecta (6/8)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4805"/>
         <source>Tempus imperfectum cum prolatione imperfecta (2/4)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione imperfecta (2/4)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4806"/>
         <source>Tempus imperfectum cum prolatione imperfecta diminution 1 (2/2)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione imperfecta diminution 1 (2/2)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4807"/>
         <source>Tempus imperfectum cum prolatione imperfecta diminution 2 (6/16)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione imperfecta diminution 2 (6/16)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4808"/>
         <source>Tempus imperfectum cum prolatione imperfecta diminution 3 (2/2)</source>
-        <translation type="unfinished"/>
+        <translation>Tempus imperfectum cum prolatione imperfecta diminution 3 (2/2)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/types/symnames.cpp" line="4851"/>
@@ -20288,12 +20318,12 @@ Pražec %1 na strunách %2</translation>
         <translation>Vibráto</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="371"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="372"/>
         <source>Tick barline 2</source>
         <translation>Zarážka 2</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="373"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="374"/>
         <source>Short barline 2</source>
         <translation>Krátká taktová čára 2</translation>
     </message>
@@ -20302,29 +20332,29 @@ Pražec %1 na strunách %2</translation>
     <name>engraving/timesig</name>
     <message>
         <location filename="../../src/engraving/dom/timesig.cpp" line="349"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1634"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1653"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1635"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1654"/>
         <location filename="../../src/project/qml/MuseScore/Project/internal/NewScore/additionalinfomodel.cpp" line="200"/>
         <source>Common time</source>
         <translation>Celý takt (4/4)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/timesig.cpp" line="351"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1635"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1654"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1636"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1655"/>
         <location filename="../../src/project/qml/MuseScore/Project/internal/NewScore/additionalinfomodel.cpp" line="202"/>
         <source>Cut time</source>
         <translation>Alla breve (2/2)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/timesig.cpp" line="353"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1658"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1659"/>
         <source>Cut time (Bach)</source>
         <translation>Alla breve (Bach)</translation>
     </message>
     <message>
         <location filename="../../src/engraving/dom/timesig.cpp" line="355"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1659"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1660"/>
         <source>Cut triple time (9/8)</source>
         <translation>Třídobé složené metrum (9/8)</translation>
     </message>
@@ -20630,7 +20660,7 @@ Pražec %1 na strunách %2</translation>
         <location filename="../../src/framework/extensions/internal/extensionsuiactions.cpp" line="65"/>
         <source>Run plugin %1: %2</source>
         <extracomment>%1 is replaced with the name of the plugin; %2 is replaced with the name of the action</extracomment>
-        <translation type="unfinished"/>
+        <translation>Spustit zásuvný modul %1: %2</translation>
     </message>
 </context>
 <context>
@@ -20692,14 +20722,14 @@ Pražec %1 na strunách %2</translation>
         <translation>Zrušit</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/EditMidiMappingDialog.qml" line="134"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/EditMidiMappingDialog.qml" line="134"/>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/noteinputbarmodel.cpp" line="552"/>
         <source>Add</source>
         <translation>Přidat</translation>
     </message>
     <message>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/internal/MidiMappingBottomPanel.qml" line="69"/>
         <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/EditShortcutDialogContent.qml" line="143"/>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/MidiMappingBottomPanel.qml" line="69"/>
         <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/ShortcutsTopPanel.qml" line="80"/>
         <location filename="../../src/framework/uicomponents/qml/Muse/UiComponents/TextInputField.qml" line="284"/>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/fretdiagrams/FretDiagramSettings.qml" line="184"/>
@@ -20707,7 +20737,7 @@ Pražec %1 na strunách %2</translation>
         <translation>Vymazat</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/MidiMappingBottomPanel.qml" line="83"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/internal/MidiMappingBottomPanel.qml" line="83"/>
         <source>Clear all</source>
         <translation>Smazat vše</translation>
     </message>
@@ -21288,7 +21318,7 @@ Pražec %1 na strunách %2</translation>
         <location filename="../../src/framework/global/dataformatter.cpp" line="104"/>
         <source>%Ln byte(s)</source>
         <extracomment>Used to indicate file size. Ideally, keep the translation short; feel free to use an abbreviation.</extracomment>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%Ln bajt</numerusform><numerusform>%Ln bajty</numerusform><numerusform>%Ln bajtů</numerusform><numerusform>%Ln bajtu</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/framework/global/internal/interactive.cpp" line="57"/>
@@ -21508,102 +21538,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="32"/>
         <source>C♯-1</source>
-        <translation type="unfinished"/>
+        <translation>C♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="33"/>
         <source>D♭-1</source>
-        <translation type="unfinished"/>
+        <translation>D♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="34"/>
         <source>D-1</source>
-        <translation type="unfinished"/>
+        <translation>D3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="35"/>
         <source>D♯-1</source>
-        <translation type="unfinished"/>
+        <translation>D♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="36"/>
         <source>E♭-1</source>
-        <translation type="unfinished"/>
+        <translation>E♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="37"/>
         <source>E-1</source>
-        <translation type="unfinished"/>
+        <translation>E3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="38"/>
         <source>E♯-1</source>
-        <translation type="unfinished"/>
+        <translation>E♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="39"/>
         <source>F♭-1</source>
-        <translation type="unfinished"/>
+        <translation>F♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="40"/>
         <source>F-1</source>
-        <translation type="unfinished"/>
+        <translation>F3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="41"/>
         <source>F♯-1</source>
-        <translation type="unfinished"/>
+        <translation>F♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="42"/>
         <source>G♭-1</source>
-        <translation type="unfinished"/>
+        <translation>G♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="43"/>
         <source>G-1</source>
-        <translation type="unfinished"/>
+        <translation>G3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="44"/>
         <source>G♯-1</source>
-        <translation type="unfinished"/>
+        <translation>G♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="45"/>
         <source>A♭-1</source>
-        <translation type="unfinished"/>
+        <translation>A♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="46"/>
         <source>A-1</source>
-        <translation type="unfinished"/>
+        <translation>A3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="47"/>
         <source>A♯-1</source>
-        <translation type="unfinished"/>
+        <translation>A♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="48"/>
         <source>B♭-1</source>
-        <translation type="unfinished"/>
+        <translation>H♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="49"/>
         <source>B-1</source>
-        <translation type="unfinished"/>
+        <translation>H3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="50"/>
         <source>B♯-1</source>
-        <translation type="unfinished"/>
+        <translation>H♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="52"/>
         <source>C♭0</source>
-        <translation type="unfinished"/>
+        <translation>C♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="53"/>
@@ -21613,102 +21643,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="54"/>
         <source>C♯0</source>
-        <translation type="unfinished"/>
+        <translation>C♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="55"/>
         <source>D♭0</source>
-        <translation type="unfinished"/>
+        <translation>D♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="56"/>
         <source>D0</source>
-        <translation type="unfinished"/>
+        <translation>D2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="57"/>
         <source>D♯0</source>
-        <translation type="unfinished"/>
+        <translation>D♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="58"/>
         <source>E♭0</source>
-        <translation type="unfinished"/>
+        <translation>E♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="59"/>
         <source>E0</source>
-        <translation type="unfinished"/>
+        <translation>E2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="60"/>
         <source>E♯0</source>
-        <translation type="unfinished"/>
+        <translation>E♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="61"/>
         <source>F♭0</source>
-        <translation type="unfinished"/>
+        <translation>F♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="62"/>
         <source>F0</source>
-        <translation type="unfinished"/>
+        <translation>F2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="63"/>
         <source>F♯0</source>
-        <translation type="unfinished"/>
+        <translation>F♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="64"/>
         <source>G♭0</source>
-        <translation type="unfinished"/>
+        <translation>G♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="65"/>
         <source>G0</source>
-        <translation type="unfinished"/>
+        <translation>G2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="66"/>
         <source>G♯0</source>
-        <translation type="unfinished"/>
+        <translation>G♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="67"/>
         <source>A♭0</source>
-        <translation type="unfinished"/>
+        <translation>A♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="68"/>
         <source>A0</source>
-        <translation type="unfinished"/>
+        <translation>A2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="69"/>
         <source>A♯0</source>
-        <translation type="unfinished"/>
+        <translation>A♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="70"/>
         <source>B♭0</source>
-        <translation type="unfinished"/>
+        <translation>H♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="71"/>
         <source>B0</source>
-        <translation type="unfinished"/>
+        <translation>H2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="72"/>
         <source>B♯0</source>
-        <translation type="unfinished"/>
+        <translation>H♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="74"/>
         <source>C♭1</source>
-        <translation type="unfinished"/>
+        <translation>C♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="75"/>
@@ -21718,102 +21748,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="76"/>
         <source>C♯1</source>
-        <translation type="unfinished"/>
+        <translation>C♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="77"/>
         <source>D♭1</source>
-        <translation type="unfinished"/>
+        <translation>D♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="78"/>
         <source>D1</source>
-        <translation type="unfinished"/>
+        <translation>D1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="79"/>
         <source>D♯1</source>
-        <translation type="unfinished"/>
+        <translation>D♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="80"/>
         <source>E♭1</source>
-        <translation type="unfinished"/>
+        <translation>E♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="81"/>
         <source>E1</source>
-        <translation type="unfinished"/>
+        <translation>E1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="82"/>
         <source>E♯1</source>
-        <translation type="unfinished"/>
+        <translation>E♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="83"/>
         <source>F♭1</source>
-        <translation type="unfinished"/>
+        <translation>F♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="84"/>
         <source>F1</source>
-        <translation type="unfinished"/>
+        <translation>F1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="85"/>
         <source>F♯1</source>
-        <translation type="unfinished"/>
+        <translation>F♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="86"/>
         <source>G♭1</source>
-        <translation type="unfinished"/>
+        <translation>G♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="87"/>
         <source>G1</source>
-        <translation type="unfinished"/>
+        <translation>G1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="88"/>
         <source>G♯1</source>
-        <translation type="unfinished"/>
+        <translation>G♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="89"/>
         <source>A♭1</source>
-        <translation type="unfinished"/>
+        <translation>A♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="90"/>
         <source>A1</source>
-        <translation type="unfinished"/>
+        <translation>A1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="91"/>
         <source>A♯1</source>
-        <translation type="unfinished"/>
+        <translation>A♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="92"/>
         <source>B♭1</source>
-        <translation type="unfinished"/>
+        <translation>H♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="93"/>
         <source>B1</source>
-        <translation type="unfinished"/>
+        <translation>H1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="94"/>
         <source>B♯1</source>
-        <translation type="unfinished"/>
+        <translation>H♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="96"/>
         <source>C♭2</source>
-        <translation type="unfinished"/>
+        <translation>C♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="97"/>
@@ -21823,102 +21853,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="98"/>
         <source>C♯2</source>
-        <translation type="unfinished"/>
+        <translation>C♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="99"/>
         <source>D♭2</source>
-        <translation type="unfinished"/>
+        <translation>D♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="100"/>
         <source>D2</source>
-        <translation type="unfinished"/>
+        <translation>D</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="101"/>
         <source>D♯2</source>
-        <translation type="unfinished"/>
+        <translation>D♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="102"/>
         <source>E♭2</source>
-        <translation type="unfinished"/>
+        <translation>E♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="103"/>
         <source>E2</source>
-        <translation type="unfinished"/>
+        <translation>E</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="104"/>
         <source>E♯2</source>
-        <translation type="unfinished"/>
+        <translation>E♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="105"/>
         <source>F♭2</source>
-        <translation type="unfinished"/>
+        <translation>F♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="106"/>
         <source>F2</source>
-        <translation type="unfinished"/>
+        <translation>F</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="107"/>
         <source>F♯2</source>
-        <translation type="unfinished"/>
+        <translation>F♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="108"/>
         <source>G♭2</source>
-        <translation type="unfinished"/>
+        <translation>G♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="109"/>
         <source>G2</source>
-        <translation type="unfinished"/>
+        <translation>G</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="110"/>
         <source>G♯2</source>
-        <translation type="unfinished"/>
+        <translation>G♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="111"/>
         <source>A♭2</source>
-        <translation type="unfinished"/>
+        <translation>A♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="112"/>
         <source>A2</source>
-        <translation type="unfinished"/>
+        <translation>A</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="113"/>
         <source>A♯2</source>
-        <translation type="unfinished"/>
+        <translation>A♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="114"/>
         <source>B♭2</source>
-        <translation type="unfinished"/>
+        <translation>H♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="115"/>
         <source>B2</source>
-        <translation type="unfinished"/>
+        <translation>H</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="116"/>
         <source>B♯2</source>
-        <translation type="unfinished"/>
+        <translation>H♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="118"/>
         <source>C♭3</source>
-        <translation type="unfinished"/>
+        <translation>c♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="119"/>
@@ -21928,102 +21958,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="120"/>
         <source>C♯3</source>
-        <translation type="unfinished"/>
+        <translation>c♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="121"/>
         <source>D♭3</source>
-        <translation type="unfinished"/>
+        <translation>d♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="122"/>
         <source>D3</source>
-        <translation type="unfinished"/>
+        <translation>d</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="123"/>
         <source>D♯3</source>
-        <translation type="unfinished"/>
+        <translation>d♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="124"/>
         <source>E♭3</source>
-        <translation type="unfinished"/>
+        <translation>e♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="125"/>
         <source>E3</source>
-        <translation type="unfinished"/>
+        <translation>e</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="126"/>
         <source>E♯3</source>
-        <translation type="unfinished"/>
+        <translation>e♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="127"/>
         <source>F♭3</source>
-        <translation type="unfinished"/>
+        <translation>f♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="128"/>
         <source>F3</source>
-        <translation type="unfinished"/>
+        <translation>f</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="129"/>
         <source>F♯3</source>
-        <translation type="unfinished"/>
+        <translation>f♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="130"/>
         <source>G♭3</source>
-        <translation type="unfinished"/>
+        <translation>g♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="131"/>
         <source>G3</source>
-        <translation type="unfinished"/>
+        <translation>g</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="132"/>
         <source>G♯3</source>
-        <translation type="unfinished"/>
+        <translation>g♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="133"/>
         <source>A♭3</source>
-        <translation type="unfinished"/>
+        <translation>a♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="134"/>
         <source>A3</source>
-        <translation type="unfinished"/>
+        <translation>a</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="135"/>
         <source>A♯3</source>
-        <translation type="unfinished"/>
+        <translation>a♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="136"/>
         <source>B♭3</source>
-        <translation type="unfinished"/>
+        <translation>h♭</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="137"/>
         <source>B3</source>
-        <translation type="unfinished"/>
+        <translation>h</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="138"/>
         <source>B♯3</source>
-        <translation type="unfinished"/>
+        <translation>h♯</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="140"/>
         <source>C♭4</source>
-        <translation type="unfinished"/>
+        <translation>c♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="141"/>
@@ -22033,102 +22063,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="142"/>
         <source>C♯4</source>
-        <translation type="unfinished"/>
+        <translation>c♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="143"/>
         <source>D♭4</source>
-        <translation type="unfinished"/>
+        <translation>d♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="144"/>
         <source>D4</source>
-        <translation type="unfinished"/>
+        <translation>d1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="145"/>
         <source>D♯4</source>
-        <translation type="unfinished"/>
+        <translation>d♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="146"/>
         <source>E♭4</source>
-        <translation type="unfinished"/>
+        <translation>e♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="147"/>
         <source>E4</source>
-        <translation type="unfinished"/>
+        <translation>e1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="148"/>
         <source>E♯4</source>
-        <translation type="unfinished"/>
+        <translation>e♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="149"/>
         <source>F♭4</source>
-        <translation type="unfinished"/>
+        <translation>f♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="150"/>
         <source>F4</source>
-        <translation type="unfinished"/>
+        <translation>f1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="151"/>
         <source>F♯4</source>
-        <translation type="unfinished"/>
+        <translation>f♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="152"/>
         <source>G♭4</source>
-        <translation type="unfinished"/>
+        <translation>g♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="153"/>
         <source>G4</source>
-        <translation type="unfinished"/>
+        <translation>g1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="154"/>
         <source>G♯4</source>
-        <translation type="unfinished"/>
+        <translation>g♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="155"/>
         <source>A♭4</source>
-        <translation type="unfinished"/>
+        <translation>a♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="156"/>
         <source>A4</source>
-        <translation type="unfinished"/>
+        <translation>a1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="157"/>
         <source>A♯4</source>
-        <translation type="unfinished"/>
+        <translation>a♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="158"/>
         <source>B♭4</source>
-        <translation type="unfinished"/>
+        <translation>h♭1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="159"/>
         <source>B4</source>
-        <translation type="unfinished"/>
+        <translation>h1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="160"/>
         <source>B♯4</source>
-        <translation type="unfinished"/>
+        <translation>h♯1</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="162"/>
         <source>C♭5</source>
-        <translation type="unfinished"/>
+        <translation>c♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="163"/>
@@ -22138,102 +22168,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="164"/>
         <source>C♯5</source>
-        <translation type="unfinished"/>
+        <translation>c♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="165"/>
         <source>D♭5</source>
-        <translation type="unfinished"/>
+        <translation>d♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="166"/>
         <source>D5</source>
-        <translation type="unfinished"/>
+        <translation>d2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="167"/>
         <source>D♯5</source>
-        <translation type="unfinished"/>
+        <translation>d♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="168"/>
         <source>E♭5</source>
-        <translation type="unfinished"/>
+        <translation>e♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="169"/>
         <source>E5</source>
-        <translation type="unfinished"/>
+        <translation>e2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="170"/>
         <source>E♯5</source>
-        <translation type="unfinished"/>
+        <translation>e♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="171"/>
         <source>F♭5</source>
-        <translation type="unfinished"/>
+        <translation>f♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="172"/>
         <source>F5</source>
-        <translation type="unfinished"/>
+        <translation>f2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="173"/>
         <source>F♯5</source>
-        <translation type="unfinished"/>
+        <translation>f♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="174"/>
         <source>G♭5</source>
-        <translation type="unfinished"/>
+        <translation>g♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="175"/>
         <source>G5</source>
-        <translation type="unfinished"/>
+        <translation>g2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="176"/>
         <source>G♯5</source>
-        <translation type="unfinished"/>
+        <translation>g♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="177"/>
         <source>A♭5</source>
-        <translation type="unfinished"/>
+        <translation>a♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="178"/>
         <source>A5</source>
-        <translation type="unfinished"/>
+        <translation>a2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="179"/>
         <source>A♯5</source>
-        <translation type="unfinished"/>
+        <translation>a♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="180"/>
         <source>B♭5</source>
-        <translation type="unfinished"/>
+        <translation>h♭2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="181"/>
         <source>B5</source>
-        <translation type="unfinished"/>
+        <translation>h2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="182"/>
         <source>B♯5</source>
-        <translation type="unfinished"/>
+        <translation>h♯2</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="184"/>
         <source>C♭6</source>
-        <translation type="unfinished"/>
+        <translation>c♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="185"/>
@@ -22243,102 +22273,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="186"/>
         <source>C♯6</source>
-        <translation type="unfinished"/>
+        <translation>c♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="187"/>
         <source>D♭6</source>
-        <translation type="unfinished"/>
+        <translation>d♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="188"/>
         <source>D6</source>
-        <translation type="unfinished"/>
+        <translation>d3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="189"/>
         <source>D♯6</source>
-        <translation type="unfinished"/>
+        <translation>d♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="190"/>
         <source>E♭6</source>
-        <translation type="unfinished"/>
+        <translation>e♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="191"/>
         <source>E6</source>
-        <translation type="unfinished"/>
+        <translation>e3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="192"/>
         <source>E♯6</source>
-        <translation type="unfinished"/>
+        <translation>e♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="193"/>
         <source>F♭6</source>
-        <translation type="unfinished"/>
+        <translation>f♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="194"/>
         <source>F6</source>
-        <translation type="unfinished"/>
+        <translation>f3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="195"/>
         <source>F♯6</source>
-        <translation type="unfinished"/>
+        <translation>f♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="196"/>
         <source>G♭6</source>
-        <translation type="unfinished"/>
+        <translation>g♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="197"/>
         <source>G6</source>
-        <translation type="unfinished"/>
+        <translation>g3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="198"/>
         <source>G♯6</source>
-        <translation type="unfinished"/>
+        <translation>g♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="199"/>
         <source>A♭6</source>
-        <translation type="unfinished"/>
+        <translation>a♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="200"/>
         <source>A6</source>
-        <translation type="unfinished"/>
+        <translation>a3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="201"/>
         <source>A♯6</source>
-        <translation type="unfinished"/>
+        <translation>a♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="202"/>
         <source>B♭6</source>
-        <translation type="unfinished"/>
+        <translation>h♭3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="203"/>
         <source>B6</source>
-        <translation type="unfinished"/>
+        <translation>h3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="204"/>
         <source>B♯6</source>
-        <translation type="unfinished"/>
+        <translation>h♯3</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="206"/>
         <source>C♭7</source>
-        <translation type="unfinished"/>
+        <translation>c♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="207"/>
@@ -22348,12 +22378,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="208"/>
         <source>C♯7</source>
-        <translation type="unfinished"/>
+        <translation>c♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="209"/>
         <source>D♭7</source>
-        <translation type="unfinished"/>
+        <translation>d♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="210"/>
@@ -22363,12 +22393,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="211"/>
         <source>D♯7</source>
-        <translation type="unfinished"/>
+        <translation>d♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="212"/>
         <source>E♭7</source>
-        <translation type="unfinished"/>
+        <translation>e♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="213"/>
@@ -22378,12 +22408,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="214"/>
         <source>E♯7</source>
-        <translation type="unfinished"/>
+        <translation>e♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="215"/>
         <source>F♭7</source>
-        <translation type="unfinished"/>
+        <translation>f♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="216"/>
@@ -22393,12 +22423,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="217"/>
         <source>F♯7</source>
-        <translation type="unfinished"/>
+        <translation>f♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="218"/>
         <source>G♭7</source>
-        <translation type="unfinished"/>
+        <translation>g♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="219"/>
@@ -22408,12 +22438,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="220"/>
         <source>G♯7</source>
-        <translation type="unfinished"/>
+        <translation>g♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="221"/>
         <source>A♭7</source>
-        <translation type="unfinished"/>
+        <translation>a♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="222"/>
@@ -22423,12 +22453,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="223"/>
         <source>A♯7</source>
-        <translation type="unfinished"/>
+        <translation>a♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="224"/>
         <source>B♭7</source>
-        <translation type="unfinished"/>
+        <translation>h♭4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="225"/>
@@ -22438,12 +22468,12 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="226"/>
         <source>B♯7</source>
-        <translation type="unfinished"/>
+        <translation>h♯4</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="228"/>
         <source>C♭8</source>
-        <translation type="unfinished"/>
+        <translation>c♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="229"/>
@@ -22453,102 +22483,102 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="230"/>
         <source>C♯8</source>
-        <translation type="unfinished"/>
+        <translation>c♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="231"/>
         <source>D♭8</source>
-        <translation type="unfinished"/>
+        <translation>d♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="232"/>
         <source>D8</source>
-        <translation type="unfinished"/>
+        <translation>d5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="233"/>
         <source>D♯8</source>
-        <translation type="unfinished"/>
+        <translation>d♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="234"/>
         <source>E♭8</source>
-        <translation type="unfinished"/>
+        <translation>e♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="235"/>
         <source>E8</source>
-        <translation type="unfinished"/>
+        <translation>e5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="236"/>
         <source>E♯8</source>
-        <translation type="unfinished"/>
+        <translation>e♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="237"/>
         <source>F♭8</source>
-        <translation type="unfinished"/>
+        <translation>f♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="238"/>
         <source>F8</source>
-        <translation type="unfinished"/>
+        <translation>f5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="239"/>
         <source>F♯8</source>
-        <translation type="unfinished"/>
+        <translation>f♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="240"/>
         <source>G♭8</source>
-        <translation type="unfinished"/>
+        <translation>g♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="241"/>
         <source>G8</source>
-        <translation type="unfinished"/>
+        <translation>g5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="242"/>
         <source>G♯8</source>
-        <translation type="unfinished"/>
+        <translation>g♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="243"/>
         <source>A♭8</source>
-        <translation type="unfinished"/>
+        <translation>a♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="244"/>
         <source>A8</source>
-        <translation type="unfinished"/>
+        <translation>a5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="245"/>
         <source>A♯8</source>
-        <translation type="unfinished"/>
+        <translation>a♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="246"/>
         <source>B♭8</source>
-        <translation type="unfinished"/>
+        <translation>h♭5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="247"/>
         <source>B8</source>
-        <translation type="unfinished"/>
+        <translation>h5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="248"/>
         <source>B♯8</source>
-        <translation type="unfinished"/>
+        <translation>h♯5</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="250"/>
         <source>C♭9</source>
-        <translation type="unfinished"/>
+        <translation>c♭6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="251"/>
@@ -22558,62 +22588,62 @@ Pražec %1 na strunách %2</translation>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="252"/>
         <source>C♯9</source>
-        <translation type="unfinished"/>
+        <translation>c♯6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="253"/>
         <source>D♭9</source>
-        <translation type="unfinished"/>
+        <translation>d♭6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="254"/>
         <source>D9</source>
-        <translation type="unfinished"/>
+        <translation>d6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="255"/>
         <source>D♯9</source>
-        <translation type="unfinished"/>
+        <translation>d♯6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="256"/>
         <source>E♭9</source>
-        <translation type="unfinished"/>
+        <translation>e♭6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="257"/>
         <source>E9</source>
-        <translation type="unfinished"/>
+        <translation>e6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="258"/>
         <source>E♯9</source>
-        <translation type="unfinished"/>
+        <translation>e♯6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="259"/>
         <source>F♭9</source>
-        <translation type="unfinished"/>
+        <translation>f♭6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="260"/>
         <source>F9</source>
-        <translation type="unfinished"/>
+        <translation>f6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="261"/>
         <source>F♯9</source>
-        <translation type="unfinished"/>
+        <translation>f♯6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="262"/>
         <source>G♭9</source>
-        <translation type="unfinished"/>
+        <translation>g♭6</translation>
     </message>
     <message>
         <location filename="../../src/framework/global/utils.cpp" line="263"/>
         <source>G9</source>
-        <translation type="unfinished"/>
+        <translation>g6</translation>
     </message>
 </context>
 <context>
@@ -22662,7 +22692,7 @@ Pražec %1 na strunách %2</translation>
     <message numerus="yes">
         <location filename="../../src/importexport/mei/internal/meireader.cpp" line="64"/>
         <source>%Ln problem(s) occurred and the import may be incomplete.</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>Došlo k %Ln problému a zavedení může být neúplné.</numerusform><numerusform>Došlo ke %Ln problémům a zavedení může být neúplné.</numerusform><numerusform>Došlo k %Ln problémům a zavedení může být neúplné.</numerusform><numerusform>Došlo k %Ln problému a zavedení může být neúplné.</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/importexport/mei/internal/meireader.cpp" line="80"/>
@@ -22897,7 +22927,7 @@ předtaktí</translation>
     <message numerus="yes">
         <location filename="../../src/importexport/musicxml/internal/import/importmusicxml.cpp" line="117"/>
         <source>%Ln error(s) found, import may be incomplete.</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>Byla nalezena %Ln chyba, zavedení může být neúplné.</numerusform><numerusform>Byly nalezeny %Ln chyby, zavedení může být neúplné.</numerusform><numerusform>Bylo nalezeno %Ln chyb, zavedení může být neúplné.</numerusform><numerusform>Bylo nalezeno %Ln chyby, zavedení může být neúplné.</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/importexport/musicxml/internal/import/musicxmlvalidation.cpp" line="96"/>
@@ -22956,17 +22986,17 @@ předtaktí</translation>
     <message>
         <location filename="../../src/importexport/mnx/internal/export/mnxexporter.cpp" line="103"/>
         <source>MNX export skipped because the score contains no exportable parts. (Tablature is not supported yet).</source>
-        <translation type="unfinished"/>
+        <translation>Vyvedení do formátu MNX bylo přeskočeno, protože notový zápis neobsahuje žádné exportovatelné části. (Tabulatury zatím nejsou podporovány).</translation>
     </message>
     <message>
         <location filename="../../src/importexport/mnx/internal/notationmnxreader.cpp" line="62"/>
         <source>File is not a valid MNX document.</source>
-        <translation type="unfinished"/>
+        <translation>Soubor není platný dokument MNX.</translation>
     </message>
     <message>
         <location filename="../../src/importexport/mnx/internal/notationmnxreader.cpp" line="68"/>
         <source>File contains no measures.</source>
-        <translation type="unfinished"/>
+        <translation>Soubor neobsahuje žádné takty.</translation>
     </message>
 </context>
 <context>
@@ -23758,7 +23788,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="68"/>
         <source>Hold line</source>
-        <translation>Držet se linky</translation>
+        <translation>Výdržová linka</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="77"/>
@@ -23775,7 +23805,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="85"/>
         <source>Tremolo line</source>
-        <translation type="unfinished"/>
+        <translation>Linka tremola</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="93"/>
@@ -23797,7 +23827,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="102"/>
         <source>Tablature staff layout</source>
-        <translation type="unfinished"/>
+        <translation>Rozvržení tabulaturové osnovy</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="111"/>
@@ -23839,12 +23869,12 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="135"/>
         <source>Customize dive</source>
-        <translation type="unfinished"/>
+        <translation>Upravit dive</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="135"/>
         <source>Customize bend</source>
-        <translation>Vlastní bend</translation>
+        <translation>Upravit bend</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/BendSettings.qml" line="158"/>
@@ -24412,7 +24442,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/ChordBracketSettings.qml" line="63"/>
         <source>Hooks</source>
-        <translation type="unfinished"/>
+        <translation>Háčky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/ChordBracketSettings.qml" line="69"/>
@@ -24496,13 +24526,13 @@ předtaktí</translation>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="116"/>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksSection.qml" line="74"/>
         <source>Line start</source>
-        <translation type="unfinished"/>
+        <translation>Začátek linky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="190"/>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksSection.qml" line="91"/>
         <source>Line end</source>
-        <translation type="unfinished"/>
+        <translation>Konec linky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="289"/>
@@ -24520,22 +24550,22 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="374"/>
         <source>Start arrow height</source>
-        <translation type="unfinished"/>
+        <translation>Výška počáteční šipky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="405"/>
         <source>Start arrow width</source>
-        <translation type="unfinished"/>
+        <translation>Šířka počáteční šipky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="459"/>
         <source>End arrow height</source>
-        <translation type="unfinished"/>
+        <translation>Výška koncové šipky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/HooksAndArrowsSection.qml" line="490"/>
         <source>End arrow width</source>
-        <translation type="unfinished"/>
+        <translation>Šířka koncové šipky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/LineStyleSection.qml" line="100"/>
@@ -24575,7 +24605,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/PedalStyleSettings.qml" line="62"/>
         <source>Make line to asterisk visible</source>
-        <translation type="unfinished"/>
+        <translation>Zviditelnit čáru k hvězdičce</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/internal/VoltaStyleSettings.qml" line="52"/>
@@ -24625,7 +24655,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/markers/MarkerSettings.qml" line="54"/>
         <source>Label</source>
-        <translation>Štítek</translation>
+        <translation>Popisek</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/markers/MarkerSettings.qml" line="63"/>
@@ -25371,7 +25401,7 @@ předtaktí</translation>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/text/TextInspectorView.qml" line="244"/>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textstylepopup/TextStylePopup.qml" line="295"/>
         <source>Justify</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/text/TextInspectorView.qml" line="245"/>
@@ -25625,7 +25655,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/bendsettingsmodel.cpp" line="58"/>
         <source>Bend/dive</source>
-        <translation type="unfinished"/>
+        <translation>Bend/dive</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/bendsettingsmodel.cpp" line="283"/>
@@ -25635,7 +25665,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/bendsettingsmodel.cpp" line="284"/>
         <source>Midpoint</source>
-        <translation type="unfinished"/>
+        <translation>Střed</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/bendsettingsmodel.cpp" line="285"/>
@@ -25710,7 +25740,7 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/chordbracketsettingsmodel.cpp" line="36"/>
         <source>Chord bracket</source>
-        <translation type="unfinished"/>
+        <translation>Závorka akordové značky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/glissandosettingsmodel.cpp" line="78"/>
@@ -25740,12 +25770,12 @@ předtaktí</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/lyricslinesettingsmodel.cpp" line="34"/>
         <source>Lyrics line</source>
-        <translation type="unfinished"/>
+        <translation>Linka zpěvního textu</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/lyricslinesettingsmodel.cpp" line="38"/>
         <source>Partial lyrics line</source>
-        <translation type="unfinished"/>
+        <translation>Část linky zpěvního textu</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/notelinesettingsmodel.cpp" line="32"/>
@@ -25825,7 +25855,7 @@ předtaktí</translation>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/textlinesettingsmodel.cpp" line="447"/>
         <source>Line arrow</source>
         <comment>hook type</comment>
-        <translation type="unfinished"/>
+        <translation>Šipka z čar</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/ottavasettingsmodel.cpp" line="86"/>
@@ -25835,7 +25865,7 @@ předtaktí</translation>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/textlinesettingsmodel.cpp" line="448"/>
         <source>Filled arrow</source>
         <comment>hook type</comment>
-        <translation type="unfinished"/>
+        <translation>Šipka s výplní</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/lines/pedalsettingsmodel.cpp" line="37"/>
@@ -26177,49 +26207,49 @@ předtaktí</translation>
         <translation>Vzhled notového zápisu</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="762"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="767"/>
         <source>Left-align text box within frame</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat textové pole vlevo v rámečku</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="764"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="769"/>
         <source>Left-align text box to note/rest</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat textové pole vlevo k notě/pomlce</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="766"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="771"/>
         <source>Left-align text box to barline</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat textové pole vlevo k taktové čáře</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="780"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="785"/>
         <source>Horizontally center text box within frame</source>
-        <translation type="unfinished"/>
+        <translation>Vodorovně vystředit textové pole v rámečku</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="782"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="787"/>
         <source>Horizontally center text box to note/rest</source>
-        <translation type="unfinished"/>
+        <translation>Vodorovně vystředit textové pole k notě/pomlce</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="784"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="789"/>
         <source>Horizontally center text box to barline</source>
-        <translation type="unfinished"/>
+        <translation>Vodorovně vystředit textové pole k taktové čáře</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="798"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="803"/>
         <source>Right-align text box within frame</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat textové pole v rámečku vpravo</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="800"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="805"/>
         <source>Right-align text box to note/rest</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat textové pole vpravo k notě/pomlce</translation>
     </message>
     <message>
-        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="802"/>
+        <location filename="../../src/inspector/qml/MuseScore/Inspector/text/textsettingsmodel.cpp" line="807"/>
         <source>Right-align text box to barline</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat textové pole vpravo k taktové čáře</translation>
     </message>
 </context>
 <context>
@@ -26717,7 +26747,7 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
         <location filename="../../src/framework/midi/internal/platform/lin/alsamidioutport.cpp" line="84"/>
         <location filename="../../src/framework/midi/internal/platform/osx/coremidiinport.cpp" line="85"/>
         <location filename="../../src/framework/midi/internal/platform/osx/coremidioutport.cpp" line="162"/>
-        <location filename="../../src/framework/midi/internal/platform/win/winmidiinport.cpp" line="97"/>
+        <location filename="../../src/framework/midi/internal/platform/win/winmidiinport.cpp" line="99"/>
         <location filename="../../src/framework/midi/internal/platform/win/winmidioutport.cpp" line="91"/>
         <source>No device</source>
         <translation>Žádné zařízení</translation>
@@ -26804,7 +26834,7 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/musesounds/internal/musesoundscheckupdatescenario.cpp" line="136"/>
         <source>Take me to MuseHub</source>
-        <translation type="unfinished"/>
+        <translation>Vezměte mě do Muse Hub</translation>
     </message>
     <message>
         <location filename="../../src/musesounds/internal/musesoundscheckupdatescenario.cpp" line="142"/>
@@ -26917,17 +26947,17 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/elementpopups/CapoPopup.qml" line="119"/>
         <source>Notation/tab in open position</source>
-        <translation type="unfinished"/>
+        <translation>Notový zápis/tabulatura v otevřené poloze</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/elementpopups/CapoPopup.qml" line="120"/>
         <source>Notation shows sounding pitches</source>
-        <translation type="unfinished"/>
+        <translation>Notový zápis zobrazuje znějící výšky</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/elementpopups/CapoPopup.qml" line="121"/>
         <source>No transposition</source>
-        <translation type="unfinished"/>
+        <translation>Bez transpozice</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/elementpopups/CapoPopup.qml" line="136"/>
@@ -27691,12 +27721,12 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/LineStyleSection.qml" line="64"/>
         <source>Dash (dashed line):</source>
-        <translation>Čárka (čárkovaná linka):</translation>
+        <translation>Čárka (u čárkované linky):</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/LineStyleSection.qml" line="70"/>
         <source>Gap (dashed line):</source>
-        <translation>Mezera (čárkovaná linka):</translation>
+        <translation>Mezera (u čárkované linky):</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/NoteFlagsTypeSelector.qml" line="45"/>
@@ -28030,12 +28060,12 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="128"/>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="141"/>
         <source>This selection cannot be copied</source>
-        <translation type="unfinished"/>
+        <translation>Tento výběr nelze zkopírovat</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="129"/>
         <source>Please select all notes that are part of this tuplet and try again.</source>
-        <translation type="unfinished"/>
+        <translation>Vyberte prosím všechny noty, které patří do této nepravidelné rytmické skupiny, a zkuste to znovu.</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="132"/>
@@ -28050,12 +28080,12 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="138"/>
         <source>Cannot paste between different local time signatures</source>
-        <translation type="unfinished"/>
+        <translation>Nelze vkládat mezi různá místní taktová označení</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="142"/>
         <source>Please select all notes that are part of this tremolo and try again.</source>
-        <translation type="unfinished"/>
+        <translation>Vyberte prosím všechny noty, které jsou součástí tohoto tremola, a zkuste to znovu.</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="145"/>
@@ -28116,32 +28146,32 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="174"/>
         <source>Can’t repeat this selection</source>
-        <translation type="unfinished"/>
+        <translation>Tento výběr nelze zopakovat</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="175"/>
         <source>Make a list selection of notes or rests on the same beat or any range selection and retry.</source>
-        <translation type="unfinished"/>
+        <translation>Vytvořte výběr not nebo pomlk na stejné době nebo v libovolném rozsahu a zkuste to znovu.</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="178"/>
         <source>Some fretboard diagrams could not be transposed</source>
-        <translation type="unfinished"/>
+        <translation>Některé hmatové diagramy nebylo možné transponovat</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="179"/>
         <source>Fretboard diagrams that could not be transposed have been left blank. You can undo this action if required.</source>
-        <translation type="unfinished"/>
+        <translation>Hmatové diagramy, které nebylo možné transponovat, byly ponechány prázdné. V případě potřeby můžete tuto akci vrátit zpět.</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="183"/>
         <source>Can’t explode or implode</source>
-        <translation type="unfinished"/>
+        <translation>Není možné rozdělit nebo sloučit hlasy</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/mscoreerrorscontroller.cpp" line="184"/>
         <source>Cannot explode or implode between different local time signatures</source>
-        <translation type="unfinished"/>
+        <translation>Není možné rozdělit nebo sloučit hlasy mezi různými místními taktovými označeními</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationaccessibility.cpp" line="123"/>
@@ -28177,42 +28207,42 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="4567"/>
         <source>‘</source>
         <extracomment>Single open quotation mark</extracomment>
-        <translation type="unfinished"/>
+        <translation>‘</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="4569"/>
         <source>’</source>
         <extracomment>Single close quotation mark</extracomment>
-        <translation type="unfinished"/>
+        <translation>’</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="4571"/>
         <source>“</source>
         <extracomment>Double open quotation mark</extracomment>
-        <translation type="unfinished"/>
+        <translation>“</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="4573"/>
         <source>”</source>
         <extracomment>Double close quotation mark</extracomment>
-        <translation type="unfinished"/>
+        <translation>”</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="58"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="57"/>
         <source>%1 in %2</source>
         <comment>Transposing instrument displayed in the score</comment>
         <extracomment>%1=name (&quot;Horn&quot;), %2=transposition (&quot;C alto&quot;). Example: &quot;Horn in C alto&quot;</extracomment>
         <translation>%1 in %2</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="78"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="77"/>
         <source>%1 in %2 %3</source>
         <comment>One of several transposing instruments displayed in the score</comment>
         <extracomment>%1=name (&quot;Horn&quot;), %2=transposition (&quot;C alto&quot;), %3=number (&quot;2&quot;). Example: &quot;Horn in C alto 2&quot;</extracomment>
         <translation>%1 in %2 %3</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="83"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="82"/>
         <source>%1 %2</source>
         <comment>One of several instruments displayed in the score</comment>
         <extracomment>%1=name (&quot;Flute&quot;), %2=number (&quot;2&quot;). Example: &quot;Flute 2&quot;</extracomment>
@@ -29054,22 +29084,22 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/ClefKeyTimeSigPage.qml" line="496"/>
         <source>When changing to a key signature containing fewer sharps or flats</source>
-        <translation type="unfinished"/>
+        <translation>Při přechodu na tóninu s menším počtem křížků nebo bé</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/ClefKeyTimeSigPage.qml" line="508"/>
         <source>Don’t show any naturals</source>
-        <translation type="unfinished"/>
+        <translation>Nezobrazovat žádné odrážky</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/ClefKeyTimeSigPage.qml" line="509"/>
         <source>Show naturals before the new key signature</source>
-        <translation type="unfinished"/>
+        <translation>Zobrazovat odrážky před novým předznamenáním</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/ClefKeyTimeSigPage.qml" line="510"/>
         <source>Show naturals after the new key signature</source>
-        <translation type="unfinished"/>
+        <translation>Zobrazovat odrážky po novém předznamenání</translation>
     </message>
 </context>
 <context>
@@ -29115,7 +29145,7 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="77"/>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="190"/>
         <source>Tablature staff</source>
-        <translation type="unfinished"/>
+        <translation>Tabulaturová osnova</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="102"/>
@@ -29130,77 +29160,77 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="131"/>
         <source>Label for full bends:</source>
-        <translation type="unfinished"/>
+        <translation>Popisek pro full bends:</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="163"/>
         <source>Dives</source>
-        <translation type="unfinished"/>
+        <translation>Dives</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="198"/>
         <source>Show dive lines</source>
-        <translation type="unfinished"/>
+        <translation>Zobrazovat linky u dive</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="205"/>
         <source>On the staff</source>
-        <translation type="unfinished"/>
+        <translation>V osnově</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="206"/>
         <source>Above the staff</source>
-        <translation type="unfinished"/>
+        <translation>Nad osnovou</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="236"/>
         <source>Whammy bar line</source>
-        <translation type="unfinished"/>
+        <translation>Linka tremolo páky</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="246"/>
         <source>Text label:</source>
-        <translation type="unfinished"/>
+        <translation>Textový popisek:</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="289"/>
         <source>Grace note bends/dives on tablature</source>
-        <translation type="unfinished"/>
+        <translation>Bends/dives v tabulatuře jako ozdobné noty</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="296"/>
         <source>Use cue sized fret numbers</source>
-        <translation type="unfinished"/>
+        <translation>Použít malá čísla pražců</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="307"/>
         <source>Align pre-bends and pre-dives</source>
-        <translation type="unfinished"/>
+        <translation>Zarovnat pre-bends and pre-dives</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="314"/>
         <source>To the main note</source>
-        <translation type="unfinished"/>
+        <translation>K hlavní notě</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="315"/>
         <source>To the grace note</source>
-        <translation type="unfinished"/>
+        <translation>K ozdobné notě</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="333"/>
         <source>Interval labels</source>
-        <translation type="unfinished"/>
+        <translation>Popisky intervalů</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="341"/>
         <source>Diagonal</source>
-        <translation>Úhlopříčný</translation>
+        <translation>Diagonálně</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/BendsPage.qml" line="342"/>
         <source>Level</source>
-        <translation type="unfinished"/>
+        <translation>Vedle sebe</translation>
     </message>
 </context>
 <context>
@@ -29243,7 +29273,7 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/ChordSymbolsPage.qml" line="254"/>
         <source>All caps (for Solfeggio and French)</source>
-        <translation type="unfinished"/>
+        <translation>Všechno velkými písmeny (pro solfeggio a francouzštinu)</translation>
     </message>
     <message>
         <location filename="../../src/notationscene/qml/MuseScore/NotationScene/styledialog/ChordSymbolsPage.qml" line="267"/>
@@ -30644,7 +30674,7 @@ Kromě toho nabízí Mastering MuseScore podpůrnou komunitu hudebníků s prost
     <message numerus="yes">
         <location filename="../../src/palette/qml/MuseScore/Palette/internal/PaletteTree.qml" line="531"/>
         <source>%1, contains %Ln matching element(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%1 obsahuje %Ln shodný prvek</numerusform><numerusform>%1 obsahuje %Ln shodné prvky</numerusform><numerusform>%1 obsahuje %Ln shodných prvků</numerusform><numerusform>%1 obsahuje %Ln shodného prvku</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/palette/qml/MuseScore/Palette/internal/PaletteTree.qml" line="532"/>
@@ -30791,50 +30821,50 @@ se nezdařil:</translation>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="326"/>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="328"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1826"/>
         <location filename="../../src/palette/internal/palettecreator.cpp" line="1827"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1828"/>
         <source>Capo</source>
         <translation>Kapodastr</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="336"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1832"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1833"/>
         <source>String tunings</source>
         <translation>Ladění strun</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="311"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1804"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1805"/>
         <source>Left-hand tapping</source>
         <translation>Klepání levou rukou</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="315"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1808"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1809"/>
         <source>Right-hand tapping</source>
         <translation>Klepání pravou rukou</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="321"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1811"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1812"/>
         <source>Hammer-on / pull-off</source>
         <translation>Příklep/odtrh</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="379"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1294"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1295"/>
         <source>Line (right arrowhead)</source>
-        <translation>Čára (šipka doprava)</translation>
+        <translation>Linka (šipka doprava)</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="387"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1299"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1300"/>
         <source>Line (left arrowhead)</source>
-        <translation>Čára (šipka směřující doleva)</translation>
+        <translation>Linka (šipka doleva)</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="427"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1685"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1686"/>
         <source>Blank</source>
         <translation>Prázdný</translation>
     </message>
@@ -30854,723 +30884,723 @@ se nezdařil:</translation>
         <translation>Dynamika</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="287"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="288"/>
         <location filename="../../src/palette/widgets/keyedit.cpp" line="312"/>
         <location filename="../../src/palette/widgets/masterpalette.cpp" line="169"/>
         <source>Key signatures</source>
         <translation>Předznamenání</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="322"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="323"/>
         <source>Accidentals</source>
         <translation>Posuvky</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="352"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="353"/>
         <source>Barlines</source>
         <translation>Taktové čáry</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="389"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="390"/>
         <source>Repeats &amp; jumps</source>
         <translation>Repetice a skoky</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="483"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1159"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="484"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1160"/>
         <source>Prima volta</source>
         <translation>Prima volta</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="491"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1185"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="492"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1186"/>
         <source>Seconda volta, open</source>
         <translation>Seconda volta (otevřená)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="499"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1168"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="500"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1169"/>
         <source>Seconda volta</source>
         <translation>Seconda volta</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="507"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1176"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="508"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1177"/>
         <source>Terza volta</source>
         <translation>Terza volta</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="526"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="527"/>
         <source>Layout</source>
         <extracomment>The name of a palette</extracomment>
         <translation>Rozvržení</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="575"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="576"/>
         <source>Fingerings</source>
         <translation>Prstoklady</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="585"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="586"/>
         <source>Fingering %1</source>
         <translation>Prstoklad %1</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="593"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1784"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="594"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1785"/>
         <source>RH guitar fingering %1</source>
         <translation>Prstoklad pro pravorukou kytaru %1</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="601"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1792"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="602"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1793"/>
         <source>LH guitar fingering %1</source>
         <translation>Prstoklad pro levorukou kytaru %1</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="608"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1799"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="609"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1800"/>
         <source>String number %1</source>
         <translation>Číslo struny %1</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="631"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="632"/>
         <source>Tremolos</source>
         <translation>Tremola</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="666"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="667"/>
         <source>Noteheads</source>
         <translation>Notové hlavičky</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="691"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="692"/>
         <source>Articulations</source>
         <translation>Artikulace</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="696"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1138"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="697"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1139"/>
         <source>Slur</source>
         <translation>Legatový oblouček</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="775"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="776"/>
         <source>Ornaments</source>
         <translation>Ozdoby</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="841"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="842"/>
         <source>Accordion</source>
         <extracomment>The name of a palette</extracomment>
         <translation>Akordeon</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="920"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="921"/>
         <source>Brackets</source>
         <translation>Svorky</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="927"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="928"/>
         <source>Bracket</source>
         <translation>Svorka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="928"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="929"/>
         <source>Brace</source>
         <translation>Klavírní svorka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="929"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="930"/>
         <source>Square</source>
         <translation>Hranatá svorka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="930"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1289"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="931"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1290"/>
         <source>Line</source>
         <translation>Linka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="951"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="952"/>
         <source>Breaths &amp; pauses</source>
         <translation>Nádechy a pauzy</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="998"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="999"/>
         <source>Arpeggios &amp; glissandos</source>
         <translation>Arpeggia a glissanda</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1057"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1058"/>
         <source>Clefs</source>
         <translation>Klíče</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1090"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1091"/>
         <source>Grace notes</source>
         <translation>Ozdobné noty</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1111"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1112"/>
         <source>Bagpipe embellishments</source>
         <translation>Dudácké ozdoby</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1131"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1132"/>
         <source>Lines</source>
         <translation>Linky</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1212"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1878"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1213"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1879"/>
         <source>Pedal (with ped and line)</source>
         <translation>Pedál (s ped a čárou)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1219"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1871"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1220"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1872"/>
         <source>Pedal (with ped and asterisk)</source>
         <translation>Pedál (s ped a hvězdičkou)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1227"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1886"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1228"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1887"/>
         <source>Pedal (straight hooks)</source>
         <translation>Pedál (rovné háčky)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1236"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1894"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1237"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1895"/>
         <source>Pedal (angled end hook)</source>
         <translation>Pedál (šikmý pravý háček)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1244"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1902"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1245"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1903"/>
         <source>Pedal (both hooks angled)</source>
         <translation>Pedál (oba háčky šikmé)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1252"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1910"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1253"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1911"/>
         <source>Pedal (angled start hook)</source>
         <translation>Pedál (šikmý levý háček)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1272"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1517"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1273"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1518"/>
         <source>Staff text line</source>
         <translation>Textová linka osnovy</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1278"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1527"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1279"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1528"/>
         <source>System text line</source>
         <translation>Textová linka systému</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1284"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1285"/>
         <source>Text line</source>
         <translation>Textová linka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1304"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1958"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1305"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1959"/>
         <source>Ambitus</source>
         <translation>Tónový rozsah</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1307"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1754"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1308"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1755"/>
         <source>Let ring</source>
         <translation>Nechat znít</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1325"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1751"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1326"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1752"/>
         <source>Palm mute</source>
         <translation>Ztlumit dlaní</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="396"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1327"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1912"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1328"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1913"/>
         <source>Chord bracket</source>
-        <translation type="unfinished"/>
+        <translation>Závorka akordové značky</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="397"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1328"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1913"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1329"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1914"/>
         <source>Chord bracket (play with left hand)</source>
-        <translation type="unfinished"/>
+        <translation>Závorka akordové značky (hrát levou rukou)</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="398"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1329"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1914"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1330"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1915"/>
         <source>Chord bracket (play with right hand)</source>
-        <translation type="unfinished"/>
+        <translation>Závorka akordové značky (hrát pravou rukou)</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1343"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1344"/>
         <source>Tempo</source>
         <translation>Tempo</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1364"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1365"/>
         <source>Half note = 80 BPM</source>
         <translation>Půlová nota = 80 MM</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1367"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1368"/>
         <source>Quarter note = 80 BPM</source>
         <translation>Čtvrťová nota = 80 MM</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1370"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1371"/>
         <source>Eighth note = 80 BPM</source>
         <translation>Osminová nota = 80 MM</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1373"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1374"/>
         <source>Dotted half note = 80 BPM</source>
         <translation>Tečkovaná půlová nota = 80 MM</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1376"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1377"/>
         <source>Dotted quarter note = 80 BPM</source>
         <translation>Tečkovaná čtvrťová nota = 80 MM</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1379"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1380"/>
         <source>Dotted eighth note = 80 BPM</source>
         <translation>Tečkovaná osminová nota = 80 MM</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1397"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1398"/>
         <source>Metric modulation: quarter note = dotted quarter note</source>
         <translation>Metrická modulace: čtvrťová nota = tečkovaná čtvrťová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1400"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1401"/>
         <source>Metric modulation: dotted quarter note = quarter note</source>
         <translation>Metrická modulace: tečkovaná čtvrťová nota = čtvrťová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1403"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1404"/>
         <source>Metric modulation: half note = quarter note</source>
         <translation>Metrická modulace: půlová nota = čtvrťová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1406"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1407"/>
         <source>Metric modulation: quarter note = half note</source>
         <translation>Metrická modulace: čtvrťová nota = půlová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1409"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1410"/>
         <source>Metric modulation: eighth note = eighth note</source>
         <translation>Metrická modulace: osminová nota = osminová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1412"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1413"/>
         <source>Metric modulation: quarter note = quarter note</source>
         <translation>Metrická modulace: čtvrťová nota = čtvrťová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1415"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1416"/>
         <source>Metric modulation: dotted eighth note = quarter note</source>
         <translation>Metrická modulace: tečkovaná osminová nota =  čtvrťová nota</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1436"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1443"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1437"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1444"/>
         <source>accel.</source>
         <translation>accel.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1437"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1444"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1438"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1445"/>
         <source>allarg.</source>
         <translation>allarg.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1438"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1449"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1439"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1450"/>
         <source>rall.</source>
         <translation>rall.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1439"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1450"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1440"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1451"/>
         <source>rit.</source>
         <translation>rit.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1445"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1446"/>
         <source>calando</source>
         <translation>calando</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1446"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1447"/>
         <source>lentando</source>
         <translation>lentando</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1447"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1448"/>
         <source>morendo</source>
         <translation>morendo</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1448"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1449"/>
         <source>precipitando</source>
         <translation>precipitando</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1451"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1452"/>
         <source>smorz.</source>
         <translation>smorz.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1452"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1453"/>
         <source>sost.</source>
         <translation>sost.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1453"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1454"/>
         <source>string.</source>
         <translation>string.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1465"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1466"/>
         <source>a tempo</source>
         <translation>a tempo</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1472"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1473"/>
         <source>tempo primo</source>
         <translation>tempo primo</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1481"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1483"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1482"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1484"/>
         <source>Swing</source>
         <translation>Swing</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1490"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1496"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1491"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1497"/>
         <source>Straight</source>
         <extracomment>System text to switch from swing rhythm back to straight rhythm</extracomment>
         <translation>Straight</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1505"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1506"/>
         <source>Text</source>
         <translation>Text</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1511"/>
         <location filename="../../src/palette/internal/palettecreator.cpp" line="1512"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1513"/>
         <source>Staff text</source>
         <translation>Text osnovy</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1520"/>
         <location filename="../../src/palette/internal/palettecreator.cpp" line="1521"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1522"/>
         <source>System text</source>
         <translation>Text systému</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1531"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1532"/>
         <source>expression</source>
         <translation>přednesový text</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1533"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1534"/>
         <source>Expression text</source>
         <translation>Přednesový text</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1536"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1537"/>
         <source>Change instr.</source>
         <translation>Změna nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1537"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1538"/>
         <source>Instrument change</source>
         <translation>Změna nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1541"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1542"/>
         <source>Rehearsal mark</source>
         <translation>Orientační značka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1551"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1552"/>
         <source>legato</source>
         <translation>legato</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1552"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1553"/>
         <source>pizz.</source>
         <translation>pizz.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1553"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1554"/>
         <source>arco</source>
         <translation>arco</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1553"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1554"/>
         <source>Arco</source>
         <translation>Arco</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1554"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1555"/>
         <source>tremolo</source>
         <translation>tremolo</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1556"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1557"/>
         <source>mute</source>
         <extracomment>For brass and plucked string instruments: staff text that prescribes to use mute while playing, see https://en.wikipedia.org/wiki/Mute_(music)</extracomment>
         <translation>con sordino</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1558"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1559"/>
         <source>open</source>
         <extracomment>For brass and plucked string instruments: staff text that prescribes to play without mute, see https://en.wikipedia.org/wiki/Mute_(music)</extracomment>
         <translation>senza sordino</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1559"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1840"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1560"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1841"/>
         <source>distort</source>
         <translation>distort</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1560"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1841"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1561"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1842"/>
         <source>overdrive</source>
         <translation>overdrive</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1561"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1842"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1562"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1843"/>
         <source>harmonics</source>
         <translation>flažolety</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1562"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1843"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1563"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1844"/>
         <source>jazz tone</source>
         <translation>jazzový tón</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1563"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1844"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1564"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1845"/>
         <source>normal</source>
         <translation>normální</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1583"/>
         <location filename="../../src/palette/internal/palettecreator.cpp" line="1584"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1585"/>
         <source>Measure number</source>
         <translation>Číslo taktu</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1587"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1588"/>
         <source>détaché</source>
         <translation>détaché</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1588"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1589"/>
         <source>martelé</source>
         <translation>martelé</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1589"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1590"/>
         <source>col legno</source>
         <translation>col legno</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1590"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1591"/>
         <source>sul pont.</source>
         <translation>sul pont.</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1591"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1592"/>
         <source>sul tasto</source>
         <translation>sul tasto</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1592"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1593"/>
         <source>vibrato</source>
         <translation>vibráto</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1616"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1617"/>
         <location filename="../../src/palette/widgets/masterpalette.cpp" line="170"/>
         <location filename="../../src/palette/widgets/timedialog.cpp" line="44"/>
         <source>Time signatures</source>
         <translation>Taktové označení</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1674"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1675"/>
         <source>Fretboard diagrams</source>
         <translation>Hmatové diagramy</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1687"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1688"/>
         <source>C</source>
         <translation>C</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1688"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1689"/>
         <source>Cm</source>
         <translation>Cm</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1689"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1690"/>
         <source>C7</source>
         <translation>C 7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1691"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1692"/>
         <source>D</source>
         <translation>D</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1692"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1693"/>
         <source>Dm</source>
         <translation>Dm</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1693"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1694"/>
         <source>D7</source>
         <translation>D7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1695"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1696"/>
         <source>E</source>
         <translation>E</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1696"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1697"/>
         <source>Em</source>
         <translation>Em</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1697"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1698"/>
         <source>E7</source>
         <translation>E7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1699"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1700"/>
         <source>F</source>
         <translation>F</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1700"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1701"/>
         <source>Fm</source>
         <translation>Fm</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1701"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1702"/>
         <source>F7</source>
         <translation>F7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1703"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1704"/>
         <source>G</source>
         <translation>G</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1704"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1705"/>
         <source>Gm</source>
         <translation>Gm</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1705"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1706"/>
         <source>G7</source>
         <translation>G7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1707"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1708"/>
         <source>A</source>
         <translation>A</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1708"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1709"/>
         <source>Am</source>
         <translation>Am</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1709"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1710"/>
         <source>A7</source>
         <translation>A7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1711"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1712"/>
         <source>B</source>
         <translation>H</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1712"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1713"/>
         <source>Bm</source>
         <translation>Hm</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1713"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1714"/>
         <source>B7</source>
         <translation>H7</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1739"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1740"/>
         <source>Guitar</source>
         <translation>Kytara</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1748"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1749"/>
         <source>Barré line</source>
         <translation>Linka barré</translation>
     </message>
     <message>
         <location filename="../../src/palette/internal/palettecompat.cpp" line="287"/>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1757"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1758"/>
         <source>Whammy bar</source>
-        <translation>Whammy bar</translation>
+        <translation>Tremolo páka</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1862"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1863"/>
         <source>Keyboard</source>
         <translation>Klavír</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1929"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1930"/>
         <source>Pitch</source>
         <extracomment>The name of a palette</extracomment>
         <translation>Výšky tónů</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1965"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1966"/>
         <source>Harp</source>
         <translation>Harfa</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1971"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1972"/>
         <source>Harp pedal diagram</source>
         <translation>Harfový pedálový diagram</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1976"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1977"/>
         <source>Harp pedal text diagram</source>
         <translation>Harfový pedálový textový diagram</translation>
     </message>
     <message>
-        <location filename="../../src/palette/internal/palettecreator.cpp" line="1984"/>
+        <location filename="../../src/palette/internal/palettecreator.cpp" line="1985"/>
         <source>Handbells</source>
         <translation>Ruční zvonky</translation>
     </message>
@@ -33507,28 +33537,28 @@ se nezdařilo: %2</translation>
         <translation>Tím se odstraní data internetových zvukových knihoven uložená ve vašem počítači pro tento notový zápis. Zpracování internetových zvukových knihoven se pokusí o okamžitý restart.</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="89"/>
+        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="91"/>
         <source>Reverb</source>
         <translation>Dozvuk</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="95"/>
+        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="97"/>
         <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="617"/>
         <source>Aux %1</source>
         <translation>Aux %1</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="1065"/>
+        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="1077"/>
         <source>Metronome</source>
         <translation>Metronom</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="1075"/>
+        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="1087"/>
         <source>Chords</source>
         <translation>Akordy</translation>
     </message>
     <message>
-        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="1436"/>
+        <location filename="../../src/playback/internal/playbackcontroller.cpp" line="1448"/>
         <source>Loading audio samples</source>
         <translation>Nahrávání zvukových vzorků</translation>
     </message>
@@ -33569,24 +33599,24 @@ se nezdařilo: %2</translation>
         <translation>Panel kanálů směšovače %1</translation>
     </message>
     <message>
-        <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="681"/>
+        <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="683"/>
         <source>Change sound</source>
         <translation>Změnit zvuk</translation>
     </message>
     <message>
-        <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="684"/>
+        <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="686"/>
         <source>Are you sure you want to change this sound?</source>
         <translation>Opravdu chcete změnit tento zvuk?</translation>
     </message>
     <message>
-        <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="685"/>
+        <location filename="../../src/playback/qml/MuseScore/Playback/mixerchannelitem.cpp" line="687"/>
         <source>Sound flags on this instrument may be reset, but staff text will remain. This action can’t be undone.</source>
         <translation>Zvukové značky tohoto nástroje lze nastavit na výchozí, ale text notové osnovy zůstane zachován. Tento krok nelze vrátit zpět.</translation>
     </message>
     <message>
         <location filename="../../src/playback/qml/MuseScore/Playback/mixerpanelcontextmenumodel.cpp" line="44"/>
         <source>Labels</source>
-        <translation>Štítky</translation>
+        <translation>Popisky</translation>
     </message>
     <message>
         <location filename="../../src/playback/qml/MuseScore/Playback/mixerpanelcontextmenumodel.cpp" line="49"/>
@@ -33619,12 +33649,12 @@ se nezdařilo: %2</translation>
         <translation>Prověřte prosím své připojení a ujistěte se, že MuseHub běží a že jste přihlášeni.</translation>
     </message>
     <message>
-        <location filename="../../src/playback/qml/MuseScore/Playback/outputresourceitem.cpp" line="15"/>
+        <location filename="../../src/playback/qml/MuseScore/Playback/outputresourceitem.cpp" line="17"/>
         <source>No effect</source>
         <translation>Žádný efekt</translation>
     </message>
     <message>
-        <location filename="../../src/playback/qml/MuseScore/Playback/outputresourceitem.cpp" line="79"/>
+        <location filename="../../src/playback/qml/MuseScore/Playback/outputresourceitem.cpp" line="81"/>
         <source>Get more effects</source>
         <translation>Získat další efekty</translation>
     </message>
@@ -33695,7 +33725,7 @@ se nezdařilo: %2</translation>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/AccentColorsSection.qml" line="61"/>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/UiColorsSection.qml" line="47"/>
         <source>Accent color</source>
-        <translation type="unfinished"/>
+        <translation>Barva akcentu</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/AdvancedTopSection.qml" line="44"/>
@@ -33836,7 +33866,7 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/FoldersSection.qml" line="31"/>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="191"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="195"/>
         <source>Folders</source>
         <translation>Složky</translation>
     </message>
@@ -33864,10 +33894,10 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/FFmpegSection.qml" line="63"/>
         <source>Locate existing installation</source>
-        <translation>Vyhledat stávající instalaci</translation>
+        <translation>Vyhledat umístění stávající instalace</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/FFmpegSection.qml" line="79"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/FFmpegSection.qml" line="81"/>
         <source>Download FFmpeg</source>
         <translation>Stáhnout FFmpeg</translation>
     </message>
@@ -33893,8 +33923,8 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/LanguagesSection.qml" line="31"/>
-        <source>Languages</source>
-        <translation>Jazyky</translation>
+        <source>Language</source>
+        <translation>Jazyk</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/LanguagesSection.qml" line="79"/>
@@ -33966,7 +33996,7 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/MnxSection.qml" line="32"/>
         <source>Disabling this may cause errors. Try only for files that fail to import otherwise.</source>
-        <translation>Vypnutí této funkce může způsobit chyby. Zkuste to pouze u souborů, které se jinak nedaří importovat.</translation>
+        <translation>Vypnutí této volby může způsobit chyby. Zkuste to pouze u souborů, které se jinak nedaří importovat.</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/MnxSection.qml" line="42"/>
@@ -34055,7 +34085,7 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/NoteInput/NoteInputSection.qml" line="33"/>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="167"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="169"/>
         <source>Note input</source>
         <translation>Vkládání not</translation>
     </message>
@@ -34107,7 +34137,7 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/NoteInput/NotePreviewSection.qml" line="73"/>
         <source>Playback duration</source>
-        <translation>Délka přehrávání</translation>
+        <translation>Doba přehrávání</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/NoteInput/NotePreviewSection.qml" line="96"/>
@@ -34342,7 +34372,7 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/UiFontSection.qml" line="57"/>
         <source>Body text size</source>
-        <translation type="unfinished"/>
+        <translation>Velikost základního textu</translation>
     </message>
     <message>
         <location filename="../../src/preferences/qml/MuseScore/Preferences/internal/WelcomeDialogSection.qml" line="32"/>
@@ -34534,67 +34564,67 @@ se nezdařilo: %2</translation>
         <translation>Vybrat výchozí styl pro zavedení</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="155"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="157"/>
         <source>General</source>
         <translation>Obecné</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="158"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="160"/>
         <source>Appearance</source>
         <translation>Vzhled</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="161"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="163"/>
         <source>Canvas</source>
         <translation>Strana</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="164"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="166"/>
         <source>Save &amp; publish</source>
         <translation>Ukládání a zveřejnění</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="170"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="172"/>
         <source>Score</source>
         <translation>Notový zápis</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="173"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="175"/>
         <source>Audio &amp; MIDI</source>
         <translation>Audio a MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="176"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="179"/>
         <source>MIDI mappings</source>
         <translation>Mapování MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="179"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="183"/>
         <source>Video</source>
         <translation>Video</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="182"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="186"/>
         <source>Percussion</source>
         <translation>Bicí nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="185"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="189"/>
         <source>Import</source>
         <translation>Zavedení</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="188"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="192"/>
         <source>Shortcuts</source>
         <translation>Klávesové zkratky</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="194"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="198"/>
         <source>Advanced</source>
         <translation>Pokročilé</translation>
     </message>
     <message>
-        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="197"/>
+        <location filename="../../src/preferences/qml/MuseScore/Preferences/preferencesmodel.cpp" line="201"/>
         <source>Braille</source>
         <translation>Braillovo písmo</translation>
     </message>
@@ -35314,57 +35344,56 @@ se nezdařilo: %2</translation>
         <translation>Nastavení pro vyvedení</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/ExportDialog.qml" line="149"/>
+        <location filename="../../src/project/qml/MuseScore/Project/ExportDialog.qml" line="151"/>
         <source>Export…</source>
         <translation>Vyvést…</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="46"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="47"/>
         <source>Sample rate:</source>
         <translation>Vzorkovací kmitočet:</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="57"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="58"/>
         <source>%1 Hz</source>
         <translation>%1 Hz</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="71"/>
-        <source>Bitrate:</source>
-        <translation>Datový tok:</translation>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="72"/>
+        <source>Bit rate:</source>
+        <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="82"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="83"/>
         <source>%1 kBit/s</source>
         <translation>%1 kBit/s</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="96"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AudioSettings.qml" line="97"/>
         <source>Sample format:</source>
-        <translation type="unfinished"/>
+        <translation>Formát vzorku:</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/AacSettingsPage.qml" line="39"/>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/FlacSettingsPage.qml" line="38"/>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp3SettingsPage.qml" line="39"/>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="65"/>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/OggSettingsPage.qml" line="39"/>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/WavSettingsPage.qml" line="38"/>
         <source>Each selected part will be exported as a separate audio file.</source>
         <translation>Každý vybraný part bude vyveden jako samostatný zvukový soubor.</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/ExportOptionsView.qml" line="55"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/ExportOptionsView.qml" line="59"/>
         <source>Format:</source>
         <translation>Formát:</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/ExportOptionsView.qml" line="98"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/ExportOptionsView.qml" line="102"/>
         <source>File type:</source>
         <translation>Typ souboru:</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/ExportOptionsView.qml" line="191"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/ExportOptionsView.qml" line="197"/>
         <source>Open destination folder on export</source>
         <translation>Po vyvedení otevřít cílovou složku</translation>
     </message>
@@ -35406,37 +35435,37 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="32"/>
         <source>Disable to let the importing app choose beam groupings.</source>
-        <translation>Zakázat, aby si importující aplikace mohla vybrat seskupení trámců</translation>
+        <translation>Zakázat importující aplikaci rozhodování o seskupení trámců.</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="34"/>
         <source>Enable to export the staff line of every rest. Disable to let the importing app decide.</source>
-        <translation>Zapněte tuto možnost, chcete-li vyvést notovou linku u každé pomlk. Vypněte ji, chcete-li rozhodnutí ponechat na importující aplikaci.</translation>
+        <translation>Zapnutím nastavíte vyvedení vertikální pozice všech pomlk. Při vypnutí rozhodne o vertikálním umístění pomlk importující aplikace.</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="38"/>
         <source>JSON indent:</source>
-        <translation type="unfinished"/>
+        <translation>Odsazení v JSON:</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="50"/>
         <source>No line breaks</source>
-        <translation type="unfinished"/>
+        <translation>Žádné konce řádků</translation>
     </message>
     <message numerus="yes">
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="52"/>
         <source>%n space(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%n mezera notové osnovy</numerusform><numerusform>%n mezery notové osnovy</numerusform><numerusform>%n mezer notové osnovy</numerusform><numerusform>%n mezery notové osnovy</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="92"/>
         <source>Export beams</source>
-        <translation type="unfinished"/>
+        <translation>Vyvést trámce</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/MnxSettingsPage.qml" line="118"/>
         <source>Export rest positions</source>
-        <translation type="unfinished"/>
+        <translation>Vyvést umístění pomlk</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/Export/PdfSettingsPage.qml" line="33"/>
@@ -35471,17 +35500,17 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/importexport/audioexport/internal/audioexportconfiguration.cpp" line="142"/>
         <source>16-bit integer</source>
-        <translation type="unfinished"/>
+        <translation>16bitový (integer)</translation>
     </message>
     <message>
         <location filename="../../src/importexport/audioexport/internal/audioexportconfiguration.cpp" line="144"/>
         <source>24-bit integer</source>
-        <translation type="unfinished"/>
+        <translation>24bitový (integer)</translation>
     </message>
     <message>
         <location filename="../../src/importexport/audioexport/internal/audioexportconfiguration.cpp" line="146"/>
         <source>32-bit float</source>
-        <translation type="unfinished"/>
+        <translation>32bitový (float)</translation>
     </message>
     <message>
         <location filename="../../src/project/internal/exportprojectscenario.cpp" line="70"/>
@@ -35546,207 +35575,232 @@ se nezdařilo: %2</translation>
         <translation>Vyvádí se…</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="52"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="55"/>
         <source>Compressed</source>
         <translation>Komprimováno</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="53"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="56"/>
         <source>Compressed MusicXML files</source>
         <translation>Nekomprimované soubory MusicXML</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="56"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="59"/>
         <source>Uncompressed</source>
         <translation>Nekomprimováno</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="57"/>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="61"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="60"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="64"/>
         <source>Uncompressed MusicXML files</source>
         <translation>Nekomprimované soubory MusicXML</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="60"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="63"/>
         <source>Uncompressed (outdated)</source>
         <translation>Nekomprimovaný soubor (zastaralé)</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="67"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="70"/>
         <source>PDF file</source>
         <translation>Soubor PDF</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="68"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="71"/>
         <source>PDF files</source>
         <translation>Soubory PDF</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="71"/>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="72"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="74"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="75"/>
         <source>PNG images</source>
         <translation>Obrázky PNG</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="75"/>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="76"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="78"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="79"/>
         <source>SVG images</source>
         <translation>Obrázky SVG</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="79"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="82"/>
         <source>MP3 audio</source>
         <translation>Zvukový formát MP3</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="80"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="83"/>
         <source>MP3 audio files</source>
         <translation>Zvukové soubory MP3</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="83"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="86"/>
         <source>WAV audio</source>
         <translation>Zvukový formát WAV</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="84"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="87"/>
         <source>WAV audio files</source>
         <translation>Zvukové soubory WAV</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="87"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="90"/>
         <source>OGG audio</source>
         <translation>Zvukový formát OGG</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="88"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="91"/>
         <source>OGG audio files</source>
         <translation>Zvukové soubory OGG</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="91"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="94"/>
         <source>FLAC audio</source>
         <translation>Zvukový formát FLAC</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="92"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="95"/>
         <source>FLAC audio files</source>
         <translation>Zvukové soubory FLAC</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="95"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="98"/>
         <source>AAC audio</source>
         <translation>Zvuk AAC</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="96"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="99"/>
         <source>AAC audio files</source>
         <translation>Zvukové soubory AAC</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="100"/>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="101"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="103"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="104"/>
         <source>MP4 video</source>
         <translation>Video MP4</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="105"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="108"/>
         <source>MIDI file</source>
         <translation>Soubor MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="106"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="109"/>
         <source>MIDI files</source>
         <translation>Soubory MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="109"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="112"/>
         <source>MusicXML</source>
         <translation>MusicXML</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="114"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="117"/>
         <source>Braille (basic bar-over-bar)</source>
         <extracomment>Meaning like &quot;measure-over-measure&quot;, but called &quot;bar-over-bar&quot; even in US English. Not to be confused with &quot;bar-by-bar&quot; format. See https://handbook.musescore.org/file-management/file-export#braille</extracomment>
         <translation>Braillovo písmo (základní – takty pod sebou)</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="115"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="118"/>
         <source>Braille files</source>
         <translation>Soubory Braillova písma</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="117"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="120"/>
         <source>MEI</source>
         <translation>MEI</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="118"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="121"/>
         <source>MEI files</source>
         <translation>Soubory MEI</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="121"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="124"/>
         <source>MNX (experimental)</source>
         <translation>MNX (experimentální)</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="122"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="125"/>
         <source>MNX files (experimental)</source>
         <translation>Soubory MNX (experimentální)</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="125"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="128"/>
         <source>LRC file</source>
         <translation>Soubor LRC</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="126"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="129"/>
         <source>LRC files</source>
         <translation>Soubory LRC</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="341"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="363"/>
         <source>Each page to a separate file</source>
         <translation>Každou stránku do samostatného souboru</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="342"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="364"/>
         <source>Each part to a separate file</source>
         <translation>Každý part do samostatného souboru</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="343"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="365"/>
         <source>All parts combined in one file</source>
         <translation>Sloučit všechny party do jednoho souboru</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="759"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="816"/>
         <source>All layout</source>
         <extracomment>Specifies to which extent layout customizations should be exported to MusicXML.</extracomment>
         <translation>Celé rozvržení notového zápisu</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="761"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="818"/>
         <source>System and page breaks</source>
         <extracomment>Specifies to which extent layout customizations should be exported to MusicXML.</extracomment>
         <translation>Zalomení systémů a stran</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="763"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="820"/>
         <source>Manually added system and page breaks only</source>
         <extracomment>Specifies to which extent layout customizations should be exported to MusicXML.</extracomment>
         <translation>Pouze ručně přidaná zalomení systémů a stran</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="765"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/exportdialogmodel.cpp" line="822"/>
         <source>No system or page breaks</source>
         <extracomment>Specifies to which extent layout customizations should be exported to MusicXML.</extracomment>
         <translation>Bez zalomení systémů a stran</translation>
     </message>
     <message>
-        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="41"/>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="51"/>
+        <source>To export to this file format, an FFmpeg installation is required. You can also configure this in Preferences &gt; Video.</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="59"/>
+        <source>Download FFmpeg</source>
+        <translation>Stáhnout FFmpeg</translation>
+    </message>
+    <message>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="77"/>
+        <source>Choose FFmpeg library folder</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="80"/>
+        <source>Locate existing installation</source>
+        <translation>Vyhledat umístění stávající instalace</translation>
+    </message>
+    <message>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="116"/>
         <source>Video resolution:</source>
+        <translation>Rozlišení videa:</translation>
+    </message>
+    <message>
+        <location filename="../../src/project/qml/MuseScore/Project/internal/Export/Mp4SettingsPage.qml" line="140"/>
+        <source>Each selected part will be exported as a separate video file.</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -35898,7 +35952,7 @@ se nezdařilo: %2</translation>
     <message numerus="yes">
         <location filename="../../src/project/qml/MuseScore/Project/internal/NewScore/MeasuresSettings.qml" line="60"/>
         <source>%Ln measure(s),</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>%Ln takt,</numerusform><numerusform>%Ln takty,</numerusform><numerusform>%Ln taktů,</numerusform><numerusform>%Ln taktu,</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/internal/NewScore/MeasuresSettings.qml" line="103"/>
@@ -36195,8 +36249,8 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/AskSaveLocationTypeDialog.qml" line="78"/>
-        <source>To the Cloud (free)</source>
-        <translation>Do serverového úložiště (zdarma)</translation>
+        <source>To the cloud (free)</source>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/AskSaveLocationTypeDialog.qml" line="79"/>
@@ -36242,7 +36296,7 @@ se nezdařilo: %2</translation>
         <location filename="../../src/project/qml/MuseScore/Project/AudioGenerationSettings.qml" line="141"/>
         <source>Every %1 saves</source>
         <extracomment>`%1` will be replaced with a number input field. Text before it will appear before that number field, text after will appear after the field.</extracomment>
-        <translation type="unfinished"/>
+        <translation>Každé (každých) %1 uložení</translation>
     </message>
     <message>
         <location filename="../../src/project/qml/MuseScore/Project/AudioGenerationSettings.qml" line="174"/>
@@ -36604,24 +36658,24 @@ se nezdařilo: %2</translation>
 <context>
     <name>shortcuts</name>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/EditMidiMappingDialog.qml" line="32"/>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/MidiMappingTopPanel.qml" line="51"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/EditMidiMappingDialog.qml" line="32"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/internal/MidiMappingTopPanel.qml" line="51"/>
         <source>MIDI remote control</source>
         <translation>Dálkové ovládání MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/EditMidiMappingDialog.qml" line="94"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/EditMidiMappingDialog.qml" line="94"/>
         <source>Press a key or adjust a control on your MIDI device to assign it to this action.</source>
         <translation>Stiskněte klávesu nebo nastavte ovládací prvek na zařízení MIDI pro přiřazení k této akci.</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/EditMidiMappingDialog.qml" line="103"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/EditMidiMappingDialog.qml" line="103"/>
         <source>MIDI mapping:</source>
         <translation>Mapování MIDI:</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/EditMidiMappingDialog.qml" line="118"/>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/editmidimappingmodel.cpp" line="59"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/EditMidiMappingDialog.qml" line="118"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/editmidimappingmodel.cpp" line="59"/>
         <source>Waiting…</source>
         <extracomment>The app is waiting for the user to trigger a valid MIDI remote event</extracomment>
         <translation>Čeká se...</translation>
@@ -36642,17 +36696,17 @@ se nezdařilo: %2</translation>
         <translation>Pište pro nastavení klávesové zkratky</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/MidiMappingBottomPanel.qml" line="43"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/internal/MidiMappingBottomPanel.qml" line="43"/>
         <source>MIDI mapping bottom panel</source>
         <translation>Spodní panel mapování MIDI</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/MidiMappingBottomPanel.qml" line="55"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/internal/MidiMappingBottomPanel.qml" line="55"/>
         <source>Assign MIDI mapping…</source>
         <translation>Přiřadit mapování MIDI...</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/MidiMappingTopPanel.qml" line="40"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/internal/MidiMappingTopPanel.qml" line="40"/>
         <source>MIDI mapping top panel</source>
         <translation>Vrchní panel mapování MIDI</translation>
     </message>
@@ -36677,8 +36731,8 @@ se nezdařilo: %2</translation>
         <translation>Obnovit výchozí nastavení</translation>
     </message>
     <message>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/MidiDeviceMappingPage.qml" line="93"/>
         <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/internal/ShortcutsList.qml" line="32"/>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/MidiDeviceMappingPage.qml" line="93"/>
         <source>action</source>
         <translation>akce</translation>
     </message>
@@ -36703,7 +36757,7 @@ se nezdařilo: %2</translation>
         <translation>Hledat klávesovou zkratku</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/MidiDeviceMappingPage.qml" line="95"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/MidiDeviceMappingPage.qml" line="95"/>
         <source>status</source>
         <translation>stav</translation>
     </message>
@@ -36729,13 +36783,13 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/editshortcutmodel.cpp" line="223"/>
-        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="140"/>
+        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="142"/>
         <source>This shortcut is already assigned to: &lt;b&gt;%1&lt;/b&gt;</source>
         <translation>Tato klávesová zkratka je již přiřazena k: &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/editshortcutmodel.cpp" line="243"/>
-        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="189"/>
+        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="191"/>
         <source>Are you sure you want to assign it to &lt;b&gt;%1&lt;/b&gt; instead?</source>
         <translation>Opravdu ji chcete namísto toho přiřadit k &lt;b&gt;%1&lt;/b&gt; ?</translation>
     </message>
@@ -36745,7 +36799,7 @@ se nezdařilo: %2</translation>
         <translation>Znovu přiřadit klávesovou zkratku</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/qml/Muse/Shortcuts/mididevicemappingmodel.cpp" line="102"/>
+        <location filename="../../src/framework/midiremote/qml/Muse/MidiRemote/mididevicemappingmodel.cpp" line="101"/>
         <source>Inactive</source>
         <translation>Neaktivní</translation>
     </message>
@@ -36765,19 +36819,19 @@ se nezdařilo: %2</translation>
         <translation>Vyvést klávesové zkratky</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/shortcutstypes.h" line="106"/>
+        <location filename="../../src/framework/midiremote/midiremotetypes.h" line="58"/>
         <source>Note %1</source>
         <extracomment>A MIDI remote event, namely a note event</extracomment>
         <translation>Nota %1</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/shortcutstypes.h" line="110"/>
+        <location filename="../../src/framework/midiremote/midiremotetypes.h" line="62"/>
         <source>CC %1</source>
         <extracomment>A MIDI remote event, namely a MIDI controller event</extracomment>
         <translation>CC %1</translation>
     </message>
     <message>
-        <location filename="../../src/framework/shortcuts/shortcutstypes.h" line="114"/>
+        <location filename="../../src/framework/midiremote/midiremotetypes.h" line="66"/>
         <location filename="../../src/palette/widgets/customizekitdialog.cpp" line="506"/>
         <location filename="../../src/palette/widgets/customizekitdialog.cpp" line="700"/>
         <source>None</source>
@@ -36785,12 +36839,12 @@ se nezdařilo: %2</translation>
         <translation>Žádný</translation>
     </message>
     <message>
-        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="101"/>
+        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="103"/>
         <source>Reassign shortcut for &lt;b&gt;%1&lt;/b&gt;</source>
         <translation>Znovu přiřadit klávesovou zkratku pro &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="184"/>
+        <location filename="../../src/notationscene/qml/MuseScore/NotationScene/editpercussionshortcutmodel.cpp" line="186"/>
         <source>When this instrument is selected, &lt;b&gt;%1&lt;/b&gt; will no longer run &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Když je vybrán tento nástroj, &lt;b&gt;%1&lt;/b&gt; se již nespustí &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
@@ -36874,7 +36928,7 @@ se nezdařilo: %2</translation>
 <context>
     <name>ui</name>
     <message>
-        <location filename="../../src/framework/uicomponents/qml/Muse/UiComponents/FilePicker.qml" line="54"/>
+        <location filename="../../src/framework/uicomponents/qml/Muse/UiComponents/FilePicker.qml" line="55"/>
         <source>Current path:</source>
         <translation>Současná cesta:</translation>
     </message>
@@ -37077,7 +37131,7 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/framework/uicomponents/qml/Muse/UiComponents/buttonboxmodel.h" line="136"/>
         <source>No button</source>
-        <translation type="unfinished"/>
+        <translation>Žádné tlačítko</translation>
     </message>
     <message>
         <location filename="../../src/framework/uicomponents/qml/Muse/UiComponents/buttonboxmodel.h" line="137"/>
@@ -37231,7 +37285,7 @@ se nezdařilo: %2</translation>
         <translation>Nový notový zápis</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/api/v1/score.cpp" line="333"/>
+        <location filename="../../src/engraving/api/v1/score.cpp" line="598"/>
         <source>Plugin edit</source>
         <translation>Úprava přídavného modulu</translation>
     </message>
@@ -37277,7 +37331,7 @@ se nezdařilo: %2</translation>
         <translation>Přidat pomlku</translation>
     </message>
     <message>
-        <location filename="../../src/engraving/editing/textedit.cpp" line="914"/>
+        <location filename="../../src/engraving/editing/textedit.cpp" line="925"/>
         <source>Paste text</source>
         <translation>Vložit text</translation>
     </message>
@@ -37350,7 +37404,7 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/bends/bendsettingsmodel.cpp" line="455"/>
         <source>Edit bend curve</source>
-        <translation>Upravit křivku bend</translation>
+        <translation>Upravit křivku bendu</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/frames/fretframe/fretframechordlistmodel.cpp" line="106"/>
@@ -37390,12 +37444,12 @@ se nezdařilo: %2</translation>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/notes/noteheads/noteheadsettingsmodel.cpp" line="54"/>
         <source>Add notehead parentheses</source>
-        <translation type="unfinished"/>
+        <translation>Přidat závorky k notové hlavičce</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/notes/noteheads/noteheadsettingsmodel.cpp" line="57"/>
         <source>Remove notehead parentheses</source>
-        <translation type="unfinished"/>
+        <translation>Odstranit závorky u notové hlavičky</translation>
     </message>
     <message>
         <location filename="../../src/inspector/qml/MuseScore/Inspector/notation/notes/stems/stemsettingsmodel.cpp" line="115"/>
@@ -37452,74 +37506,74 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="71"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="233"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="232"/>
         <source>Add/remove instruments</source>
         <translation>Přidat/Odstranit nástroje</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="106"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="954"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="867"/>
         <source>Remove instruments</source>
         <translation>Odstranit nástroje</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="121"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="1076"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="987"/>
         <source>Remove staves</source>
         <translation>Odstranit osnovy</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="140"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="601"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="621"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="592"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="612"/>
         <source>Add staff</source>
         <translation>Přidat osnovu</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="167"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="645"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="636"/>
         <source>Add linked staff</source>
         <translation>Přidat propojenou notovou osnovu</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="191"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="706"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="697"/>
         <source>Replace instrument</source>
         <translation>Nahradit nástroj</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="226"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="732"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="722"/>
         <source>Edit drumset</source>
         <translation>Úprava bicí soupravy</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="264"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="773"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="762"/>
         <source>Add system markings</source>
         <translation>Přidat značky systému</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="277"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="808"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="776"/>
         <source>Remove system markings</source>
         <translation>Odstranit značky systému</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="286"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="846"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="795"/>
         <source>Move system markings</source>
         <translation>Přesunout značky systému</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="303"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="891"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="804"/>
         <source>Add system object layer below the bottom staff</source>
         <translation>Přidat vrstvu objektu systému pod spodní notovou osnovu</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/masternotationparts.cpp" line="316"/>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="900"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="813"/>
         <source>Remove system object layer below the bottom staff</source>
         <translation>Odstranit vrstvu objektu systému pod spodní notovou osnovu</translation>
     </message>
@@ -37655,7 +37709,7 @@ se nezdařilo: %2</translation>
     <message numerus="yes">
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="5168"/>
         <source>Add %Ln measure(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>Přidat %Ln takt</numerusform><numerusform>Přidat %Ln takty</numerusform><numerusform>Přidat %Ln taktů</numerusform><numerusform>Přidat %Ln taktu</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="5255"/>
@@ -37718,7 +37772,7 @@ se nezdařilo: %2</translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="5699"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8266"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8256"/>
         <source>Toggle articulation</source>
         <translation>Přidat/Odebrat artikulaci</translation>
     </message>
@@ -37888,7 +37942,7 @@ se nezdařilo: %2</translation>
     <message numerus="yes">
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="6423"/>
         <source>Delete %Ln measure(s)</source>
-        <translation type="unfinished"><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform><numerusform></numerusform></translation>
+        <translation><numerusform>Odstranit %Ln takt</numerusform><numerusform>Odstranit %Ln takty</numerusform><numerusform>Odstranit %Ln taktů</numerusform><numerusform>Odstranit %Ln taktu</numerusform></translation>
     </message>
     <message>
         <location filename="../../src/notation/internal/notationinteraction.cpp" line="6434"/>
@@ -37976,108 +38030,113 @@ se nezdařilo: %2</translation>
         <translation>Přejít na texty písní</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="6888"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="6947"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="6890"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="6950"/>
         <source>Navigate to next syllable</source>
         <translation>Přejít k další slabice</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7126"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="6912"/>
+        <source>Add partial lyrics dash</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7116"/>
         <source>Navigate to verse</source>
         <translation>Přejít ke sloce</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7183"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7273"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7173"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7263"/>
         <source>Navigate to next chord symbol</source>
         <translation>Přejít k další akordové značce</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7316"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7306"/>
         <source>Navigate to chord symbol</source>
         <translation>Přejít k akordové značce</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7373"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7419"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7363"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7409"/>
         <source>Navigate to next figured bass</source>
         <translation>Přejít k další značce číslovaného basu</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7467"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7457"/>
         <source>Navigate to figured bass</source>
         <translation>Přejít ke značce číslovaného basu</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7765"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7794"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7855"/>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7915"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7755"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7784"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7845"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7905"/>
         <source>Enter lyrics extension line</source>
         <translation>Vložit výdržovou linku pro zpěvní text</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7940"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7930"/>
         <source>Add lyrics verse</source>
         <translation>Přidat sloku zpěvního textu</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7980"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="7970"/>
         <source>Enter guitar bend</source>
         <translation>Vložit kytarový bend</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8049"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8039"/>
         <source>Add fretboard diagram</source>
         <translation>Přidat hmatový diagram</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8190"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8180"/>
         <source>Format text</source>
         <translation>Formátovat text</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8210"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8200"/>
         <source>Toggle subscript</source>
         <translation>Zapnout/Vypnout dolní index</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8212"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8202"/>
         <source>Toggle superscript</source>
         <translation>Zapnout/Vypnout horní index</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8214"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8204"/>
         <source>Toggle subscript/superscript</source>
         <translation>Přepnout dolní/horní index</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8271"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8261"/>
         <source>Toggle ornament</source>
         <translation>Zobrazit/Skrýt ornament</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8276"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8266"/>
         <source>Toggle automatic placement</source>
         <translation>Zapnout/Vypnout automatické umístění</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8287"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8277"/>
         <source>Add clef</source>
         <translation>Přidat klíč</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8292"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8282"/>
         <source>Add accidental</source>
         <translation>Přidat posuvku</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8297"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8287"/>
         <source>Transpose semitone</source>
         <translation>Transponovat o půltón</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8304"/>
+        <location filename="../../src/notation/internal/notationinteraction.cpp" line="8294"/>
         <source>Transpose diatonically</source>
         <translation>Transponovat diatonicky</translation>
     </message>
@@ -38124,104 +38183,104 @@ se nezdařilo: %2</translation>
         <translation>Zkrácení délky zapisované noty na polovinu</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="252"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="251"/>
         <source>Set score order</source>
         <translation>Nastavit pořadí partitury</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="274"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="273"/>
         <location filename="../../src/notationscene/widgets/timeline.cpp" line="3033"/>
         <source>Show instrument</source>
         <translation>Zobrazit nástroj</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="275"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="274"/>
         <location filename="../../src/notationscene/widgets/timeline.cpp" line="3034"/>
         <source>Hide instrument</source>
         <translation>Skrýt nástroj</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="306"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="305"/>
         <source>Set sharps/flats no preference</source>
         <translation>Neupřednostňovat křížky/bé</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="307"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="306"/>
         <source>Set prefer flats</source>
         <translation>Nastavit upřednostnění křížků</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="308"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="307"/>
         <source>Set prefer sharps</source>
         <translation>Nastavit upřednostnění bé</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="309"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="308"/>
         <source>Set sharps/flats automatic</source>
         <translation>Nastavit křížky/bé automaticky</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="311"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="310"/>
         <source>Set sharps/flats preference</source>
         <translation>Nastavení upřednostnění křížků/bé</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="435"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="431"/>
         <source>Set instrument name</source>
         <translation>Nastavit název nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="462"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="458"/>
         <source>Set abbreviated instrument name</source>
         <translation>Nastavit zkrácený název nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="489"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="477"/>
         <source>Show voice %1</source>
         <translation>Zobrazit hlas %1</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="490"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="478"/>
         <source>Hide voice %1</source>
         <translation>Skrýt hlas %1</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="525"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="517"/>
         <source>Show staff</source>
         <translation>Zobrazit osnovu</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="526"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="518"/>
         <source>Hide staff</source>
         <translation>Skrýt osnovu</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="557"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="548"/>
         <source>Set staff type</source>
         <translation>Nastavit typ osnovy</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="579"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="570"/>
         <source>Edit staff properties</source>
         <translation>Upravit vlastnosti osnovy</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="666"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="657"/>
         <source>Add instrument</source>
         <translation>Přidat nástroj</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="686"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="677"/>
         <source>Reset instrument formatting</source>
         <translation>Obnovit formátování nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="1127"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="1009"/>
         <source>Move instruments</source>
         <translation>Přesunout nástroje</translation>
     </message>
     <message>
-        <location filename="../../src/notation/internal/notationparts.cpp" line="1156"/>
+        <location filename="../../src/notation/internal/notationparts.cpp" line="1037"/>
         <source>Move staves</source>
         <translation>Přesunout osnovy</translation>
     </message>

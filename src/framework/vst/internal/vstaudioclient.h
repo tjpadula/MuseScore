@@ -26,17 +26,25 @@
 #include "../ivstplugininstance.h"
 #include "../vsttypes.h"
 
+#include "modularity/ioc.h"
+#include "audio/engine/itransporteventsdispatcher.h"
+#include "midiremote/immcdecoderfactory.h"
+
 namespace muse::vst {
 class VstAudioClient
 {
+    muse::GlobalInject<muse::audio::engine::ITransportEventsDispatcher> transportEventsDispatcher;
+    muse::GlobalInject<muse::midiremote::IMMCDecoderFactory> mmcDecoderFactory;
+
 public:
-    VstAudioClient() = default;
+    VstAudioClient();
     ~VstAudioClient();
 
     void init(audioplugins::AudioPluginType type, IVstPluginInstancePtr instance);
     void loadSupportedParams();
 
     void setIsActive(const bool isActive);
+    void setIsPlaying(const bool isPlaying);
     void setOutputSpec(const audio::OutputSpec& spec);
     void setProcessMode(VstProcessMode mode);
     void setVolumeGain(const muse::audio::gain_t newVolumeGain);
@@ -46,7 +54,7 @@ public:
 
     void flushSound();
 
-    muse::audio::samples_t process(float* output, muse::audio::samples_t samplesPerChannel, muse::audio::msecs_t playbackPosition = 0);
+    audio::samples_t process(float* output, audio::samples_t samplesPerChannel, audio::samples_t playbackPositionSamples = 0);
 
     ParamsMapping paramsMapping(const std::set<Steinberg::Vst::CtrlNumber>& controllers) const;
 
@@ -60,6 +68,8 @@ private:
 
     void fillOutputBufferInstrument(muse::audio::samples_t sampleCount, float* output);
     void fillOutputBufferFx(muse::audio::samples_t sampleCount, float* output);
+
+    void processOutputEvents();
 
     void ensureActivity();
     void disableActivity();
@@ -77,8 +87,9 @@ private:
     std::vector<int> m_activeOutputBusses;
     std::vector<int> m_activeInputBusses;
 
-    VstEventList m_eventList;
-    VstParameterChanges m_paramChanges;
+    VstEventList m_inputEvents;
+    VstParameterChanges m_inputParamChanges;
+    VstEventList m_outputEvents;
     VstProcessData m_processData;
     VstProcessContext m_processContext;
     VstProcessMode m_processMode = VstProcessMode::kRealtime;
@@ -89,8 +100,11 @@ private:
     std::unordered_map<PluginParamId, PluginParamInfo> m_pluginParamInfoMap;
 
     bool m_needUnprepareProcessData = false;
+    bool m_needUpdateState = false;
 
     audioplugins::AudioPluginType m_type = audioplugins::AudioPluginType::Undefined;
     audio::OutputSpec m_outputSpec;
+
+    midiremote::IMMCDecoderPtr m_mmcDecoder;
 };
 }

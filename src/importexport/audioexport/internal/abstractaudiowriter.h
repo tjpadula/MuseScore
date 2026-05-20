@@ -39,6 +39,7 @@ class AbstractAudioWriter : public project::INotationWriter, public muse::Contex
 public:
     muse::GlobalInject<IAudioExportConfiguration> configuration;
     muse::GlobalInject<muse::IApplication> application;
+    muse::GlobalInject<muse::audio::IStartAudioController> startAudioController;
 
 public:
     AbstractAudioWriter(const muse::modularity::ContextPtr& iocCtx)

@@ -36,6 +36,9 @@ class FxResolver;
 
 namespace muse::audio::engine {
 class AudioEngineConfiguration;
+class AudioEngine;
+class EnginePlayback;
+class TransportEventsDispatcher;
 class EngineGlobalSetup : public modularity::IModuleSetup
 {
 public:
@@ -52,21 +55,8 @@ private:
     std::shared_ptr<synth::SynthResolver> m_synthResolver;
     std::shared_ptr<fx::FxResolver> m_fxResolver;
     std::shared_ptr<synth::SoundFontRepository> m_soundFontRepository;
-};
-
-class AudioEngine;
-class EnginePlayback;
-class EngineContextSetup : public modularity::IContextSetup
-{
-public:
-    EngineContextSetup(const muse::modularity::ContextPtr& ctx)
-        : modularity::IContextSetup(ctx) {}
-
-    void registerExports() override;
-    void onDeinit() override;
-
-private:
     std::shared_ptr<AudioEngine> m_audioEngine;
     std::shared_ptr<EnginePlayback> m_playback;
+    std::shared_ptr<TransportEventsDispatcher> m_transportEventsDispatcher;
 };
 }

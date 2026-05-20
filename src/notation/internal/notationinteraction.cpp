@@ -93,9 +93,11 @@
 #include "engraving/editing/editnote.h"
 #include "engraving/editing/editpart.h"
 #include "engraving/editing/editsystemlocks.h"
+#include "engraving/editing/exchangevoices.h"
+#include "engraving/editing/implodeexplode.h"
 #include "engraving/editing/splitjoinmeasure.h"
-#include "engraving/editing/transpose.h"
 #include "engraving/editing/textedit.h"
+#include "engraving/editing/transpose.h"
 #include "engraving/rw/rwregister.h"
 #include "engraving/rw/xmlreader.h"
 
@@ -6142,7 +6144,7 @@ void NotationInteraction::swapVoices(voice_idx_t voiceIndex1, voice_idx_t voiceI
     }
 
     startEdit(TranslatableString("undoableAction", "Swap voices"));
-    score()->cmdExchangeVoice(voiceIndex1, voiceIndex2);
+    ExchangeVoices::exchangeVoicesInSelection(score(), voiceIndex1, voiceIndex2);
     apply();
 }
 
@@ -6457,7 +6459,7 @@ void NotationInteraction::explodeSelectedStaff()
     }
 
     startEdit(TranslatableString("undoableAction", "Explode"));
-    if (score()->cmdExplode()) {
+    if (ImplodeExplode::explode(score())) {
         apply();
     } else {
         rollback();
@@ -6473,7 +6475,7 @@ void NotationInteraction::implodeSelectedStaff()
     }
 
     startEdit(TranslatableString("undoableAction", "Implode"));
-    if (score()->cmdImplode()) {
+    if (ImplodeExplode::implode(score())) {
         apply();
     } else {
         rollback();
@@ -6990,6 +6992,8 @@ void NotationInteraction::navigateToNextSyllable()
         return;
     }
 
+    PartialLyricsLine* prevPartialLyricsLine = findPrevPartialLyricsLineDash(lyrics);
+
     endEditText();
 
     // look for the lyrics we are moving from; may be the current lyrics or a previous one
@@ -7032,6 +7036,7 @@ void NotationInteraction::navigateToNextSyllable()
 
         if (hasPrecedingRepeat) {
             score()->endCmd();
+            score()->startCmd(TranslatableString("undoableAction", "Add partial lyrics dash"));
             // No from lyrics - create incoming partial dash
             PartialLyricsLine* dash = Factory::createPartialLyricsLine(score()->dummy());
             dash->setIsEndMelisma(false);
@@ -7117,20 +7122,6 @@ void NotationInteraction::navigateToNextSyllable()
         }
     }
 
-    PartialLyricsLine* prevPartialLyricsLine = nullptr;
-
-    for (auto sp : score()->spannerMap().findOverlapping(initialCR->tick().ticks(), initialCR->tick().ticks())) {
-        if (!sp.value->isPartialLyricsLine() || sp.value->track() != track) {
-            continue;
-        }
-        PartialLyricsLine* partialLine = toPartialLyricsLine(sp.value);
-        if (partialLine->isEndMelisma() || partialLine->verse() != lyrics->verse() || partialLine->placement() != lyrics->placement()) {
-            continue;
-        }
-        prevPartialLyricsLine = partialLine;
-        break;
-    }
-
     bool newLyrics = (toLyrics == 0);
     if (!toLyrics || hasPrecedingRepeat) {
         // Don't advance cursor if we are after a repeat, there is no partial dash present and we are inputting a dash
@@ -7188,6 +7179,7 @@ void NotationInteraction::navigateToNextSyllable()
     } else if (prevPartialLyricsLine) {
         const Fraction tickDiff = cr->tick() - prevPartialLyricsLine->tick2();
         prevPartialLyricsLine->undoMoveEnd(tickDiff);
+        score()->undoAddElement(prevPartialLyricsLine);
         prevPartialLyricsLine->triggerLayout();
     }
 

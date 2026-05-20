@@ -41,8 +41,7 @@ class VstSynthesiser : public muse::audio::synth::AbstractSynthesizer
     GlobalInject<IVstInstancesRegister> instancesRegister;
 
 public:
-    explicit VstSynthesiser(const muse::audio::TrackId trackId, const muse::audio::AudioInputParams& params,
-                            const modularity::ContextPtr& iocCtx);
+    explicit VstSynthesiser(const muse::audio::TrackId trackId, const muse::audio::AudioInputParams& params);
     ~VstSynthesiser() override;
 
     void init(const audio::OutputSpec& spec);
@@ -88,6 +87,8 @@ private:
 
     bool m_inited = false;
     bool m_useDynamicEvents = false;
+
+    audio::samples_t m_currentPositionSamples = 0;
 };
 
 using VstSynthPtr = std::shared_ptr<VstSynthesiser>;

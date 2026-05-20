@@ -48,6 +48,8 @@ target_sources(muse_ui PRIVATE
     api/keyboardapi.cpp
     api/keyboardapi.h
 
+    internal/guiapplication.cpp
+    internal/guiapplication.h
     internal/uistate.cpp
     internal/uistate.h
     internal/uiengine.cpp
@@ -95,7 +97,6 @@ target_sources(muse_ui PRIVATE
     view/widgetstatestore.cpp
     view/widgetstatestore.h
     view/widgetutils.h
-    view/widgetdialog.cpp
     view/widgetdialog.h
 )
 
@@ -115,6 +116,31 @@ if (OS_IS_MAC)
             SKIP_UNITY_BUILD_INCLUSION ON
             SKIP_PRECOMPILE_HEADERS ON
     )
+
+    if (IOS)
+
+        # Additional source files
+        target_sources(muse_ui PRIVATE
+            internal/platform/ios/StIntervalTimer.cpp
+            internal/platform/ios/StIntervalTimer.h
+            internal/platform/ios/IOSNotificationListener.mm
+            internal/platform/ios/IOSNotificationListener.h
+            )
+
+    # Don't mix C++ and Objective-C++ in unity builds
+    set_source_files_properties(
+        ${CMAKE_CURRENT_LIST_DIR}/internal/platform/ios/IOSNotificationListener.mm
+        PROPERTIES
+            SKIP_UNITY_BUILD_INCLUSION ON
+            SKIP_PRECOMPILE_HEADERS ON
+    )
+
+        list(APPEND IOS_PATHS
+            ${PROJECT_SOURCE_DIR}/src/framework/ui/internal/platform/ios
+            )
+
+    endif(IOS)
+
 elseif(OS_IS_WIN)
     target_sources(muse_ui PRIVATE
         internal/platform/windows/windowsplatformtheme.cpp

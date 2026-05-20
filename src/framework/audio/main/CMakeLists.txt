@@ -30,6 +30,7 @@ target_sources(muse_audio_main PRIVATE
     iplayback.h
     iplayer.h
     isoundfontcontroller.h
+    isoundfontinstallscenario.h
 
     internal/audioconfiguration.cpp
     internal/audioconfiguration.h
@@ -37,6 +38,8 @@ target_sources(muse_audio_main PRIVATE
     internal/audiouiactions.h
     internal/audioactionscontroller.cpp
     internal/audioactionscontroller.h
+    internal/transporteventscontroller.cpp
+    internal/transporteventscontroller.h
     internal/startaudiocontroller.cpp
     internal/startaudiocontroller.h
     internal/playback.cpp
@@ -56,6 +59,8 @@ else()
     target_sources(muse_audio_main PRIVATE
         platform/general/generalsoundfontcontroller.cpp
         platform/general/generalsoundfontcontroller.h
+        platform/general/generalsoundfontinstallscenario.cpp
+        platform/general/generalsoundfontinstallscenario.h
     )
 endif()
 

@@ -27,21 +27,21 @@
 #include "mpe/events.h"
 
 #include "global/modularity/ioc.h"
-#include "../../iaudioengine.h"
+#include "../iaudioengine.h"
 #include "../../iaudioengineconfiguration.h"
 
 #include "audio/common/audiotypes.h"
 #include "../../isynthesizer.h"
 
 namespace muse::audio::synth {
-class AbstractSynthesizer : public ISynthesizer, public Contextable, public async::Asyncable
+class AbstractSynthesizer : public ISynthesizer, public async::Asyncable
 {
 public:
     muse::GlobalInject<engine::IAudioEngineConfiguration> config;
-    muse::ContextInject<engine::IAudioEngine> audioEngine = { this };
+    muse::GlobalInject<engine::IAudioEngine> audioEngine;
 
 public:
-    AbstractSynthesizer(const audio::AudioInputParams& params, const modularity::ContextPtr& iocCtx);
+    AbstractSynthesizer(const audio::AudioInputParams& params);
     virtual ~AbstractSynthesizer() = default;
 
     const audio::AudioInputParams& params() const override;

@@ -29,7 +29,6 @@
 
 namespace muse::audio::engine  {
 class EngineGlobalSetup;
-class EngineContextSetup;
 }
 
 namespace muse::audio::rpc  {
@@ -39,6 +38,7 @@ class IRpcChannel;
 namespace muse::audio {
 class AudioConfiguration;
 class AudioActionsController;
+class TransportEventsController;
 class StartAudioController;
 class Playback;
 class ISoundFontController;
@@ -61,6 +61,11 @@ public:
 private:
     std::shared_ptr<AudioConfiguration> m_configuration;
     std::shared_ptr<engine::EngineGlobalSetup> m_engineGlobalSetup;
+    std::shared_ptr<AudioDriverController> m_audioDriverController;
+    std::shared_ptr<ISoundFontController> m_soundFontController;
+    std::shared_ptr<StartAudioController> m_startAudioController;
+    std::shared_ptr<rpc::IRpcChannel> m_rpcChannel;
+    Ticker m_rpcTicker;
 };
 
 class AudioContext : public modularity::IContextSetup
@@ -75,14 +80,10 @@ public:
     void onDeinit() override;
 
 private:
-    std::shared_ptr<engine::EngineContextSetup> m_engineContextSetup;
     std::shared_ptr<AudioActionsController> m_actionsController;
+    std::shared_ptr<TransportEventsController> m_transportEventsController;
     std::shared_ptr<Playback> m_mainPlayback;
-    std::shared_ptr<AudioDriverController> m_audioDriverController;
-    std::shared_ptr<ISoundFontController> m_soundFontController;
-    std::shared_ptr<StartAudioController> m_startAudioController;
-    std::shared_ptr<rpc::IRpcChannel> m_rpcChannel;
-    Ticker m_rpcTicker;
+
     bool m_audioInited = false;
 };
 }
