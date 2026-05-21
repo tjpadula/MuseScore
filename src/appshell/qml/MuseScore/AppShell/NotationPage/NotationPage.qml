@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2024 MuseScore Limited
+ * Copyright (C) 2024 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -510,32 +510,6 @@ DockPage {
             Timeline {
                 navigationSection: timelinePanel.navigationSection
                 contentNavigationPanelOrderStart: timelinePanel.contentNavigationPanelOrderStart
-            }
-        },
-
-        DockPanel {
-            id: drumsetPanel
-
-            objectName: root.pageModel.drumsetPanelName()
-            title: qsTrc("appshell", "Drumset tools")
-
-            height: 64
-            minimumHeight: 64
-            maximumHeight: 64
-
-            //! NOTE: hidden by default
-            visible: false
-
-            floatable: false
-            closable: false
-
-            location: Location.Bottom
-
-            navigationSection: root.navigationPanelSec(drumsetPanel.location)
-
-            DrumsetPanel {
-                navigationSection: drumsetPanel.navigationSection
-                contentNavigationPanelOrderStart: drumsetPanel.contentNavigationPanelOrderStart
             }
         },
 

@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -34,6 +34,7 @@
 #include "containers.h"
 
 #include "editing/addremoveelement.h"
+#include "editing/editstavesharing.h"
 #include "editing/mscoreview.h"
 #include "editing/splitjoinmeasure.h"
 #include "editing/transpose.h"
@@ -2387,6 +2388,8 @@ void Score::cmdRemovePart(Part* part)
         return;
     }
 
+    EditStaveSharing::handleRemovePart(part);
+
     staff_idx_t sidx = staffIdx(part);
     size_t n = part->nstaves();
 
@@ -2395,6 +2398,10 @@ void Score::cmdRemovePart(Part* part)
     }
 
     undoRemovePart(part, muse::indexOf(m_parts, part));
+
+    if (!hasSharedParts()) {
+        undoChangeStyleVal(Sid::enableStaveSharing, false);
+    }
 }
 
 //---------------------------------------------------------
@@ -3121,6 +3128,7 @@ void Score::padToggle(Pad p, bool toggleForSelectionOnly)
 
                     for (const NoteVal& nval : m_is.notes()) {
                         if (chord && chord->findNote(nval.pitch)) {
+                            m_is.moveToNextInputPos();
                             continue;
                         }
 
@@ -5779,6 +5787,29 @@ size_t Score::visiblePartCount() const
         }
     }
     return count;
+}
+
+std::vector<SharedPart*> Score::sharedParts() const
+{
+    std::vector<SharedPart*> sharedParts;
+    for (Part* part : m_parts) {
+        if (part->isSharedPart()) {
+            sharedParts.push_back(toSharedPart(part));
+        }
+    }
+
+    return sharedParts;
+}
+
+bool Score::hasSharedParts() const
+{
+    for (Part* part : m_parts) {
+        if (part->isSharedPart()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 size_t Score::visibleStavesCount() const

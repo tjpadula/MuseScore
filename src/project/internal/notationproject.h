@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore Limited
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -118,11 +118,11 @@ private:
     muse::Ret doImport(const muse::io::path_t& path, const OpenParams& params);
 
     muse::Ret saveScore(const muse::io::path_t& path, const std::string& fileSuffix, bool generateBackup = true,
-                        bool createThumbnail = true, bool isAutosave = false);
+                        bool createThumbnail = true, bool isAutosave = false, const engraving::write::WriteContext* ctx = nullptr);
     muse::Ret saveSelectionOnScore(const muse::io::path_t& path = muse::io::path_t());
     muse::Ret exportProject(const muse::io::path_t& path, const std::string& suffix);
     muse::Ret doSave(const muse::io::path_t& path, engraving::MscIoMode ioMode, bool generateBackup = true, bool createThumbnail = true,
-                     bool isAutosave = false);
+                     bool isAutosave = false, const engraving::write::WriteContext* ctx = nullptr);
     muse::Ret makeBackup(muse::io::path_t filePath);
     muse::Ret writeProject(const muse::io::path_t& path, const engraving::write::WriteContext* ctx = nullptr);
     muse::Ret writeProject(engraving::MscWriter& msczWriter, bool createThumbnail = true,

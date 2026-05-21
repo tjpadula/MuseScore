@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -412,7 +412,7 @@ Ret ProjectActionsController::doFinishOpenProject()
     extensionsProvider()->performPointAsync(EXEC_ONPOST_PROJECT_OPENED);
 
     //! Show MuseSounds / MuseSampler update if need
-    auto showUpdateNotification = [=]() {
+    auto showUpdateNotification = [this]() {
         QTimer::singleShot(1000, [this]() {
             if (museSoundsCheckUpdateScenario()->hasUpdate()) {
                 museSoundsCheckUpdateScenario()->showUpdate();
@@ -426,8 +426,8 @@ Ret ProjectActionsController::doFinishOpenProject()
         showUpdateNotification();
     } else {
         async::Channel<Uri> opened = interactive()->opened();
-        opened.onReceive(this, [=](const Uri&) {
-            async::Async::call(this, [=]() {
+        opened.onReceive(this, [this, opened, showUpdateNotification](const Uri&) {
+            async::Async::call(this, [this, opened, showUpdateNotification]() {
                 async::Channel<Uri> mut = opened;
                 mut.disconnect(this);
 
@@ -1242,7 +1242,7 @@ void ProjectActionsController::showUploadProgressDialog()
 void ProjectActionsController::closeUploadProgressDialog()
 {
     if (interactive()->isOpened(UPLOAD_PROGRESS_URI).val) {
-        interactive()->close(UPLOAD_PROGRESS_URI);
+        interactive()->closeSync(UriQuery(UPLOAD_PROGRESS_URI));
     }
 }
 

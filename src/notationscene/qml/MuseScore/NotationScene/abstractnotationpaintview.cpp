@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -1435,6 +1435,10 @@ void AbstractNotationPaintView::setNotation(INotationPtr notation)
 {
     m_notation = notation;
 
+    if (publishMode() && isNoteEnterMode()) {
+        notationNoteInput()->endNoteInput(true);
+    }
+
     if (m_loadCalled) {
         m_continuousPanel->setNotation(m_notation);
         m_playbackCursor->setNotation(m_notation);
@@ -1651,6 +1655,9 @@ void AbstractNotationPaintView::setPublishMode(bool arg)
     }
 
     m_publishMode = arg;
+    if (m_publishMode) {
+        setReadonly(true);
+    }
     emit publishModeChanged();
 }
 

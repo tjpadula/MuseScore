@@ -42,15 +42,8 @@ AppWindow {
     }
 
     Component.onCompleted: {
-        platformMenuBar.setSource("../PlatformMenuBar.qml");
-        if ((platformMenuBar.item) && (platformMenuBar.item.available)) {
-            platformMenuBar.item.load();
-            appMenuBar.active = 0;
-        } else {
-            appMenuBar.setSource("../AppMenuBar.qml", { "appWindow": root });
-            platformMenuBar.active = 0;
-        }
-        window.init()
+        appMenuBar.setSource("../AppMenuBar.qml", { "appWindow": root });
+        platformMenuBar.active = 0;
     }
 
     WindowContent {

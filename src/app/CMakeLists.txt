@@ -4,7 +4,7 @@
 # MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2021-2024 MuseScore Limited
+# Copyright (C) 2021-2024 MuseScore Limited and others
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -140,6 +140,7 @@ add_to_link_if_exists(muse::extensions)
 add_to_link_if_exists(muse::interactive)
 add_to_link_if_exists(muse::languages)
 add_to_link_if_exists(muse::learn)
+add_to_link_if_exists(muse::media)
 add_to_link_if_exists(muse::midi)
 add_to_link_if_exists(muse::midiremote)
 add_to_link_if_exists(muse::mpe)
@@ -324,7 +325,7 @@ if (OS_IS_MAC)
         set_target_properties(MuseScoreStudio PROPERTIES
             MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/iOS/Info.plist.in
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER}
-            QT_IOS_LAUNCH_SCREEN ${PROJECT_SOURCE_DIR}/src/framework/ui/internal/platform/ios/Launch_Screen.storyboard
+            QT_IOS_LAUNCH_SCREEN ${PROJECT_SOURCE_DIR}/muse/framework/ui/internal/platform/ios/Launch_Screen.storyboard
  #           XCODE_ATTRIBUTE_UILAUNCHSTORYBOARDNAME "Launch_Screen.storyboard"
             )
                     

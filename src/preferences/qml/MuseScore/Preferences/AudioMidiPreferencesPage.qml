@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -41,15 +41,15 @@ PreferencesPage {
         width: parent.width
         spacing: root.sectionsSpacing
 
-        AudioApiSection {
-            currentAudioApiIndex: audioMidiModel.currentAudioApiIndex
-            audioApiList: audioMidiModel.audioApiList()
+        AudioDriverSection {
+            currentAudioDriverIndex: audioMidiModel.currentAudioDriverIndex
+            audioDrivers: audioMidiModel.audioDrivers()
 
             navigation.section: root.navigationSection
             navigation.order: root.navigationOrderStart + 1
 
-            onCurrentAudioApiIndexChangeRequested: function(newIndex) {
-                audioMidiModel.currentAudioApiIndex = newIndex
+            onCurrentAudioDriverIndexChangeRequested: function(newIndex) {
+                audioMidiModel.currentAudioDriverIndex = newIndex
             }
         }
 

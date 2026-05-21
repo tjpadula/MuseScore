@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2025 MuseScore Limited
+ * Copyright (C) 2025 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -27,12 +27,14 @@
 
 #include "modularity/ioc.h"
 #include "async/asyncable.h"
+
 #include "audio/main/iaudioconfiguration.h"
 #include "audio/iaudiodrivercontroller.h"
 #include "midi/imidiconfiguration.h"
 #include "midi/imidioutport.h"
 #include "midi/imidiinport.h"
 #include "playback/iplaybackconfiguration.h"
+#include "interactive/iinteractive.h"
 
 namespace mu::preferences {
 class AudioMidiPreferencesModel : public QObject, public muse::Contextable, public muse::async::Asyncable
@@ -40,7 +42,8 @@ class AudioMidiPreferencesModel : public QObject, public muse::Contextable, publ
     Q_OBJECT
     QML_ELEMENT;
 
-    Q_PROPERTY(int currentAudioApiIndex READ currentAudioApiIndex WRITE setCurrentAudioApiIndex NOTIFY currentAudioApiIndexChanged)
+    Q_PROPERTY(
+        int currentAudioDriverIndex READ currentAudioDriverIndex WRITE setCurrentAudioDriverIndex NOTIFY currentAudioDriverIndexChanged)
 
     Q_PROPERTY(QVariantList midiInputDevices READ midiInputDevices NOTIFY midiInputDevicesChanged)
     Q_PROPERTY(QString midiInputDeviceId READ midiInputDeviceId NOTIFY midiInputDeviceIdChanged)
@@ -66,13 +69,14 @@ class AudioMidiPreferencesModel : public QObject, public muse::Contextable, publ
     muse::GlobalInject<muse::midi::IMidiOutPort> midiOutPort;
     muse::GlobalInject<muse::midi::IMidiInPort> midiInPort;
     muse::GlobalInject<muse::audio::IAudioDriverController> audioDriverController;
+    muse::ContextInject<muse::IInteractive> interactive = { this };
 
 public:
     explicit AudioMidiPreferencesModel(QObject* parent = nullptr);
 
     Q_INVOKABLE void init();
 
-    int currentAudioApiIndex() const;
+    int currentAudioDriverIndex() const;
 
     QString midiInputDeviceId() const;
     Q_INVOKABLE void inputDeviceSelected(const QString& deviceId);
@@ -80,7 +84,7 @@ public:
     QString midiOutputDeviceId() const;
     Q_INVOKABLE void outputDeviceSelected(const QString& deviceId);
 
-    Q_INVOKABLE QStringList audioApiList() const;
+    Q_INVOKABLE QStringList audioDrivers() const;
 
     Q_INVOKABLE void restartAudioAndMidiDevices();
 
@@ -99,7 +103,7 @@ public:
     int onlineSoundsShowProgressBarMode() const;
 
 public slots:
-    void setCurrentAudioApiIndex(int index);
+    void setCurrentAudioDriverIndex(int index);
 
     void setUseMIDI20Output(bool use);
 
@@ -110,7 +114,7 @@ public slots:
     void setOnlineSoundsShowProgressBarMode(int mode);
 
 signals:
-    void currentAudioApiIndexChanged(int index);
+    void currentAudioDriverIndexChanged(int index);
     void midiInputDeviceIdChanged();
     void midiOutputDeviceIdChanged();
 

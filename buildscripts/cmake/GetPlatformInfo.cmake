@@ -4,7 +4,7 @@
 # MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2023 MuseScore Limited
+# Copyright (C) 2023 MuseScore Limited and others
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -40,7 +40,7 @@ endif()
 # based on Qt processor detection code
 # https://github.com/qt/qtbase/blob/dev/src/corelib/global/qprocessordetection.h
 
-# we only have binary blobs compatible with x86_64, aarch64, and armv7l
+# we only have binaries compatible with x86_64 and aarch64
 
 # IOS_CONFIG_BUG
 # This "program" used to always print the last error 'unknown' no matter what,
@@ -50,8 +50,6 @@ set(archdetect_c_code "
     #if defined(__arm__) || defined(__TARGET_ARCH_ARM) || defined(_M_ARM) || defined(_M_ARM64) || defined(__aarch64__) || defined(__ARM64__)
         #if defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
             #error cmake_ARCH aarch64
-        #elif defined(__ARM_ARCH_7A__)
-            #error cmake_ARCH armv7l
         #endif
     #elif defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(_M_X64)
         #error cmake_ARCH x86_64
@@ -110,9 +108,7 @@ endif()
 
 message(STATUS "Detected CPU Architecture: ${ARCH}")
 
-if(${ARCH} MATCHES "armv7l")
-    set(ARCH_IS_ARMV7L 1)
-elseif(${ARCH} MATCHES "aarch64")
+if(${ARCH} MATCHES "aarch64")
     set(ARCH_IS_AARCH64 1)
 elseif(${ARCH} MATCHES "x86_64")
     set(ARCH_IS_X86_64 1)

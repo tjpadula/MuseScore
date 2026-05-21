@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -94,6 +94,8 @@ public:
     virtual EngravingObject* propertyDelegate(Pid) const override;
     void undoChangeProperty(Pid id, const PropertyValue&, PropertyFlags ps) override;
     using EngravingObject::undoChangeProperty;
+
+    PointF defaultPos() const override;
 
     Sid getPropertyStyle(Pid id) const override;
     void resetProperty(Pid id) override;
@@ -205,7 +207,6 @@ public:
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue& v) override;
     PropertyValue propertyDefault(Pid propertyId) const override;
-    virtual void undoChangeProperty(Pid id, const PropertyValue&, PropertyFlags ps) override;
 
     virtual void computeStartElement();
     void computeEndElement();

@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -800,6 +800,9 @@ void Chord::remove(EngravingItem* e)
     case ElementType::CHORD:
     {
         auto i = std::find(m_graceNotes.begin(), m_graceNotes.end(), toChord(e));
+        IF_ASSERT_FAILED(i != m_graceNotes.end()) {
+            break;
+        }
         Chord* grace = *i;
         grace->setGraceIndex(i - m_graceNotes.begin());
         m_graceNotes.erase(i);
@@ -1988,7 +1991,6 @@ void Chord::setSlash(bool flag, bool stemless)
         // for non-drum staves, add an additional offset
         // for drum staves, no offset, but use normal head
         if (!staffType->isDrumStaff()) {
-            // undoChangeProperty(Pid::OFFSET, PointF(0.0, y));
             mutldata()->moveY(y);
         } else {
             head = NoteHeadGroup::HEAD_NORMAL;

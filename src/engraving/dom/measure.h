@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,6 +40,10 @@ class MeasureRead;
 }
 
 namespace mu::engraving::read460 {
+class MeasureRead;
+}
+
+namespace mu::engraving::read500 {
 class MeasureRead;
 }
 
@@ -395,6 +399,15 @@ public:
 
     bool canAddStringTunings(staff_idx_t staffIdx) const;
     bool canAddStaffTypeChange(staff_idx_t staffIdx) const;
+
+    struct LayoutData : public MeasureBase::LayoutData {
+    private:
+        bool m_needLayout = true;
+    public:
+        bool needLayout() const { return m_needLayout; }
+        void setNeedLayout(bool v) { m_needLayout = v; }
+    };
+    DECLARE_LAYOUTDATA_METHODS(Measure)
 
 private:
 

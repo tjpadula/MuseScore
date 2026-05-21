@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -5125,7 +5125,7 @@ void MusicXmlParserDirection::bracket(const String& type, const int number,
             } else if (lineEnd == "both") {
                 textLine->setBeginHookType(HookType::HOOK_90T);
             } else if (lineEnd == "arrow") {
-                m_logger->logError(String(u"line-end \"arrow\" not supported"));
+                textLine->setBeginHookType(HookType::ARROW_FILLED);
             } else if (lineEnd == "none") {
                 textLine->setBeginHookType(HookType::NONE);
             }
@@ -5186,7 +5186,7 @@ void MusicXmlParserDirection::bracket(const String& type, const int number,
             } else if (lineEnd == "both") {
                 textLine->setEndHookType(HookType::HOOK_90T);
             } else if (lineEnd == "arrow") {
-                m_logger->logError(String(u"line-end \"arrow\" not supported"));
+                textLine->setEndHookType(HookType::ARROW_FILLED);
             } else if (lineEnd == "none") {
                 textLine->setEndHookType(HookType::NONE);
             }
@@ -9209,6 +9209,8 @@ static void addChordLine(const Notation& notation, Note* note,
                          MusicXmlLogger* logger, const XmlStreamReader* const xmlreader)
 {
     const String chordLineType = notation.subType();
+    const String lineType = notation.attribute(u"line-type");
+    const String lineShape = notation.attribute(u"line-shape");
     if (!chordLineType.empty()) {
         if (note) {
             ChordLine* const chordline = Factory::createChordLine(note->chord());
@@ -9220,6 +9222,14 @@ static void addChordLine(const Notation& notation, Note* note,
                 chordline->setChordLineType(ChordLineType::PLOP);
             } else if (chordLineType == u"scoop") {
                 chordline->setChordLineType(ChordLineType::SCOOP);
+            }
+            if (lineShape == u"straight") {
+                chordline->setStraight(true);
+            }
+            if (lineType == u"wavy") {
+                chordline->setWavy(true);
+            } else if (!lineType.empty() && lineType != u"solid") {
+                logger->logError(String(u"unsupported line-type: %1").arg(lineType), xmlreader);
             }
             chordline->setVisible(notation.visible());
             colorItem(chordline, Color::fromString(notation.attribute(u"color")));

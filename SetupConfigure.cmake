@@ -4,7 +4,7 @@
 # MuseScore Studio
 # Music Composition & Notation
 #
-# Copyright (C) 2024 MuseScore Limited
+# Copyright (C) 2024 MuseScore Limited and others
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -298,7 +298,6 @@ if(BUILD_CONFIGURATION STREQUAL "UTEST")
     set(MUE_BUILD_APPSHELL_MODULE OFF)
     set(MUE_ENABLE_SPLASHSCREEN OFF)
     set(MUE_BUILD_BRAILLE_QML OFF)
-    set(MUE_BUILD_CONVERTER_MODULE OFF)
     set(MUE_BUILD_INSPECTOR_MODULE OFF)
     set(MUE_BUILD_INSTRUMENTSSCENE_MODULE OFF)
     set(MUE_BUILD_PALETTE_MODULE OFF)
@@ -406,9 +405,5 @@ if (MUE_GENERAL_APP)
 endif()
 
 add_compile_definitions(KORS_PROFILER_ENABLED)
-
-if (MUE_ENABLE_LOAD_QML_FROM_SOURCE)
-    add_compile_definitions(MUE_ENABLE_LOAD_QML_FROM_SOURCE)
-endif()
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/app/app_config.h.in app_config.h )

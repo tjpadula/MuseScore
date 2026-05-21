@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -184,6 +184,7 @@ void StringData::fretChords(Chord* chord) const
     };
 
     int strings = static_cast<int>(this->strings());
+    const bool skipDeadNotes = chord->configuration()->keepDeadNotesUnchangedOnTranspose();
 
     // we need the notes sorted in order of string (from highest to lowest) and then pitch
     std::map<int, Note*> sortedNotes;
@@ -246,6 +247,9 @@ void StringData::fretChords(Chord* chord) const
         nString = nNewString = note->string();
         nFret   = nNewFret   = note->fret();
         note->setFretConflict(false);           // assume no conflicts on this note
+        if (skipDeadNotes && note->deadNote()) {
+            continue;
+        }
         // if no fretting (any invalid fretting has been erased by sortChordNotes() )
         if (nString == INVALID_STRING_INDEX /*|| nFret == INVALID_FRET_INDEX || getPitch(nString, nFret) != note->pitch()*/) {
             const CapoParams& capo = note->staff()->capo(note->tick());
@@ -288,6 +292,13 @@ void StringData::fretChords(Chord* chord) const
             }
         }
 
+        // Still two notes on one string: try a free string with fret <0 or >maxFrets.
+        if (note->configuration()->negativeFretsAllowed()
+            && note->displayFret() == Note::DisplayFretOption::NoHarmonic
+            && bUsed[nNewString] > 1) {
+            tryResolveStringConflictWithOutOfRangeFret(note, strings, bUsed, nNewString, nNewFret);
+        }
+
         // TODO : try to optimize used fret range, avoiding excessively open positions
 
         // if fretting did change, store as a fret change
@@ -302,6 +313,9 @@ void StringData::fretChords(Chord* chord) const
     // check for any remaining fret conflict
     for (auto& p : sortedNotes) {
         Note* note = p.second;
+        if (skipDeadNotes && note->deadNote()) {
+            continue;
+        }
         if (!note->negativeFretUsed() && (note->string() == -1 || bUsed[note->string()] > 1)) {
             note->setFretConflict(true);
         }
@@ -509,33 +523,154 @@ int StringData::fret(int pitch, int string, int pitchOffset) const
     return fret;
 }
 
-void StringData::sortChordNotesUseSameString(const Chord* chord, int pitchOffset) const
-{
-    int capoFret = chord->staff()->capo(chord->tick()).fretPosition;
+//---------------------------------------------------------
+//   tryResolveStringConflictWithOutOfRangeFret
+//    After in-range conflict resolution fails: assign an unused string using raw
+//    fret (may be <0 or >maxFrets). Chooses smallest distance to [0, maxFrets];
+//    ties break toward lower string index.
+//---------------------------------------------------------
 
-    bool anyReset = false;
-    for (Note* note : chord->notes()) {
-        if (note->displayFret() != Note::DisplayFretOption::NoHarmonic) {
+bool StringData::tryResolveStringConflictWithOutOfRangeFret(const Note* note, int numStrings, std::vector<int>& bUsed,
+                                                            int& nNewString, int& nNewFret) const
+{
+    int bestString = -1;
+    int bestDistance = INT32_MAX;
+    int bestRawFret = 0;
+
+    for (int s = 0; s < numStrings; s++) {
+        if (bUsed[static_cast<size_t>(s)] >= 1) {
             continue;
         }
-        if (note->string() < 0 || note->fret() < 0) {
-            anyReset = true;
-            continue;
-        }
-        int pitch = getPitch(note->string(), note->fret() + capoFret, pitchOffset);
-        int newFret = note->fret() + note->pitch() - pitch;
-        if (newFret < 0) {
-            anyReset = true;
+        const int openPitch = m_stringTable.at(m_stringTable.size() - s - 1).pitch;
+        const int rawFret = note->pitch() + pitchOffsetAt(note->staff(), note->tick(), s) - openPitch;   // not clamped to 0..m_frets
+        int distance;
+        if (rawFret < 0) {
+            distance = -rawFret;
+        } else if (rawFret > m_frets) {
+            distance = rawFret - m_frets;
         } else {
-            note->setFret(newFret);
+            continue;   // only out-of-range frets here; in-range tried above in fretChords
+        }
+
+        if (distance < bestDistance
+            || (distance == bestDistance && (bestString < 0 || s < bestString))) {
+            bestDistance = distance;
+            bestRawFret = rawFret;
+            bestString = s;
         }
     }
 
-    // If any note in the chord couldn't keep its string, reset ALL notes
-    // so fretChords/convertPitch assigns the entire chord optimally.
+    if (bestString < 0) {
+        return false;
+    }
+
+    bUsed[static_cast<size_t>(nNewString)]--;
+    bUsed[static_cast<size_t>(bestString)]++;
+    nNewFret = bestRawFret;
+    nNewString = bestString;
+    return true;
+}
+
+//---------------------------------------------------------
+//   sortChordNotesUseSameString
+//    Tries to keep each note on its currently assigned string when the
+//    chord's pitches are transposed, updating only the fret.
+//---------------------------------------------------------
+
+void StringData::sortChordNotesUseSameString(const Chord* chord) const
+{
+    const CapoParams& capo = chord->staff()->capo(chord->tick());
+    const bool skipDeadNotes = chord->configuration()->keepDeadNotesUnchangedOnTranspose();
+    const int pitchOffsetWithCapo = pitchOffsetAt(chord->staff(), chord->tick());
+    const int bassStr = static_cast<int>(strings()) - 1;
+
+    auto skipTabNote = [&](const Note* n) {
+        return n->displayFret() != Note::DisplayFretOption::NoHarmonic
+               || (skipDeadNotes && n->deadNote());
+    };
+
+    const bool sameStrNeg = chord->configuration()->preferSameStringForTranspose()
+                            && chord->configuration()->negativeFretsAllowed();
+    const int openLow = (sameStrNeg && bassStr > 0) ? m_stringTable.at(0).pitch : 0;
+    auto bassTaken = [&](const Note* except) {
+        for (Note* o : chord->notes()) {
+            if (o != except && !skipTabNote(o) && o->string() == bassStr) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    bool anyReset = false;
+    for (Note* note : chord->notes()) {
+        if (skipTabNote(note)) {
+            continue;
+        }
+        if (note->string() < 0) {
+            anyReset = true;
+            continue;
+        }
+        int pitch = getPitch(note->string(), note->fret(), chord->staff(), chord->tick());
+        int newFret = note->fret() + note->pitch() - pitch;
+        if (newFret < 0) {
+            if (note->configuration()->negativeFretsAllowed()) {
+                note->setFret(newFret);
+            } else {
+                anyReset = true;
+            }
+        } else {
+            note->setFret(newFret);
+        }
+
+        // Shallow negative on bass beats deep negative on an inner string (if bass free).
+        // Same order as a second pass over chord->notes() would have had.
+        if (sameStrNeg && bassStr > 0 && note->string() >= 0 && note->string() != bassStr && note->fret() < 0
+            && !bassTaken(note)) {
+            const int rawLow = note->pitch() + pitchOffsetAt(chord->staff(), chord->tick(), bassStr) - openLow;
+            if (rawLow < 0 && rawLow > note->fret()) {
+                note->setString(bassStr);
+                note->setFret(rawLow);
+            }
+        }
+    }
+
+    // Returns true if a valid non-negative placement exists for this note.
+    // Used in the detection and reset passes below.
+    auto hasNonNegativeAlternative = [&](const Note* note) {
+        int string = 0;
+        int fret = 0;
+        return convertPitch(note->pitch(), pitchOffsetWithCapo, &string, &fret, capo);
+    };
+
+    // When negativeFretsAllowed kept a note with a negative fret, check if a
+    // valid (non-negative) fret exists on any string. If so, resetting the
+    // chord lets fretChords find a more compact arrangement.
+    if (!anyReset) {
+        for (Note* note : chord->notes()) {
+            if (skipTabNote(note)) {
+                continue;
+            }
+            // On the lowest tab string, convertPitch may still find a thinner-string
+            // fingering (e.g. with transposing instruments) even though same-string
+            // logic already chose a negative fret; resetting would move the note off
+            // the bass string. Skip this detection for the lowest string only.
+            if (note->string() >= 0 && note->string() < bassStr && note->fret() < 0
+                && hasNonNegativeAlternative(note)) {
+                anyReset = true;
+                break;
+            }
+        }
+    }
+
+    // Reset notes so fretChords/convertPitch assigns the chord optimally.
+    // Preserve negative-fret notes that have no valid in-range alternative —
+    // their negative fret is the only option for that pitch.
     if (anyReset) {
         for (Note* note : chord->notes()) {
-            if (note->displayFret() != Note::DisplayFretOption::NoHarmonic) {
+            if (skipTabNote(note)) {
+                continue;
+            }
+            if (note->fret() < 0 && !hasNonNegativeAlternative(note)) {
                 continue;
             }
             note->setString(INVALID_STRING_INDEX);
@@ -558,11 +693,12 @@ void StringData::sortChordNotesUseSameString(const Chord* chord, int pitchOffset
 void StringData::sortChordNotes(std::map<int, Note*>& sortedNotes, const Chord* chord, int* count) const
 {
     bool useSameString = chord->configuration()->preferSameStringForTranspose();
+    const bool skipDeadNotes = chord->configuration()->keepDeadNotesUnchangedOnTranspose();
     int transp = chord->staff() ? chord->part()->instrument(chord->tick())->transpose().chromatic : 0;
     int pitchOffset = -transp + chord->staff()->pitchOffset(chord->segment()->tick());
 
     if (useSameString) {
-        sortChordNotesUseSameString(chord, pitchOffset);
+        sortChordNotesUseSameString(chord);
     }
 
     for (Note* note : chord->notes()) {
@@ -576,14 +712,20 @@ void StringData::sortChordNotes(std::map<int, Note*>& sortedNotes, const Chord* 
         int pitch = getPitch(string, noteFret, pitchOffsetAt(chord->staff(), chord->tick(), string));
         // if note not fretted yet or current fretting no longer valid,
         // use most convenient string as key
-        if (!note->negativeFretUsed() && (string <= INVALID_STRING_INDEX || noteFret <= INVALID_FRET_INDEX
-                                          || (pitchIsValid(pitch) && pitch != note->pitch()))) {
+        if (!(skipDeadNotes && note->deadNote()) && !note->negativeFretUsed()
+            && (string <= INVALID_STRING_INDEX || noteFret <= INVALID_FRET_INDEX
+                || (pitchIsValid(pitch) && pitch != note->pitch()))) {
             note->setString(INVALID_STRING_INDEX);
             note->setFret(INVALID_FRET_INDEX);
         }
 
         int key = string * 100000;
-        key += -(note->pitch() + pitchOffset) * 100 + *count;       // disambiguate notes of equal pitch
+        if (string == INVALID_STRING_INDEX && note->configuration()->negativeFretsAllowed()) {
+            // No string assigned yet: lower note first, then higher (transpose in one go or in steps must match).
+            key += (note->pitch() + pitchOffset) * 100 + *count;
+        } else {
+            key += -(note->pitch() + pitchOffset) * 100 + *count;   // disambiguate notes of equal pitch
+        }
         sortedNotes.insert({ key, note });
         (*count)++;
     }

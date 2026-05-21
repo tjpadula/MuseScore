@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -78,7 +78,7 @@ static IExcerptNotationPtr createAndInitExcerptNotation(MasterNotation* master, 
 MasterNotation::MasterNotation(project::INotationProject* project, const muse::modularity::ContextPtr& iocCtx)
     : Notation(this, iocCtx), m_project(project)
 {
-    m_parts = std::make_shared<MasterNotationParts>(this, interaction(), undoStack());
+    m_parts = std::make_shared<MasterNotationParts>(this, interaction(), undoStack(), style());
 
 #ifdef MUE_BUILD_ENGRAVING_PLAYBACK
     m_notationPlayback = std::make_shared<NotationPlayback>(this, m_notationChanged, iocCtx);

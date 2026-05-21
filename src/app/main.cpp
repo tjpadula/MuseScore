@@ -5,7 +5,7 @@
  * MuseScore Studio
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore Limited
+ * Copyright (C) 2021 MuseScore Limited and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -40,6 +40,12 @@
 #include "log.h"
 
 #include <stdio.h>
+// C++20 check
+// #include <concepts>
+// #include <type_traits>
+// consteval int square(int n) { return n * n; }
+// static_assert(square(5) == 25);
+// ========================
 
 #ifndef MUSE_MODULE_DIAGNOSTICS_CRASHPAD_CLIENT
 static void crashCallback(int signum)
