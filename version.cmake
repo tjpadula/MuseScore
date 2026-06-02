@@ -21,9 +21,6 @@
 set(MUSE_APP_NAME_HUMAN_READABLE "MuseScore Studio")
 set(MUSE_APP_NAME_MACHINE_READABLE "MuseScoreStudio")
 
-set(MUSE_APP_NAME_HUMAN_READABLE_COMPAT "MuseScore")
-set(MUSE_APP_NAME_MACHINE_READABLE_COMPAT "MuseScore")
-
 # IOS_CONFIG_BUG
 # We use our company identifier so we can set things up to run on a real device
 # for now. Obviously this will someday be org.musescore someday.
@@ -45,12 +42,7 @@ if (NOT CMAKE_BUILD_NUMBER)
     set(CMAKE_BUILD_NUMBER "0")
 endif()
 
-# TODO: Remove
-set(MUSE_APP_TITLE "${MUSE_APP_NAME_HUMAN_READABLE}")
-set(MUSE_APP_NAME "${MUSE_APP_NAME_MACHINE_READABLE_COMPAT}")
-set(MUSE_APP_TITLE_VERSION "${MUSE_APP_TITLE} ${MUSE_APP_VERSION_MAJOR}")
-set(MUSE_APP_NAME_VERSION "${MUSE_APP_NAME} ${MUSE_APP_VERSION_MAJOR}")
-# ---
+set(MUSE_APP_GUI_IDENTIFIER org.musescore.${MUSE_APP_NAME_MACHINE_READABLE}${MUSE_APP_VERSION_MAJOR})
 
 set(MUSE_APP_UNSTABLE ON)
 set(MUSE_APP_IS_PRERELEASE ON)

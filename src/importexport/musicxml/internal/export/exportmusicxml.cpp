@@ -542,8 +542,8 @@ String ExportMusicXml::positioningAttributes(EngravingItem const* const el, bool
             //       seg, p.x(), p.y(), seg->offset().x(), seg->offset().y(), seg->spatium());
         } else {
             const LineSegment* seg = span->backSegment();
-            const PointF userOff = seg->offset();       // This is the offset accessible from the inspector
-            const PointF userOff2 = seg->userOff2();       // Offset of the actual dragged anchor, which doesn't affect the inspector offset
+            const PointF userOff = seg->offset();       // This is the offset accessible from the Properties panel
+            const PointF userOff2 = seg->userOff2();       // Offset of the actual dragged anchor, which doesn't affect the Properties panel offset
             //auto pos = seg->pos();
             //auto pos2 = seg->pos2();
 
@@ -2476,32 +2476,8 @@ void ExportMusicXml::keysig(const KeySig* ks, ClefType ct, staff_idx_t staff, bo
     } else {
         // traditional key signature
         m_xml.tag("fifths", static_cast<int>(ks->key()));
-        switch (ks->mode()) {
-        case KeyMode::NONE:       m_xml.tag("mode", "none");
-            break;
-        case KeyMode::MAJOR:      m_xml.tag("mode", "major");
-            break;
-        case KeyMode::MINOR:      m_xml.tag("mode", "minor");
-            break;
-        case KeyMode::DORIAN:     m_xml.tag("mode", "dorian");
-            break;
-        case KeyMode::PHRYGIAN:   m_xml.tag("mode", "phrygian");
-            break;
-        case KeyMode::LYDIAN:     m_xml.tag("mode", "lydian");
-            break;
-        case KeyMode::MIXOLYDIAN: m_xml.tag("mode", "mixolydian");
-            break;
-        case KeyMode::AEOLIAN:    m_xml.tag("mode", "aeolian");
-            break;
-        case KeyMode::IONIAN:     m_xml.tag("mode", "ionian");
-            break;
-        case KeyMode::LOCRIAN:    m_xml.tag("mode", "locrian");
-            break;
-        case KeyMode::UNKNOWN:              // fall thru
-        default:
-            if (ks->isCustom()) {
-                m_xml.tag("mode", "none");
-            }
+        if (ks->mode() != KeyMode::UNKNOWN) {
+            m_xml.tag("mode", String::fromAscii(TConv::toXml(ks->mode()).ascii()));
         }
     }
     m_xml.endElement();
@@ -3999,12 +3975,14 @@ static void writeNotehead(XmlWriter& xml, const Note* const note)
         static const std::regex nameparts("^note([A-Z][a-z]*)(Sharp|Flat)?");
         AsciiStringView noteheadName = SymNames::nameForSymId(note->noteHead());
         StringList matches = String::fromAscii(noteheadName.ascii()).search(nameparts, { 1, 2 }, SplitBehavior::SkipEmptyParts);
-        xml.startElement("notehead-text");
-        xml.tag("display-text", matches.at(0));
-        if (matches.size() > 1) {
-            xml.tag("accidental-text", matches.at(1).toLower());
+        if (!matches.empty()) {
+            xml.startElement("notehead-text");
+            xml.tag("display-text", matches.at(0));
+            if (matches.size() > 1) {
+                xml.tag("accidental-text", matches.at(1).toLower());
+            }
+            xml.endElement();
         }
-        xml.endElement();
     }
 }
 

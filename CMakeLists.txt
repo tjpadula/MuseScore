@@ -18,10 +18,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+if (APPLE)
+    # Required to prevent issues with incremental builds of MuseScoreQuickLookPreviewExtension
+    # (https://github.com/musescore/MuseScore/pull/33554)
+    cmake_minimum_required(VERSION 3.31)
+else()
+    # Required to use C++20 modules in the future.
+    cmake_minimum_required(VERSION 3.28)
+endif()
 
-cmake_minimum_required(VERSION 3.28) 
-
-project(MuseScore LANGUAGES C CXX)
+project(MuseScoreStudio LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,12 +55,25 @@ set(CMAKE_MODULE_PATH
 message(STATUS "C:   ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "CXX: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")    
 
+if (IOS)
+# This is a hack because CheckCompilerVersion doesn't exist. Perhaps it's a Qt 6.10 thing?
+
 # set(CLANG_MIN_VERSION 20)
 set(CLANG_MIN_VERSION 17)
 set(GCC_MIN_VERSION 14)
 set(MSVC_MIN_VERSION 19.40)
 
 include(GetCompilerInfo)
+
+else (IOS)
+
+	include(CheckCompilerVersion)
+	check_compile_version("Clang" 20 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
+	check_compile_version("AppleClang" 21 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
+	check_compile_version("GCC" 14 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
+	check_compile_version("MSVC" 19.40 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
+	
+endif (IOS)
 
 ###########################################
 # See what has been set up so far
@@ -165,8 +184,8 @@ option(MUE_BUILD_IMPEXP_LYRICS_MODULE "Build importexport lyrics module" ON)
 
 option(MUE_BUILD_IMPORTEXPORT_TESTS "Build importexport tests" ON)
 
-option(MUE_BUILD_INSPECTOR_MODULE "Build inspector module" ON)
-option(MUE_BUILD_INSPECTOR_QML "Build inspector QML" ${MUE_BUILD_INSPECTOR_MODULE})
+option(MUE_BUILD_PROPERTIESPANEL_MODULE "Build propertiespanel module" ON)
+option(MUE_BUILD_PROPERTIESPANEL_QML "Build propertiespanel QML" ${MUE_BUILD_PROPERTIESPANEL_MODULE})
 
 option(MUE_BUILD_INSTRUMENTSSCENE_MODULE "Build instruments scene module" ON) 
 option(MUE_BUILD_INSTRUMENTSSCENE_QML "Build instruments scene QML" ${MUE_BUILD_INSTRUMENTSSCENE_MODULE})
