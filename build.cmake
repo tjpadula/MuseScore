@@ -166,7 +166,7 @@ fn__set_default(INSTALL_PATH "install") # relative to BUILD_PATH
 
 # MSCORE_EXECUTABLE (path relative to INSTALL_PATH)
 if(WIN32)
-    fn__set_default(MSCORE_EXECUTABLE "bin/MuseScore5.exe")
+    fn__set_default(MSCORE_EXECUTABLE "bin/MuseScoreStudio5.exe")
 elseif(APPLE)
 
     # IOS_CONFIG_BUG
