@@ -235,7 +235,7 @@ else()
 	option(MUE_RUN_LRELEASE "Generate .qm files" ON)
 endif()
 option(MUE_INSTALL_SOUNDFONT "Install sound font" ON)
-option(MUE_RUN_WINDEPLOYQT "Run windeployqt" ON)
+option(MUE_RUN_WINDEPLOYQT "Run windeployqt" OFF)
 
 # === Tests ===
 set(MUE_VTEST_MSCORE_REF_BIN "${CMAKE_CURRENT_LIST_DIR}/../MU_ORIGIN/MuseScore/build.debug/install/${INSTALL_SUBDIR}/mscore" CACHE PATH "Path to mscore ref bin")
