@@ -56,6 +56,10 @@ message(STATUS "C:   ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "CXX: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 
 if (IOS)
+
+#variable_watch(CMAKE_OSX_SYSROOT)
+#variable_watch(QT_OSX_ARCHITECTURES)
+
 # This is a hack because CheckCompilerVersion doesn't exist. Perhaps it's a Qt 6.10 thing?
 
 # set(CLANG_MIN_VERSION 20)

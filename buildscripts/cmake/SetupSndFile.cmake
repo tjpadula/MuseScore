@@ -76,6 +76,10 @@ elseif (IOS)
     # For 4.6.0a and later, Qt 6.9 is required, but it doesn't build for arm simulator.
     # However, the Rosetta simulator still works for iOS 16, so we can build to target
     # that on x86_64. Yes, this is silly.
+    #
+    # Update on 23 June 2026: We may have succeeded in building Qt 6.9.3 for ARM64 simulator,
+    # so we're trying that with today's TOT. But, by the time we get to here, CMAKE_OSX_SYSROOT
+    # has already been set to iphoneos.
     
     message(STATUS "SetupSndFile.cmake: CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
     message(STATUS "SetupSndFile.cmake: ARCH_IS_X86_64: ${ARCH_IS_X86_64}")
@@ -85,7 +89,7 @@ elseif (IOS)
     message(STATUS "SetupSndFile.cmake: CMAKE_OSX_ARCHITECTURES: ${CMAKE_OSX_ARCHITECTURES}")
     message(STATUS "SetupSndFile.cmake: CMAKE_XCODE_SCHEME_ENVIRONMENT: ${CMAKE_XCODE_SCHEME_ENVIRONMENT}")
     
-    # The abovw gives this on arm64 building for Rosetta simulator:
+    # The above gives this on arm64 building for Rosetta simulator:
 # -- SetupSndFile.cmake: CMAKE_OSX_SYSROOT: iphoneos
 # -- SetupSndFile.cmake: ARCH_IS_X86_64:
 # -- SetupSndFile.cmake: ARCH_IS_AARCH64: 1
@@ -114,7 +118,7 @@ elseif (IOS)
         # Here is where things get sticky. Arm64 simulator doesn't build for the required
         # version of Qt, so we build it for x86_64 and run the Rosetta simulator.
         # Something somewhere is changing LIBSNDFILE_TARGET_OS to 'iphoneos' before the build
-        # gets here. We're done with searching for a needle in s haystack and we're using
+        # gets here. We're done with searching for a needle in a haystack and we're using
         # a workaround.
         #if(LIBSNDFILE_TARGET_OS MATCHES "iphonesimulator")
         if(PLATFORM MATCHES "x86_64")       # We must be building for Rosetta simulator.
