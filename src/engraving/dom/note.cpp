@@ -34,6 +34,9 @@
 #include "../editing/addremoveelement.h"
 #include "../editing/editchord.h"
 #include "../editing/editnote.h"
+#include "../editing/editparentheses.h"
+#include "../editing/noteinput.h"
+#include "../editing/transaction/transaction.h"
 #include "../editing/transpose.h"
 #include "types/typesconv.h"
 #include "iengravingfont.h"
@@ -56,7 +59,6 @@
 #include "laissezvib.h"
 #include "linkedobjects.h"
 #include "measure.h"
-#include "navigate.h"
 #include "notedot.h"
 #include "noteline.h"
 #include "parenthesis.h"
@@ -338,11 +340,18 @@ SymId Note::noteHead(int direction, NoteHeadGroup group, NoteHeadType t, int tpc
         return noteHeads[direction][int(group)][int(t)];
     }
     // other schemes
-    if (scheme == NoteHeadScheme::HEAD_PITCHNAME || scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN) {
+    if (scheme == NoteHeadScheme::HEAD_PITCHNAME || scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN
+        || scheme == NoteHeadScheme::HEAD_PITCHNAME_NO_ACCIDENTALS
+        || scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN_NO_ACCIDENTALS) {
+        const bool no_accidentals = scheme == NoteHeadScheme::HEAD_PITCHNAME_NO_ACCIDENTALS
+                                    || scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN_NO_ACCIDENTALS;
+        const bool german = scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN
+                            || scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN_NO_ACCIDENTALS;
+
         if (tpc == Tpc::TPC_A) {
             group = NoteHeadGroup::HEAD_A;
         } else if (tpc == Tpc::TPC_B) {
-            if (scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN) {
+            if (german) {
                 group = NoteHeadGroup::HEAD_H;
             } else {
                 group = NoteHeadGroup::HEAD_B;
@@ -358,41 +367,101 @@ SymId Note::noteHead(int direction, NoteHeadGroup group, NoteHeadType t, int tpc
         } else if (tpc == Tpc::TPC_G) {
             group = NoteHeadGroup::HEAD_G;
         } else if (tpc == Tpc::TPC_A_S) {
-            group = NoteHeadGroup::HEAD_A_SHARP;
-        } else if (tpc == Tpc::TPC_B_S) {
-            if (scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN) {
-                group = NoteHeadGroup::HEAD_H_SHARP;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_A;
             } else {
-                group = NoteHeadGroup::HEAD_B_SHARP;
+                group = NoteHeadGroup::HEAD_A_SHARP;
+            }
+        } else if (tpc == Tpc::TPC_B_S) {
+            if (no_accidentals) {
+                if (german) {
+                    group = NoteHeadGroup::HEAD_H;
+                } else {
+                    group = NoteHeadGroup::HEAD_B;
+                }
+            } else {
+                if (german) {
+                    group = NoteHeadGroup::HEAD_H_SHARP;
+                } else {
+                    group = NoteHeadGroup::HEAD_B_SHARP;
+                }
             }
         } else if (tpc == Tpc::TPC_C_S) {
-            group = NoteHeadGroup::HEAD_C_SHARP;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_C;
+            } else {
+                group = NoteHeadGroup::HEAD_C_SHARP;
+            }
         } else if (tpc == Tpc::TPC_D_S) {
-            group = NoteHeadGroup::HEAD_D_SHARP;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_D;
+            } else {
+                group = NoteHeadGroup::HEAD_D_SHARP;
+            }
         } else if (tpc == Tpc::TPC_E_S) {
-            group = NoteHeadGroup::HEAD_E_SHARP;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_E;
+            } else {
+                group = NoteHeadGroup::HEAD_E_SHARP;
+            }
         } else if (tpc == Tpc::TPC_F_S) {
-            group = NoteHeadGroup::HEAD_F_SHARP;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_F;
+            } else {
+                group = NoteHeadGroup::HEAD_F_SHARP;
+            }
         } else if (tpc == Tpc::TPC_G_S) {
-            group = NoteHeadGroup::HEAD_G_SHARP;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_G;
+            } else {
+                group = NoteHeadGroup::HEAD_G_SHARP;
+            }
         } else if (tpc == Tpc::TPC_A_B) {
-            group = NoteHeadGroup::HEAD_A_FLAT;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_A;
+            } else {
+                group = NoteHeadGroup::HEAD_A_FLAT;
+            }
         } else if (tpc == Tpc::TPC_B_B) {
-            if (scheme == NoteHeadScheme::HEAD_PITCHNAME_GERMAN) {
+            if (no_accidentals) {
                 group = NoteHeadGroup::HEAD_B;
             } else {
-                group = NoteHeadGroup::HEAD_B_FLAT;
+                if (german) {
+                    group = NoteHeadGroup::HEAD_B;
+                } else {
+                    group = NoteHeadGroup::HEAD_B_FLAT;
+                }
             }
         } else if (tpc == Tpc::TPC_C_B) {
-            group = NoteHeadGroup::HEAD_C_FLAT;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_C;
+            } else {
+                group = NoteHeadGroup::HEAD_C_FLAT;
+            }
         } else if (tpc == Tpc::TPC_D_B) {
-            group = NoteHeadGroup::HEAD_D_FLAT;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_D;
+            } else {
+                group = NoteHeadGroup::HEAD_D_FLAT;
+            }
         } else if (tpc == Tpc::TPC_E_B) {
-            group = NoteHeadGroup::HEAD_E_FLAT;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_E;
+            } else {
+                group = NoteHeadGroup::HEAD_E_FLAT;
+            }
         } else if (tpc == Tpc::TPC_F_B) {
-            group = NoteHeadGroup::HEAD_F_FLAT;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_F;
+            } else {
+                group = NoteHeadGroup::HEAD_F_FLAT;
+            }
         } else if (tpc == Tpc::TPC_G_B) {
-            group = NoteHeadGroup::HEAD_G_FLAT;
+            if (no_accidentals) {
+                group = NoteHeadGroup::HEAD_G;
+            } else {
+                group = NoteHeadGroup::HEAD_G_FLAT;
+            }
         }
     } else if (scheme == NoteHeadScheme::HEAD_SHAPE_NOTE_4) {
         int degree = tpc2degree(tpc, key);
@@ -1388,6 +1457,7 @@ bool Note::isNoteName() const
             s = st->staffTypeForElement(this)->noteHeadScheme();
         }
         return s == NoteHeadScheme::HEAD_PITCHNAME || s == NoteHeadScheme::HEAD_PITCHNAME_GERMAN
+               || s == NoteHeadScheme::HEAD_PITCHNAME_NO_ACCIDENTALS || s == NoteHeadScheme::HEAD_PITCHNAME_GERMAN_NO_ACCIDENTALS
                || s == NoteHeadScheme::HEAD_SOLFEGE || s == NoteHeadScheme::HEAD_SOLFEGE_FIXED;
     }
     return false;
@@ -1738,7 +1808,7 @@ bool Note::acceptDrop(EditData& data) const
 //   drop
 //---------------------------------------------------------
 
-EngravingItem* Note::drop(EditData& data)
+EngravingItem* Note::drop(Transaction& tx, EditData& data)
 {
     EngravingItem* e = data.dropElement;
 
@@ -1862,8 +1932,7 @@ EngravingItem* Note::drop(EditData& data)
         }
 
         case ActionIconType::PARENTHESES: {
-            std::list<Note*> note = { this };
-            score()->cmdAddParenthesesToNotes(note);
+            EditParentheses::addParenthesesToNotes(tx, { this });
             break;
         }
         case ActionIconType::STANDARD_BEND:
@@ -1896,7 +1965,7 @@ EngravingItem* Note::drop(EditData& data)
         default:
             break;
         }
-        return ch->drop(data);
+        return ch->drop(tx, data);
     }
 
     case ElementType::GUITAR_BEND:
@@ -2014,7 +2083,7 @@ EngravingItem* Note::drop(EditData& data)
         const ChordRest* cr = nullptr;
         if (data.modifiers & ShiftModifier) {
             // add note to chord
-            score()->addNote(ch, nval);
+            NoteInput::addNote(tx, score(), ch, nval);
         } else {
             // replace current chord
             Segment* seg = score()->setNoteRest(ch->segment(), t, nval,
@@ -2022,7 +2091,7 @@ EngravingItem* Note::drop(EditData& data)
             cr = seg ? toChordRest(seg->element(t)) : nullptr;
         }
         if (cr) {
-            score()->nextInputPos(cr, false);
+            NoteInput::nextInputPos(tx, score(), cr, false);
         }
         delete e;
     }
@@ -2030,7 +2099,7 @@ EngravingItem* Note::drop(EditData& data)
 
     case ElementType::CHORDLINE:
         toChordLine(e)->setNote(this);
-        return ch->drop(data);
+        return ch->drop(tx, data);
 
     default:
         Spanner* spanner;
@@ -2044,7 +2113,7 @@ EngravingItem* Note::drop(EditData& data)
             score()->undoAddElement(spanner);
             return e;
         }
-        return ch->drop(data);
+        return ch->drop(tx, data);
     }
     return 0;
 }
@@ -2771,17 +2840,31 @@ void Note::verticalDrag(EditData& ed)
         }
         int nStep = absStep(ned->line + lineOffset, score()->staff(idx)->clef(_tick));
         nStep = std::max(0, nStep);
-        int octave = nStep / 7;
-        int newPitch = step2pitch(nStep) + octave * 12 + int(accOffs);
-        newPitch = std::clamp(newPitch, 0, 127);
+        int octave = nStep / STEP_DELTA_OCTAVE;
+        int newPitch = step2pitch(nStep) + octave * PITCH_DELTA_OCTAVE + int(accOffs);
 
-        int newTpc1 = step2tpc(nStep % 7, accOffs);
+        int newTpc1 = step2tpc(nStep % STEP_DELTA_OCTAVE, accOffs);
         int newTpc2 = newTpc1;
         if (concertPitch()) {
             newTpc2 = transposeTpc(newTpc1);
         } else {
             newPitch += staff()->transpose(_tick).chromatic;
             newTpc1 = transposeTpc(newTpc2);
+        }
+
+        int clampedPitch = clampPitch(newPitch);
+        if (clampedPitch != newPitch) {
+            // newTpc1/newTpc2 were derived from a step/accidental that no longer
+            // matches the clamped pitch; respell them so tpc and pitch stay in sync
+            Key key = score()->staff(idx)->key(_tick);
+            if (concertPitch()) {
+                newTpc1 = pitch2tpc(clampedPitch, key, Prefer::NEAREST);
+                newTpc2 = transposeTpc(newTpc1);
+            } else {
+                newTpc2 = pitch2tpc(clampedPitch - staff()->transpose(_tick).chromatic, key, Prefer::NEAREST);
+                newTpc1 = transposeTpc(newTpc2);
+            }
+            newPitch = clampedPitch;
         }
 
         for (Note* nn : tiedNotes()) {
@@ -4100,7 +4183,7 @@ bool Note::transposeDiatonic(int interval, bool keepAlterations, bool useDoubleA
     }
 
     // check pitch is in range
-    newPitch = clampPitch(newPitch, true);
+    newPitch = clampPitchOctaved(newPitch);
 
     // store new data
     EditNote::undoChangePitch(score(), this, newPitch, newTpc1, newTpc2);

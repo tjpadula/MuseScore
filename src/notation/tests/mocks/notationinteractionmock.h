@@ -40,10 +40,11 @@ public:
     MOCK_METHOD(muse::async::Channel<bool>, shadowNoteChanged, (), (const, override));
 
     MOCK_METHOD(void, toggleVisible, (), (override));
+    MOCK_METHOD(void, setSelectionVisible, (bool), (override));
 
-    MOCK_METHOD(EngravingItem*, hitElement, (const muse::PointF&, float), (const, override));
-    MOCK_METHOD(std::vector<EngravingItem*>, hitElements, (const muse::PointF&, float), (const, override));
-    MOCK_METHOD(Staff*, hitStaff, (const muse::PointF&), (const, override));
+    MOCK_METHOD(engraving::EngravingItem*, hitElement, (const muse::PointF&, float), (const, override));
+    MOCK_METHOD(std::vector<engraving::EngravingItem*>, hitElements, (const muse::PointF&, float), (const, override));
+    MOCK_METHOD(engraving::Staff*, hitStaff, (const muse::PointF&), (const, override));
 
     MOCK_METHOD(const HitElementContext&, hitElementContext, (), (const, override));
     MOCK_METHOD(void, setHitElementContext, (const HitElementContext&), (override));
@@ -158,6 +159,7 @@ public:
     MOCK_METHOD(void, deleteSelection, (), (override));
     MOCK_METHOD(void, flipSelection, (), (override));
     MOCK_METHOD(void, flipSelectionHorizontally, (), (override));
+    MOCK_METHOD(void, mirrorNotes, (), (override));
     MOCK_METHOD(void, addTieToSelection, (), (override));
     MOCK_METHOD(void, addLaissezVibToSelection, (), (override));
     MOCK_METHOD(void, addTiedNoteToChord, (), (override));
@@ -191,6 +193,11 @@ public:
     MOCK_METHOD(void, toggleScoreLock, (), (override));
     MOCK_METHOD(void, makeIntoSystem, (), (override));
     MOCK_METHOD(void, applySystemLock, (), (override));
+    MOCK_METHOD(void, moveSystemToPrevPage, (), (override));
+    MOCK_METHOD(void, moveSystemToNextPage, (), (override));
+    MOCK_METHOD(void, togglePageLock, (), (override));
+    MOCK_METHOD(void, makeIntoPage, (), (override));
+    MOCK_METHOD(void, applyPageLock, (), (override));
 
     MOCK_METHOD(void, addRemoveSystemLocks, (AddRemoveSystemLockType, int), (override));
     MOCK_METHOD(bool, transpose, (const TransposeOptions&), (override));
@@ -217,7 +224,7 @@ public:
     MOCK_METHOD(void, explodeSelectedStaff, (), (override));
     MOCK_METHOD(void, implodeSelectedStaff, (), (override));
 
-    MOCK_METHOD(void, realizeSelectedChordSymbols, (bool, Voicing, HarmonyDurationType), (override));
+    MOCK_METHOD(void, realizeSelectedChordSymbols, (bool, engraving::Voicing, engraving::HDuration), (override));
     MOCK_METHOD(void, extendToNextNote, (), (override));
     MOCK_METHOD(void, removeSelectedMeasures, (), (override));
     MOCK_METHOD(void, removeSelectedRange, (), (override));

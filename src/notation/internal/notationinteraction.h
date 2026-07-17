@@ -42,16 +42,20 @@
 
 #include "engraving/dom/engravingitem.h"
 #include "engraving/dom/elementgroup.h"
+#include "engraving/dom/score.h"
 #include "engraving/rendering/paintoptions.h"
 #include "engraving/types/symid.h"
 #include "previewmeasure.h"
 #include "scorecallbacks.h"
 
+class QDrag;
+
 namespace mu::engraving {
 class Lasso;
-}
+class Transaction;
 
-class QDrag;
+enum class HarmonyType : unsigned char;
+}
 
 namespace mu::notation {
 class Notation;
@@ -85,11 +89,12 @@ public:
 
     // Visibility
     void toggleVisible() override;
+    void setSelectionVisible(bool visible) override;
 
     // Hit
     EngravingItem* hitElement(const muse::PointF& pos, float width) const override;
     std::vector<EngravingItem*> hitElements(const muse::PointF& pos, float width) const override;
-    Staff* hitStaff(const muse::PointF& pos) const override;
+    engraving::Staff* hitStaff(const muse::PointF& pos) const override;
     const HitElementContext& hitElementContext() const override;
     void setHitElementContext(const HitElementContext& context) override;
 
@@ -213,6 +218,7 @@ public:
     void deleteSelection() override;
     void flipSelection() override;
     void flipSelectionHorizontally() override;
+    void mirrorNotes() override;
     void addTieToSelection() override;
     void addLaissezVibToSelection() override;
     void addTiedNoteToChord() override;
@@ -246,6 +252,11 @@ public:
     void toggleScoreLock() override;
     void makeIntoSystem() override;
     void applySystemLock() override;
+    void moveSystemToPrevPage() override;
+    void moveSystemToNextPage() override;
+    void togglePageLock() override;
+    void makeIntoPage() override;
+    void applyPageLock() override;
 
     void addRemoveSystemLocks(AddRemoveSystemLockType intervalType, int interval = 0) override;
     bool transpose(const TransposeOptions& options) override;
@@ -272,7 +283,7 @@ public:
     void explodeSelectedStaff() override;
     void implodeSelectedStaff() override;
 
-    void realizeSelectedChordSymbols(bool literal, Voicing voicing, HarmonyDurationType durationType) override;
+    void realizeSelectedChordSymbols(bool literal, engraving::Voicing voicing, engraving::HDuration durationType) override;
     void extendToNextNote() override;
     void removeSelectedMeasures() override;
     void removeSelectedRange() override;
@@ -381,8 +392,8 @@ private:
     void applyPaletteElementToRange(EngravingItem* element, mu::engraving::Score* score, const mu::engraving::Selection& sel,
                                     Qt::KeyboardModifiers modifiers = {});
 
-    bool doDropStandard();
-    bool doDropTextBaseAndSymbols(const muse::PointF& pos, bool applyUserOffset);
+    bool doDropStandard(mu::engraving::Transaction& tx);
+    bool doDropTextBaseAndSymbols(mu::engraving::Transaction& tx, const muse::PointF& pos, bool applyUserOffset);
 
     void onElementDestroyed(EngravingItem* element);
 
@@ -403,8 +414,8 @@ private:
     void toggleVerticalAlignment(mu::engraving::VerticalAlignment);
     void navigateToLyrics(bool, bool, bool);
 
-    Harmony* editedHarmony() const;
-    Segment* harmonySegment(const Harmony* harmony) const;
+    mu::engraving::Harmony* editedHarmony() const;
+    mu::engraving::Segment* harmonySegment(const mu::engraving::Harmony* harmony) const;
     mu::engraving::Harmony* findHarmonyInSegment(const mu::engraving::Segment* segment, engraving::track_idx_t track,
                                                  mu::engraving::TextStyleType textStyleType) const;
     mu::engraving::Harmony* createHarmony(mu::engraving::Segment* segment, engraving::track_idx_t track,
@@ -489,8 +500,8 @@ private:
 
     struct HitMeasureData
     {
-        Measure* measure = nullptr;
-        Staff* staff = nullptr;
+        engraving::Measure* measure = nullptr;
+        engraving::Staff* staff = nullptr;
     };
 
     HitMeasureData hitMeasure(const muse::PointF& pos) const;

@@ -247,8 +247,6 @@ set(APP_WORKSPACE_CONFIG_FILE "${CMAKE_CURRENT_LIST_DIR}/src/app/configs/workspa
 set(APP_BUILTIN_WORKSPACES_DIR "${CMAKE_CURRENT_LIST_DIR}/share/workspaces")
 
 # === Compile ===
-set(MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH "" CACHE PATH "Path to precompiled dependencies (macOS only; optional: if not specified, some libraries will be used from the system and others will be built from source)")
-
 option(MUSE_GENERATE_COMPILE_COMMANDS "Generate compile commands" OFF)
 option(MUSE_COMPILE_USE_UNITY "Use unity build" ON)
 option(MUSE_COMPILE_USE_COMPILER_CACHE "Try to use compiler cache: tries ccache, sccache, buildcache in that order. Use COMPILER_CACHE_PROGRAM to specify a specific compiler cache program." ON)
@@ -277,6 +275,7 @@ set(MUSE_MODULE_MULTIWINDOWS_SINGLEPROC_MODE ON)
 if(IOS)
 	set(QT_ADD_LINGUISTTOOLS OFF)
     set(QT_QPROCESS_SUPPORTED OFF)
+    set(MUSE_MODULE_AUDIOPLUGINS OFF)
 else()
 	set(QT_ADD_LINGUISTTOOLS ON)
 	set(QT_QPROCESS_SUPPORTED ON)
@@ -305,10 +304,6 @@ endif(MUSE_COMPILE_USE_COMPILER_CACHE)
 ###########################################
 set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_BASE_DIR ${PROJECT_BINARY_DIR}/_deps)
-
-if (MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH)
-    list(PREPEND CMAKE_PREFIX_PATH ${MUE_COMPILE_MACOS_PRECOMPILED_DEPS_PATH})
-endif()
 
 include(SetupQt6)
 

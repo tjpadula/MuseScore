@@ -77,10 +77,10 @@ Transaction& Transaction::dummy()
     return dummyTransaction;
 }
 
-void Transaction::push(UndoableCommand* cmd, EditData* editData)
+void Transaction::push(UndoableCommand* cmd)
 {
     if (m_isDummy) {
-        cmd->redo(editData);
+        cmd->redo();
         delete cmd;
         return;
     }
@@ -89,7 +89,7 @@ void Transaction::push(UndoableCommand* cmd, EditData* editData)
     // may themselves push further commands; those must end up _after_ this
     // command in the transaction, so that undo reverses them first.
     m_undoableTransaction->appendCommand(cmd);
-    cmd->redo(editData);
+    cmd->redo();
 }
 
 void Transaction::pushWithoutPerforming(UndoableCommand* cmd)
@@ -192,6 +192,7 @@ void TransactionManager::endTransaction(bool rollback, bool layoutAllParts)
     m_masterScore->cmdState().reset();
 
     if (!isCurrentTransactionEmpty && !rollback) {
+        m_masterScore->updateAutomation(changes);
         m_masterScore->changesChannel().send(changes);
     }
 }
@@ -246,7 +247,7 @@ void TransactionManager::undoRedo(bool undo, EditData* editData)
         changes = stack->last()->changesInfo(true);
         stack->undo(editData);
     } else {
-        stack->redo(editData);
+        stack->redo();
         changes = stack->last()->changesInfo(false);
     }
 
@@ -255,5 +256,6 @@ void TransactionManager::undoRedo(bool undo, EditData* editData)
     m_masterScore->updateSelection();
 
     ScoreChanges result = buildScoreChanges(m_masterScore->cmdState(), changes);
+    m_masterScore->updateAutomation(result);
     m_masterScore->changesChannel().send(result);
 }

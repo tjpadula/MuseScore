@@ -50,12 +50,12 @@ public:
     ConnectSharedPart(SharedPart* s, Part* o)
         : sharedPart(s), originPart(o) {}
 
-    void undo(EditData*) override
+    void undo() override
     {
         sharedPart->removeOriginPart(originPart);
     }
 
-    void redo(EditData*) override
+    void redo() override
     {
         sharedPart->addOriginPart(originPart);
     }
@@ -75,12 +75,12 @@ public:
     DisconnectSharedPart(SharedPart* s, Part* o)
         : sharedPart(s), originPart(o) {}
 
-    void undo(EditData*) override
+    void undo() override
     {
         sharedPart->addOriginPart(originPart);
     }
 
-    void redo(EditData*) override
+    void redo() override
     {
         sharedPart->removeOriginPart(originPart);
     }
@@ -246,7 +246,7 @@ void EditStaveSharing::addStaffToSharedPart(SharedPart* sharedPart, const KeyLis
 
     score->undoInsertStaff(staff, relStaffIdx);
 
-    staff_idx_t absStaffIdx = track2staff(sharedPart->startTrack()) + relStaffIdx;
+    staff_idx_t absStaffIdx = track2staff(sharedPart->trackRange().startTrack) + relStaffIdx;
     score->adjustKeySigs(absStaffIdx, absStaffIdx + 1, keyList);
 }
 
