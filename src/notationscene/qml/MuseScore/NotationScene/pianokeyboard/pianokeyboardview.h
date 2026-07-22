@@ -117,7 +117,11 @@ private:
     std::map<KeyState, QColor> m_blackKeyTopPieceStateColors;
     std::map<KeyState, QColor> m_blackKeyBottomPieceStateColors;
 
+#if defined(Q_OS_IOS)
+    qreal m_keyWidthScaling = 2.0;
+#else
     qreal m_keyWidthScaling = 1.0;
+#endif
     qreal m_scrollOffset = 0.0;
     qreal m_spacing = 0.0;
 

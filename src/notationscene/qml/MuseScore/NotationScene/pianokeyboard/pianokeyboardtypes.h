@@ -25,9 +25,15 @@
 namespace mu::notation {
 using piano_key_t = uint8_t;
 
+#if defined(Q_OS_IOS)
+static constexpr qreal SMALL_KEY_WIDTH_SCALING = 1.0;
+static constexpr qreal NORMAL_KEY_WIDTH_SCALING = 2.0;
+static constexpr qreal LARGE_KEY_WIDTH_SCALING = 4.0;
+#else
 static constexpr qreal SMALL_KEY_WIDTH_SCALING = 0.5;
 static constexpr qreal NORMAL_KEY_WIDTH_SCALING = 1.0;
 static constexpr qreal LARGE_KEY_WIDTH_SCALING = 2.0;
+#endif
 
 enum class KeyState {
     None,
