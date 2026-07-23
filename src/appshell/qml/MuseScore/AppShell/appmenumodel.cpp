@@ -74,8 +74,11 @@ void AppMenuModel::load()
         makeViewMenu(),
         makeAddMenu(),
         makeFormatMenu(),
-        makeToolsMenu(),
+        makeToolsMenu()
+#if !defined(Q_OS_IOS)
+        ,
         makePluginsMenu()
+#endif
     };
 
     if (globalConfiguration()->devModeEnabled()) {
