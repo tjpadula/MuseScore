@@ -307,6 +307,11 @@ void NotationStatusBarModel::toggleConcertPitch()
     dispatch(TOGGLE_CONCERT_PITCH_CODE);
 }
 
+void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool state)
+{
+    LOGI() << "NotationStatusBarModel::setMetaKeyState key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
+}
+
 void NotationStatusBarModel::setCurrentViewMode(const QString& modeCode)
 {
     dispatch(codeFromQString(modeCode));

@@ -114,6 +114,25 @@ Item {
 
         SeparatorLine { orientation: Qt.Vertical; visible: workspaceControl.visible }
 
+        MetaKeyControl {
+            id: metaKeyControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: Qt.platform.os === "ios"
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onMetaKeyChange: function(metaKeyName, state) {
+                model.setMetaKeyState(metaKeyName, state)
+            }
+
+        }
+
+        SeparatorLine { orientation: Qt.Vertical; visible: workspaceControl.visible }
+
         FlatButton {
             id: workspaceControl
             Layout.alignment: Qt.AlignVCenter
@@ -127,7 +146,7 @@ Item {
             visible: statusBarRow.remainingSpace > width + concertPitchControl.width
 
             navigation.panel: navPanel
-            navigation.order: 2
+            navigation.order: metaKeyControl.navigationOrderMax + 1
 
             onClicked: {
                 menuLoader.toggleOpened(model.currentWorkspaceItem.subitems)
@@ -158,7 +177,7 @@ Item {
             visible: statusBarRow.remainingSpace > width
 
             navigation.panel: navPanel
-            navigation.order: 3
+            navigation.order: workspaceControl.navigationOrder + 1
 
             onToggleConcertPitchRequested: {
                 model.toggleConcertPitch()
@@ -176,7 +195,7 @@ Item {
             availableViewModeList: model.availableViewModeList
 
             navigation.panel: navPanel
-            navigation.order: 4
+            navigation.order: concertPitchControl.navigationOrder + 1
 
             onChangeCurrentViewModeRequested: function(newViewMode) {
                 model.setCurrentViewMode(newViewMode)
@@ -195,7 +214,7 @@ Item {
             availableZoomList: model.availableZoomList
 
             navigationPanel: navPanel
-            navigationOrderMin: 5
+            navigationOrderMin: viewModeControl.navigationOrder + 1
 
             onChangeZoomPercentageRequested: function(newZoomPercentage) {
                 model.currentZoomPercentage = newZoomPercentage

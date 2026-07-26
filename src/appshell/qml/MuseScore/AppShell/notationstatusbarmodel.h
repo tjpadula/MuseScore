@@ -74,6 +74,8 @@ public:
     muse::uicomponents::MenuItem* currentViewMode();
     bool zoomEnabled() const;
     int currentZoomPercentage() const;
+    
+    Q_INVOKABLE void setMetaKeyState(const QString& metaKeyName, bool state);
 
     Q_INVOKABLE void toggleConcertPitch();
     Q_INVOKABLE void setCurrentViewMode(const QString& modeCode);
