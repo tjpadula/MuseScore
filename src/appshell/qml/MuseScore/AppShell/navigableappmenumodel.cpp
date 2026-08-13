@@ -29,6 +29,8 @@
 
 #include "log.h"
 
+#include "ui/internal/platform/ios/IOSEventTrampoline.h"
+
 using namespace mu::appshell;
 using namespace muse::ui;
 using namespace muse::uicomponents;
@@ -226,7 +228,7 @@ QString ToString(const EnumType& enumValue)
 
 bool NavigableAppMenuModel::eventFilter(QObject* watched, QEvent* event)
 {
-#if defined (Q_OS_IOS) && 0
+#if defined (Q_OS_IOS) && 1
     // This might work.
     if (event->type() != QEvent::Type::Timer) {     // we get a lot of these, at least one per second.
         std::stringstream aStream;
@@ -234,10 +236,31 @@ bool NavigableAppMenuModel::eventFilter(QObject* watched, QEvent* event)
         // but it doesn't.
         std::string anEventTypeString = (ToString(event->type())).toStdString();
         if (anEventTypeString.compare("QEvent::Type::") == 0) {
-            aStream << __PRETTY_FUNCTION__ << " unknown event enum: " << event->type() << std::endl;
+            aStream << __PRETTY_FUNCTION__ << " unknown event enum: " << event->type();
         } else {
-            aStream << __PRETTY_FUNCTION__ << " incoming event: " << anEventTypeString << std::endl;
+            aStream << __PRETTY_FUNCTION__ << " incoming event: " << anEventTypeString;
+            if ((event->type() == QEvent::Type::KeyPress) || (event->type() == QEvent::Type::KeyRelease)) {
+                QKeyEvent* aKeyEvent = dynamic_cast<QKeyEvent*>(event);
+                if (aKeyEvent && (!aKeyEvent->isAutoRepeat())) {
+                    aStream << ", text: " << aKeyEvent->text().toStdString() << ", key: 0x" <<  std::hex << aKeyEvent->key() << std::dec << ", native virtual key: " << aKeyEvent->nativeVirtualKey() << ", mods: ";
+                    if (aKeyEvent->modifiers() &  Qt::ShiftModifier) {
+                        aStream << "Shift ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::ControlModifier) {
+                        aStream << "Control ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::AltModifier) {
+                        aStream << "Option ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::MetaModifier) {
+                        aStream << "Command ";
+                    }
+                    aStream << "watched: " << watched->objectName().toStdString();
+                }
+            }
         }
+        
+        aStream << std::endl;
         fprintf (stderr, "%s", aStream.str().c_str());
     }
     

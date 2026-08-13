@@ -46,9 +46,8 @@ RowLayout {
     	isNarrow: true
     	margins: 2
 		
-		text: "Esc"
+		text: "\u238B"
         icon: IconCode.NONE
-  //      icon: IconCode.ESCAPE_META_KEY
         iconFont: ui.theme.toolbarIconsFont
 
         height: 28
@@ -84,9 +83,8 @@ RowLayout {
     	isNarrow: true
     	margins: 2
 		
-		text: "Shft"
+		text: "\u21E7"
         icon: IconCode.NONE
-  //      icon: IconCode.SHIFT_META_KEY
         iconFont: ui.theme.toolbarIconsFont
 
         height: 28
@@ -122,9 +120,8 @@ RowLayout {
     	isNarrow: true
     	margins: 2
 		
-		text: "Ctrl"
+		text: "\u2303"
         icon: IconCode.NONE
-  //      icon: IconCode.CONTROL_META_KEY
         iconFont: ui.theme.toolbarIconsFont
 
         height: 28
@@ -160,9 +157,8 @@ RowLayout {
     	isNarrow: true
     	margins: 2
 		
-		text: "Opt"
+		text: "\u2325"
         icon: IconCode.NONE
-  //      icon: IconCode.OPTION_META_KEY
         iconFont: ui.theme.toolbarIconsFont
 
         height: 28
@@ -194,9 +190,8 @@ RowLayout {
     FlatButton {
         id: commandKeyButton
 
-		text: "Cmd"
+ 		text: "\u2318"
         icon: IconCode.NONE
-//       icon: IconCode.COMMAND_META_KEY
         iconFont: ui.theme.toolbarIconsFont
 
 	    buttonType: FlatButton.Horizontal
@@ -232,9 +227,8 @@ RowLayout {
     FlatButton {
         id: deleteKeyButton
 
-		text: "Del"
+ 		text: "\u232B"
         icon: IconCode.NONE
-//       icon: IconCode.DELETE_META_KEY
         iconFont: ui.theme.toolbarIconsFont
 
 	    buttonType: FlatButton.Horizontal

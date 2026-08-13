@@ -39,6 +39,11 @@
 #include "notation/inotationundostack.h" // IWYU pragma: keep
 #include "notation/inotationviewstate.h" // IWYU pragma: keep
 
+#include <QtCore>
+#include <QtCore/qnamespace.h>
+
+#include "ui/internal/platform/ios/IOSEventTrampoline.h"
+
 using namespace mu::appshell;
 using namespace mu::notation;
 using namespace muse;
@@ -310,6 +315,57 @@ void NotationStatusBarModel::toggleConcertPitch()
 void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool state)
 {
     LOGI() << "NotationStatusBarModel::setMetaKeyState key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
+    // Create a QKeyEvent and bounce it off our trampoline into Objective-C land.
+    QEvent::Type anEventType = state ? QActionEvent::KeyPress : QActionEvent::KeyRelease;
+    int aKey = 0;
+    Qt::KeyboardModifiers aModifiers = Qt::NoModifier;
+    if (metaKeyName.compare ("shift") == 0) {
+        aKey = mu::engraving::Key_Shift;
+        aModifiers = Qt::ShiftModifier;
+    }
+    if (metaKeyName.compare ("control") == 0) {
+        aKey = mu::engraving::Key_Control;
+        aModifiers = Qt::ControlModifier;
+    }
+    if (metaKeyName.compare ("option") == 0) {
+        aKey = Qt::Key_Alt;
+        aModifiers = Qt::AltModifier;
+    }
+    if (metaKeyName.compare ("command") == 0) {
+        aKey = Qt::Key_Meta;
+        aModifiers = Qt::MetaModifier;
+    }
+    if (aModifiers != Qt::NoModifier) {
+        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, aKey, aModifiers);
+        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
+        return;
+    }
+    
+    // We were given something other than a modifier key, so let's see if
+    // we know about it. We don't actually have anything that sends a single
+    // char (yet).
+    if (metaKeyName.length() == 1) {
+        // It's a simple character key. We'll convert it from a plain unicode
+        // (ASCII) char so we can use that as the key.
+        aKey = (int)(metaKeyName.at(0).unicode());
+        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, aKey, aModifiers, metaKeyName);
+        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
+        return;
+    }
+
+    if (metaKeyName.compare ("delete") == 0) {
+        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, Qt::Key_Backspace, aModifiers);
+        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
+        return;
+    }
+    
+    if (metaKeyName.compare ("escape") == 0) {
+        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, Qt::Key_Escape, aModifiers);
+        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
+        return;
+    }
+    
+    LOGI() << "NotationStatusBarModel::setMetaKeyState did not recognize key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
 }
 
 void NotationStatusBarModel::setCurrentViewMode(const QString& modeCode)
