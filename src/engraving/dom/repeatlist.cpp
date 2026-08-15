@@ -23,6 +23,7 @@
 #include "repeatlist.h"
 
 #include <list>
+#include <set>
 #include <utility> // std::pair
 
 #include "jump.h"
@@ -235,6 +236,18 @@ void RepeatList::updateTempo()
         return;
     }
 
+    // Collect the end-ticks of all segments that carry a section-break pause.
+    // tick2time() always includes the pause at the queried tick, so for repeated
+    // sections every segment ending at a section break would accumulate the pause
+    // once per iteration.  We subtract it from non-final segments so that it is
+    // counted only once (in the last segment, where s->pause > 0.0).
+    std::set<int> sectionBreakEndTicks;
+    for (RepeatSegment* s : *this) {
+        if (s->pause > 0.0) {
+            sectionBreakEndTicks.insert(s->tick + s->len());
+        }
+    }
+
     int utick = 0;
     double t  = 0;
 
@@ -245,7 +258,13 @@ void RepeatList::updateTempo()
         s->timeOffset = t - ct;
         int len       = s->len();
         utick        += len;
-        t            += tl->tick2time(s->tick + len) - ct;
+        double delta  = tl->tick2time(s->tick + len) - ct;
+        // For a non-final segment that ends at a section break, remove the
+        // section-break pause from the delta so the pause is not double-counted.
+        if (s->pause == 0.0 && sectionBreakEndTicks.count(s->tick + len)) {
+            delta -= tl->pauseSecs(s->tick + len);
+        }
+        t            += delta;
     }
 }
 
@@ -526,9 +545,10 @@ void RepeatList::collectRepeatListElements()
         if (mb->isMeasure()) {
             Measure* m = toMeasure(mb);
             sectionEndMeasureBase = mb; // ending measure of section is the most recently encountered actual Measure
+            Measure* underlyingMeasure = m->isMMRest() ? m->mmRestFirst() : m;
 
             // Volta ?
-            if ((!preProcessedVoltas.empty()) && (preProcessedVoltas.front()->startMeasure() == m)) {
+            if ((!preProcessedVoltas.empty()) && (preProcessedVoltas.front()->startMeasure() == underlyingMeasure)) {
                 if (volta != nullptr) {
                     //if (volta->endMeasure()->tick() < m->tick()) {
                     // The previous volta was supposed to end before us (open volta case) -> insert the end
@@ -546,7 +566,7 @@ void RepeatList::collectRepeatListElements()
             // Start
             if (m->repeatStart()) {
                 if (volta != nullptr) {
-                    if (volta->startMeasure() != m) {
+                    if (volta->startMeasure() != underlyingMeasure) {
                         // Volta and Start repeat are not on the same measure
                         // assume the previous volta was supposed to end before us (open volta case) -> insert the end
                         // Warning: This might "break" a volta prematurely if its explicit notated end is later than this point

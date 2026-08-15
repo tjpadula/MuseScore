@@ -19,6 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #include "abstractnotationpaintview.h"
 
 #include <QCursor>
@@ -31,6 +32,7 @@
 #include "actions/actiontypes.h"
 #include "engraving/dom/shadownote.h"
 
+#include "notation/imasternotation.h" // IWYU pragma: keep
 #include "notation/inotationaccessibility.h" // IWYU pragma: keep
 #include "notation/inotationautomation.h"
 #include "notation/inotationelements.h"
@@ -79,6 +81,8 @@ AbstractNotationPaintView::AbstractNotationPaintView(QQuickItem* parent)
 
 AbstractNotationPaintView::~AbstractNotationPaintView()
 {
+    m_inputController->deinit();
+
     if (m_notation && isMainView()) {
         m_notation->accessibility()->setMapToScreenFunc(nullptr);
         m_notation->interaction()->setGetViewRectFunc(nullptr);
@@ -116,13 +120,6 @@ void AbstractNotationPaintView::load()
     m_loopOutMarker = std::make_unique<LoopMarker>(LoopBoundaryType::LoopOut, iocContext());
 
     m_continuousPanel = std::make_unique<ContinuousPanel>();
-
-    //! NOTE For diagnostic tools
-    if (!dispatcher()->isReg(this)) {
-        dispatcher()->reg(this, "diagnostic-notationview-redraw", [this]() {
-            scheduleRedraw();
-        });
-    }
 
     m_inputController->setReadonly(m_readonly);
     m_inputController->init();
@@ -246,16 +243,7 @@ void AbstractNotationPaintView::selectOnNavigationActive()
         return;
     }
 
-    interaction->selectFirstElement(false);
-}
-
-bool AbstractNotationPaintView::canReceiveAction(const ActionCode& actionCode) const
-{
-    if (actionCode == "diagnostic-notationview-redraw") {
-        return true;
-    }
-
-    return hasFocus();
+    interaction->select(SelectionTarget::FirstItem);
 }
 
 void AbstractNotationPaintView::onCurrentNotationChanged()
@@ -611,8 +599,7 @@ INotationSelectionPtr AbstractNotationPaintView::notationSelection() const
 
 INotationAutomationPtr AbstractNotationPaintView::notationAutomation() const
 {
-    const IMasterNotationPtr masterNotation = m_notation ? m_notation->masterNotation() : nullptr;
-    return masterNotation ? masterNotation->automation() : nullptr;
+    return m_notation ? m_notation->masterNotation()->automation() : nullptr;
 }
 
 void AbstractNotationPaintView::onNoteInputStateChanged()
@@ -673,6 +660,11 @@ void AbstractNotationPaintView::hideContextMenu()
     if (m_isContextMenuOpen) {
         emit hideContextMenuRequested();
     }
+}
+
+void AbstractNotationPaintView::showSearch()
+{
+    emit showSearchRequested();
 }
 
 void AbstractNotationPaintView::showElementPopup(const ElementType& elementType)
@@ -791,6 +783,10 @@ void AbstractNotationPaintView::onNotationSetup()
     });
 
     notationConfiguration()->foregroundChanged().onNotify(this, [this]() {
+        scheduleRedraw();
+    });
+
+    notationConfiguration()->notationColorChanged().onNotify(this, [this]() {
         scheduleRedraw();
     });
 

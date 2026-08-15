@@ -26,6 +26,7 @@
 
 #include "dom/chord.h"
 #include "dom/harmony.h"
+#include "dom/measure.h"
 #include "dom/note.h"
 #include "dom/sig.h"
 #include "dom/tempo.h"
@@ -366,7 +367,7 @@ void PlaybackEventsRenderer::renderFixedNoteEvent(const Note* note, const mpe::t
                           profile,
                           playbackCtx };
 
-    NoteArticulationsParser::parsePlayingTechnique(ctx, ctx.commonArticulations, false /*sustainAllowed*/);
+    NoteArticulationsParser::parsePlayingTechnique(ctx, note->track(), ctx.commonArticulations, false /*sustainAllowed*/);
     NoteArticulationsParser::parseGhostNote(note, ctx, ctx.commonArticulations);
     NoteArticulationsParser::parseNoteHead(note, ctx, ctx.commonArticulations);
     NoteArticulationsParser::parseSymbols(note, ctx, ctx.commonArticulations);

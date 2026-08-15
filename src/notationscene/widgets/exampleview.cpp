@@ -30,6 +30,7 @@
 #include "engraving/dom/page.h"
 #include "engraving/dom/score.h"
 #include "engraving/dom/system.h"
+#include "engraving/rendering/iscorerenderer.h"
 
 #include "notation/inotationcontextconfiguration.h"
 
@@ -119,7 +120,7 @@ void ExampleView::changeEditElement(EngravingItem*)
 {
 }
 
-void ExampleView::setDropRectangle(const RectF&)
+void ExampleView::setDropRectangles(const std::vector<RectF>&)
 {
 }
 

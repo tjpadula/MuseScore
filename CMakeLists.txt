@@ -281,6 +281,10 @@ else()
 	set(QT_QPROCESS_SUPPORTED ON)
 endif()
 
+if(NOT DEFINED MUSE_MODULE_DOCKWINDOW_KDDOCKWIDGETS_V2)
+    set(MUSE_MODULE_DOCKWINDOW_KDDOCKWIDGETS_V2 ON)
+endif()
+
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/SetupConfigure.local.cmake")
     include(${CMAKE_CURRENT_LIST_DIR}/SetupConfigure.local.cmake)
 else()
