@@ -432,7 +432,11 @@ QVector<NotationAutomationController::PointData> NotationAutomationController::p
                                                                                                  int startTick, int endTick) const
 {
     QVector<PointData> points;
+#if defined(Q_OS_IOS)
+    if (!(staff && score() && automationData())) {  // automationData() is nil on iOS.
+#else
     IF_ASSERT_FAILED(staff && score() && automationData()) {
+#endif
         return points;
     }
 
