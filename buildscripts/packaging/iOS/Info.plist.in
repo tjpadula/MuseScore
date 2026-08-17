@@ -513,7 +513,7 @@
     <key>ATSApplicationFontsPath</key>
     <string>fonts/</string>
 	<key>QtRunLoopIntegrationStackSize</key>
-	<integer>524288</integer>
+	<integer>262144</integer>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ar</string>
