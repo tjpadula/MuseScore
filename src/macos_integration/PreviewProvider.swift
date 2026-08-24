@@ -14,7 +14,7 @@ class PreviewProvider: QLPreviewProvider, QLPreviewingController {
     let logger = Logger()
 
     func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
-        logger.info("Generating preview for file: \(request.fileURL.path, privacy: .public)")
+//        logger.info("Generating preview for file: \(request.fileURL.path, privacy: .public)")
 
         await MainActor.run {
             PreviewProviderCxx.initIfNeeded()
@@ -41,9 +41,9 @@ class PreviewProvider: QLPreviewProvider, QLPreviewingController {
 
         let pageSize = firstPage.bounds(for: .mediaBox).size
 
-        logger.info(
-            "Preview generated successfully with page size: \(pageSize.width, privacy: .public)x\(pageSize.height, privacy: .public)"
-        )
+//        logger.info(
+//            "Preview generated successfully with page size: \(pageSize.width, privacy: .public)x\(pageSize.height, privacy: .public)"
+//        )
         return QLPreviewReply(forPDFWithPageSize: pageSize) { _ in pdfDocument }
     }
 }

@@ -54,6 +54,7 @@ vtest/Thumbnails
 vtest/Pictures
 .vs
 dependencies
+safety
 
 # Downloaded files during build process
 VERSION

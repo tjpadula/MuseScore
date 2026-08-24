@@ -252,6 +252,37 @@ if (MUSE_ENABLE_UNIT_TESTS_CODE_COVERAGE)
     target_link_options(MuseScoreStudio PRIVATE ${COVERAGE_LINK_FLAGS})
 endif()
 
+function(create_mac_resource OUT_RESOURCES_FOUND_ACCUMULATED SOURCE_PATH DESTINATION PATTERN)
+    file(GLOB_RECURSE _LIST CONFIGURE_DEPENDS ${SOURCE_PATH}/${PATTERN})
+    foreach (RESOURCE ${_LIST})
+        get_filename_component(_PARENT ${RESOURCE} DIRECTORY)
+        if (${_PARENT} STREQUAL ${SOURCE_PATH})
+            set(_DESTINATION ${DESTINATION})
+        else ()
+            file(RELATIVE_PATH _DESTINATION ${SOURCE_PATH} ${_PARENT})
+            set(_DESTINATION ${DESTINATION}/${_DESTINATION})
+        endif ()
+
+        target_sources(MuseScoreStudio PUBLIC ${RESOURCE})
+		set_property(SOURCE ${RESOURCE}
+				PROPERTY
+					MACOSX_PACKAGE_LOCATION "${_DESTINATION}")
+		
+		# From:
+		# https://cmake.org/cmake/help/latest/command/set_property.html#command:set_property			
+		# "If the property is not already directly set in the nominated scope, the command will behave as though APPEND or APPEND_STRING had not been given."
+		# But there is a warning here:
+		# https://stackoverflow.com/questions/41121000/cmake-os-x-bundle-recursively-copy-directory-to-resources
+		# But watch out! For me setting the PROPERTY MACOSX_PACKAGE_LOCATION only works if I don't set the target property RESOURCE:
+		# ...so let's turn off the RESOURCE property (?)
+		# The above finally works.
+
+        message (STATUS "create_mac_resource RESOURCE: ${RESOURCE}, _DESTINATION: ${_DESTINATION}")
+        
+    endforeach (RESOURCE)
+    set(${OUT_RESOURCES_FOUND_ACCUMULATED} "${${OUT_RESOURCES_FOUND_ACCUMULATED}};${_LIST}" PARENT_SCOPE)
+endfunction()
+
 if (OS_IS_MAC)
     include(${PROJECT_SOURCE_DIR}/share/icons/SetupIconComposerIcon.cmake)
     target_setup_iconcomposer_icon(MuseScoreStudio "${PROJECT_SOURCE_DIR}/share/icons/AppIcon/AppIcon.icon")
@@ -260,6 +291,32 @@ if (OS_IS_MAC)
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/macOS/Info.plist.in
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER}
     )
+    
+	set(RESOURCES_MAC_SOURCE_PATH "${PROJECT_SOURCE_DIR}/share")
+
+	# This works, it's just off so we can test picking the files we want.
+#		create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/sound Resources/sound *)
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/sound Resources/sound "MS Basic.sf3")
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/sound Resources/sound "MS Basic_License.md")
+
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/extensions Resources/extensions *)
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/locale Resources/locale *.qm)
+	
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/plugins Resources/plugins *)
+	
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/styles Resources/styles *.mss)
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/styles Resources/styles MSN/.mss)
+	
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/templates Resources/templates *)
+	
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/wallpapers Resources/wallpapers *.png)
+	
+	create_mac_resource(RESOURCES_MAC_LIST ${RESOURCES_MAC_SOURCE_PATH}/workspaces Resources/workspaces *)
+	
+	message (STATUS "src/app/CMakeLists.txt RESOURCES_MAC_LIST: ${RESOURCES_MAC_LIST}")
+	message (STATUS "src/app/CMakeLists.txt RESOURCES_MAC_SOURCE_PATH: ${RESOURCES_MAC_SOURCE_PATH}")
+	message (STATUS "src/app/CMakeLists.txt MUSE_APP_INSTALL_RESOURCES_LOCATION: ${MUSE_APP_INSTALL_RESOURCES_LOCATION}")
+
 endif (OS_IS_MAC)
 
 if (CC_IS_MINGW)
