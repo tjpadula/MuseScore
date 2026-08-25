@@ -53,9 +53,10 @@ Ret MuseSoundsCheckUpdateService::needCheckForUpdate() const
     return true;
 #elif defined(Q_OS_MACOS)
     //! NOTE: If there is installed MuseHub, but we can't open it, then we shouldn't check update
-    if (!interactive()) {   // iOS doesn't have this (yet)
+    
+    if (!platformInteractive()) { 	// iOS doesn't have this (yet)
         return false;
-    }
+	}
     
     static const std::string MUSEHUB_APP_IDENTIFIER = "com.muse.hub";
     bool isMuseHubExists = platformInteractive()->isAppExists(MUSEHUB_APP_IDENTIFIER);

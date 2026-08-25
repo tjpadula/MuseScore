@@ -24,6 +24,14 @@ endif()
 
 message(STATUS "Configuring macOS integration")
 
+# Swift logger is not available before MacOS 11, and at this point these
+# are both defined as 10.15.4 for whatever reason for the Mac build.
+set(MACOSX_DEPLOYMENT_TARGET_STASH ${MACOSX_DEPLOYMENT_TARGET})
+set(CMAKE_OSX_DEPLOYMENT_TARGET_STASH ${CMAKE_OSX_DEPLOYMENT_TARGET})
+
+set(MACOSX_DEPLOYMENT_TARGET 12.0)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0)
+
 set(CMAKE_OSX_ARCHITECTURES_BACKUP ${CMAKE_OSX_ARCHITECTURES})
 
 set(CMAKE_OSX_ARCHITECTURES "" CACHE STRING "" FORCE)
@@ -34,9 +42,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 # Set up swiftrt.o and runtime library search paths
 include(InitializeSwift)
-
-# set(MACOSX_DEPLOYMENT_TARGET 12.0)
-# set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0)
 
 add_executable(MuseScoreQuickLookPreviewExtension
     MACOSX_BUNDLE
@@ -120,3 +125,7 @@ install(CODE "
 ")
 
 set(CMAKE_OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES_BACKUP} CACHE STRING "" FORCE)
+
+set(MACOSX_DEPLOYMENT_TARGET ${MACOSX_DEPLOYMENT_TARGET_STASH})
+set(CMAKE_OSX_DEPLOYMENT_TARGET ${CMAKE_OSX_DEPLOYMENT_TARGET_STASH})
+

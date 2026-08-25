@@ -315,6 +315,7 @@ void NotationStatusBarModel::toggleConcertPitch()
 
 void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool state)
 {
+#if defined(Q_OS_IOS)
     LOGI() << "NotationStatusBarModel::setMetaKeyState key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
     // Create a QKeyEvent and bounce it off our trampoline into Objective-C land.
     QEvent::Type anEventType = state ? QActionEvent::KeyPress : QActionEvent::KeyRelease;
@@ -367,6 +368,7 @@ void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool st
     }
     
     LOGI() << "NotationStatusBarModel::setMetaKeyState did not recognize key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
+#endif
 }
 
 void NotationStatusBarModel::setCurrentViewMode(const QString& modeCode)

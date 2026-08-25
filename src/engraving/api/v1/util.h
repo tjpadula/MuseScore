@@ -23,12 +23,15 @@
 #pragma once
 
 #include <QDir>
-#if QT_QPROCESS_SUPPORTED
+// This is madness. If this is here, it evaluates to false.
+// #if QT_QPROCESS_SUPPORTED
+#if !defined(Q_OS_IOS)
 #include <QProcess>
 #endif
 
 #include "global/modularity/ioc.h"
 #include "global/iglobalconfiguration.h"
+// This eventually includes app_config.h, which sets QT_QPROCESS_SUPPORTED to 1.
 #include "extensions/iextensionsconfiguration.h"
 #include "project/iprojectconfiguration.h"
 #include "notation/inotationconfiguration.h"

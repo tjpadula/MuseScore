@@ -533,7 +533,8 @@ public:
     Q_INVOKABLE void removeElement(apiv1::EngravingItem* wrapped);
     Q_INVOKABLE void cmd(const QString&);
     /// \cond PLUGIN_API \private \endcond
-#if QT_QPROCESS_SUPPORTED
+//#if QT_QPROCESS_SUPPORTED
+#if !defined(Q_OS_IOS)
     Q_INVOKABLE apiv1::MsProcess* newQProcess();
 #endif
     Q_INVOKABLE bool writeScore(apiv1::Score*, const QString& name, const QString& ext);

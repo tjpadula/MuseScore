@@ -14,7 +14,8 @@ class PreviewProvider: QLPreviewProvider, QLPreviewingController {
     let logger = Logger()
 
     func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
-        logger.info("Generating preview for file: \(request.fileURL.path, privacy: .public)")
+        // Turned this off for now, see below.
+//        logger.info("Generating preview for file: \(request.fileURL.path, privacy: .public)")
 
         await MainActor.run {
             PreviewProviderCxx.initIfNeeded()
@@ -40,10 +41,18 @@ class PreviewProvider: QLPreviewProvider, QLPreviewingController {
         }
 
         let pageSize = firstPage.bounds(for: .mediaBox).size
+        
+        // This is all simply broken. Perhaps a newer Xcode is needed,
+        // but we're running 26.3, which was released 26 Feb 2026, it's
+        // now 20 Aug 2026, it's not even seven months old.
+//        let message = "Generating preview for file: \(request.fileURL.path)"
+//        logger.info(message as NSString)      // can't be done.
+//        logger.info(message as OSLogMessage)  // also can't be done.
 
-        logger.info(
-            "Preview generated successfully with page size: \(pageSize.width, privacy: .public)x\(pageSize.height, privacy: .public)"
-        )
+//        logger.info(
+//            "Preview generated successfully with page size: \(pageSize.width, privacy: .public)x\(pageSize.height, privacy: .public)"
+//        )
+    
         return QLPreviewReply(forPDFWithPageSize: pageSize) { _ in pdfDocument }
     }
 }

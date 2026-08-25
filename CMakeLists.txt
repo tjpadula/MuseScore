@@ -72,7 +72,7 @@ include(GetCompilerInfo)
 else (IOS)
 
 	include(CheckCompilerVersion)
-	check_compile_version("Clang" 20 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
+#	check_compile_version("Clang" 20 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
 	check_compile_version("AppleClang" 21 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
 	check_compile_version("GCC" 14 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
 	check_compile_version("MSVC" 19.40 "https://github.com/musescore/MuseScore/wiki/Set-up-developer-environment")
@@ -129,6 +129,8 @@ if(IOS)
     
 endif()
 
+    dump_all_cmake_vars()
+#message (FATAL_ERROR "Bummer, dude.")
 ###########################################
 # Setup option and build settings
 ###########################################
@@ -279,6 +281,7 @@ if(IOS)
 else()
 	set(QT_ADD_LINGUISTTOOLS ON)
 	set(QT_QPROCESS_SUPPORTED ON)
+    set(MUSE_MODULE_AUDIOPLUGINS ON)
 endif()
 
 if(NOT DEFINED MUSE_MODULE_DOCKWINDOW_KDDOCKWIDGETS_V2)

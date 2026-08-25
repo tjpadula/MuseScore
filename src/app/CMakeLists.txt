@@ -346,8 +346,21 @@ if (OS_IS_MAC)
 		set_target_properties(MuseScoreStudio PROPERTIES
 			MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/buildscripts/packaging/macOS/Info.plist.in
 			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${MACOSX_BUNDLE_GUI_IDENTIFIER})
+			
+        set(RESOURCES_MAC_PATH "${PROJECT_SOURCE_DIR}/share")
+
+    	set(RES_FILES "${RESOURCES_MAC_PATH}/sound/MS Basic.sf3" "${RESOURCES_MAC_PATH}/sound/MS Basic_License.md")
+        target_sources(MuseScoreStudio PRIVATE ${RES_FILES})
+		set_source_files_properties(${RES_FILES} PROPERTIES
+			MACOSX_PACKAGE_LOCATION ${MUSE_APP_INSTALL_RESOURCES_LOCATION}/sound
+		)
+		
+		message (STATUS "src/app/CMakeLists.txt RESOURCES_MAC_PATH: ${RESOURCES_MAC_PATH}")
+		message (STATUS "src/app/CMakeLists.txt RES_FILES: ${RES_FILES}")
+		message (STATUS "src/app/CMakeLists.txt MUSE_APP_INSTALL_RESOURCES_LOCATION: ${MUSE_APP_INSTALL_RESOURCES_LOCATION}")
+
     endif(IOS)
-    
+         
 endif (OS_IS_MAC)
 
 if (CC_IS_MINGW)

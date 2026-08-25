@@ -206,7 +206,7 @@ void PluginAPI::registerQmlTypes()
     qRegisterMetaType<OrnamentIntervalWrapper*>("OrnamentIntervalWrapper*");
 
 #if QT_QPROCESS_SUPPORTED
-    qmlRegisterType<MsProcess>("MuseScore", 3, 0, "QProcess");
+    qmlRegisterType<MsProcess>("MuseScore", 3, 0, "MsProcess");
 #endif
     qmlRegisterType<FileIO, 1>("FileIO",    3, 0, "FileIO");
 

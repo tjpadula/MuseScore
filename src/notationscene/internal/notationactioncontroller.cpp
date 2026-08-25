@@ -888,9 +888,9 @@ void NotationActionController::init()
             { "add-hairpin-reverse", ADD_HAIRPIN_REVERSE_COMMAND, {} },
             { "add-noteline", ADD_NOTELINE_COMMAND, {} },
             { "add-image", ADD_IMAGE_COMMAND, {} },
-            { "stretch-decrease", STRETCH_DECREASE_COMMAND, {} },
-            { "stretch-increase", STRETCH_INCREASE_COMMAND, {} },
-            { "stretch-reset", STRETCH_RESET_COMMAND, {} },
+            { "stretch-", STRETCH_DECREASE_COMMAND, {} },
+            { "stretch+", STRETCH_INCREASE_COMMAND, {} },
+            { "reset-stretch", STRETCH_RESET_COMMAND, {} },
             { "title-text", ADD_TITLE_TEXT_COMMAND, {} },
             { "subtitle-text", ADD_SUBTITLE_TEXT_COMMAND, {} },
             { "composer-text", ADD_COMPOSER_TEXT_COMMAND, {} },
@@ -3262,9 +3262,11 @@ void NotationActionController::toggleAutomation()
 muse::Ret NotationActionController::selectAutomationType(const muse::rcommand::CommandQuery& query)
 {
     const std::string type = query.param("type").toString();
-
     mu::engraving::AutomationType automationType = mu::engraving::AutomationType::Dynamics;
-    if (type == "volume") {
+
+    if (type == "tempo") {
+        automationType = mu::engraving::AutomationType::Tempo;
+    } else if (type == "volume") {
         automationType = mu::engraving::AutomationType::Volume;
     } else if (type == "pan") {
         automationType = mu::engraving::AutomationType::Pan;
