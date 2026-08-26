@@ -44,6 +44,7 @@ RowLayout {
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
+	    implicitWidth: 64
     	margins: 2
 		
 		text: "\u238B"
@@ -81,6 +82,7 @@ RowLayout {
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
+	    implicitWidth: 64
     	margins: 2
 		
 		text: "\u21E7"
@@ -118,6 +120,7 @@ RowLayout {
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
+	    implicitWidth: 64
     	margins: 2
 		
 		text: "\u2303"
@@ -155,6 +158,7 @@ RowLayout {
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
+	    implicitWidth: 64
     	margins: 2
 		
 		text: "\u2325"
@@ -196,6 +200,7 @@ RowLayout {
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
+	    implicitWidth: 64
     	margins: 2
 
         height: 28
@@ -233,6 +238,7 @@ RowLayout {
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
+	    implicitWidth: 64
     	margins: 2
 
         height: 28
