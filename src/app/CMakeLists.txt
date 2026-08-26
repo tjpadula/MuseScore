@@ -425,15 +425,12 @@ if(IOS)
     # Plugins also need to be built-in for a static app.
     list(APPEND MODULE_LINK Qt::Qml Qt::Network Qt::NetworkAuth)
 
-#    find_package(Qt6QmlImportScanner REQUIRED)
 	find_package(Qt6 REQUIRED COMPONENTS Qml)
 	find_package(Qt6 REQUIRED COMPONENTS Core)
 	
-	qt_import_plugins(MuseScoreStudio INCLUDE qtquick2plugin)
 	target_link_libraries(MuseScoreStudio PRIVATE Qt6::Quick Qt6::Qml)
 	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquick2plugin)
 	
-	qt_import_plugins(MuseScoreStudio INCLUDE qtquickcontrols2plugin)
 	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QuickControls2)
 	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrols2plugin)
 	
@@ -450,49 +447,14 @@ if(IOS)
 	target_link_libraries(MuseScoreStudio PRIVATE Qt6::effectsplugin)
 
 	target_link_libraries(MuseScoreStudio PRIVATE Qt6::labsmodelsplugin)
-
-# Can't find the name of this one, why the heck are these names top secret?
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qwidgetplugin)
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtqmlmodelsplugin)
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtqmlworkerscriptplugin)
-
-#	qt_import_plugins(MuseScoreStudio INCLUDE qtquickcontrolsplugin)
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QuickControls)
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickcontrolsplugin)
-
-	qt_import_plugins(MuseScoreStudio INCLUDE qtquickplugin)
-	qt_import_plugins(MuseScoreStudio INCLUDE fredflintstone)		# does this fail?
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::qtquickplugin)
-
-	# This looks like it might have generated builds/blah/src/app/muse_iocomponents_qmlapiplugin_init.cpp,
-	# which simply is, in it's entirety:
-	# #include <QtPlugin>
-	# Q_IMPORT_PLUGIN(MuseApi_ControlsPlugin)
-
-# They do this for us now in src/framework/uicomponents/api/MuseApi/Controls/CMakeLists.txt.	
-#	qt_add_qml_module(muse_uicomponents_qmlapi
-#		URI MuseApi.Controls
-#		VERSION 1.0
-#		QML_FILES
-#			${UICOMPONENTS_FILES}
-#	
-#		IMPORTS
-#			QtQuick
-#	)
-	
-	#fixup_qml_module_dependencies(muse_uicomponents_qmlapi)
-	
+		
 	target_link_libraries(MuseScoreStudio PRIVATE Qt::Widgets Qt::QmlIntegration)
-
-	qt_import_plugins(MuseScoreStudio INCLUDE QQuickControls2BasicStylePlugin)
-	qt_import_plugins(MuseScoreStudio INCLUDE QQuickControls2FusionStylePlugin)
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QQuickControls2BasicStylePlugin)
-#	target_link_libraries(MuseScoreStudio PRIVATE Qt6::QQuickControls2FusionStylePlugin)
 
     qt_import_qml_plugins(MuseScoreStudio)
 
     # Set iOS to use 8MB as its stack size, like MacOS does. If we don't do this,
     # the liblouis initialization will blow the stack.
+    # THIS DOES NOT WORK. The stack sized is fixed at 1MB and is not alterable.
     set_target_properties(MuseScoreStudio PROPERTIES LINK_FLAGS "-Xlinker -stack_size -Xlinker 0x800000")
 
 elseif (CC_IS_EMCC)
