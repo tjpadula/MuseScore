@@ -314,6 +314,12 @@ void StartupScenario::openScore(const project::ProjectFile& file)
 
 void StartupScenario::restoreLastSession()
 {
+#if defined(Q_OS_IOS)
+    // iOS apps never really quit in the same sense that desktop apps do. They eventually get bumped out
+    // of memory, and are given a warning from the OS to clean up first, but there is no opportunity to interact
+    // with the user. Also, the app may get killed without warning under some circumstances. So this is a common situation.
+    sessionsManager()->restore();
+#else
     auto promise = interactive()->question(muse::trc("appshell", "The previous session quit unexpectedly."),
                                            muse::trc("appshell", "Do you want to restore the session?"),
                                            { IInteractive::Button::No, IInteractive::Button::Yes });
@@ -327,6 +333,7 @@ void StartupScenario::restoreLastSession()
             checkAndShowMuseSamplerUpdateIfNeed();
         }
     });
+#endif
 }
 
 void StartupScenario::removeProjectsUnsavedChanges(const io::paths_t& projectsPaths)

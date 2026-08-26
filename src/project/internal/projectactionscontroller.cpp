@@ -1949,6 +1949,39 @@ void ProjectActionsController::warnProjectCriticallyCorrupted(const String& proj
 
 void ProjectActionsController::warnProjectCannotBeOpened(const Ret& ret, const muse::io::path_t& filepath)
 {
+#if defined(Q_OS_IOS)
+    // Avoid putting up 'file not found' warnings if the app is newly installed. We do this by comparing the app's UUID
+    // to the one in the path we're trying to open.
+    // The path we expect is /var/mobile/Containers/Data/Application/<UUID>/Library/...
+    // and the format of the UUID is the 36-char pattern.
+    do {
+        std::string aniOSAppPathStart = "/var/mobile/Containers/Data/Application/";
+        std::string aPrototypeUUID = "01234567-89ab-cdef-0123-456789abcdef";
+        size_t aMinimumLength = aniOSAppPathStart.length() + aPrototypeUUID.length();
+        if (filepath.size() < aMinimumLength) {
+            break;
+        }
+        muse::io::path_t aUserProjectsPath = configuration()->defaultUserProjectsPath();
+        if (aUserProjectsPath.size() < aMinimumLength) {
+            break;
+        }
+        const std::string aProjectsPathString = aUserProjectsPath.toStdString();
+        if (!(aProjectsPathString.starts_with(aniOSAppPathStart))) {
+            break;
+        }
+        const std::string aGivenPathString = filepath.toStdString();
+        if (!(aGivenPathString.starts_with(aniOSAppPathStart))) {
+            break;
+        }
+        std::string aProjectsPathUUID = aProjectsPathString.substr(aniOSAppPathStart.length(), aPrototypeUUID.length());
+        std::string aGivenPathUUID = aGivenPathString.substr(aniOSAppPathStart.length(), aPrototypeUUID.length());
+        // We could check further, such as ensuring the hyphens are where they ought to be and all chars are [0-F] if
+        // we really needed to be pedantic.
+        if (aProjectsPathUUID.compare(aGivenPathUUID)) {        // UUIDs are not the same, this is a launch of a new app.
+            return;
+        }
+    } while(0);
+#endif
     std::string title = muse::mtrc("project", "Cannot read file %1").arg(io::toNativeSeparators(filepath).toString()).toStdString();
     std::string body;
 
