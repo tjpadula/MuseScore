@@ -1147,12 +1147,9 @@ void TWrite::write(const Chord* item, XmlWriter& xml, WriteContext& ctx)
     // Write parens
     for (const NoteParenthesisInfo* parenPair : item->noteParentheses()) {
         xml.startElement("NoteParenGroup");
-        if (parenPair->leftParen()->isUserModified()) {
-            write(parenPair->leftParen(), xml, ctx);
-        }
-        if (parenPair->rightParen()->isUserModified()) {
-            write(parenPair->rightParen(), xml, ctx);
-        }
+
+        write(parenPair->leftParen(), xml, ctx);
+        write(parenPair->rightParen(), xml, ctx);
 
         xml.startElement("Notes");
         for (const Note* note : parenPair->notes()) {
@@ -1669,7 +1666,7 @@ void TWrite::writeProperties(const Spanner* item, XmlWriter& xml, WriteContext& 
     if (item->anchor() == Spanner::Anchor::SEGMENT) {
         int t2 = static_cast<int>(item->track2()) + ctx.trackDiff();
         xml.tag("track2", t2);
-        xml.tagFraction("startTick", item->tick());
+        xml.tagFraction("startTick", item->tick(), /* default = */ Fraction(-1, 0)); // Need to be able to write start of score, so a different default is needed
         xml.tagFraction("ticks", item->ticks());
     } else if (!item->isGuitarBendHold()) {
         /* GuitarBendHold lines are regenerated during layout by GuitarBend::updateHoldLine(),

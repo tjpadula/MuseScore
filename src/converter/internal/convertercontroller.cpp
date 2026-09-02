@@ -423,11 +423,15 @@ Ret ConverterController::convertByExtension(INotationWriterPtr writer, INotation
 // The call to ->perform() below is broken, it needs two params and provides only one.
 // We're walling it all off for our own builds for now, this is something that the team
 // changed and we must have synced up when these changes were in flux.
-#if !defined(MUSE_MODULE_EXTENSIONS)
+// Looks like the team has changed this to send two params, so this might be OK now.
+#if !defined(MUSE_MODULE_EXTENSIONS) && 0
     return make_ret(Err::UnknownError);
 #else
+    extensions::ExtensionUri uri = extensionUri.uri();
+    extensions::ExtensionActionCode actionCode = extensionUri.param("action", Val("main")).toString();
+
     //! NOTE First we do the extension, it can modify the notation (score)
-    Ret ret = extensionsProvider()->perform(extensionUri);
+    Ret ret = extensionsProvider()->perform(uri, actionCode);
     if (!ret) {
         return ret;
     }

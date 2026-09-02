@@ -3964,20 +3964,6 @@ void TRead::readNoteParenGroup(Chord* ch, XmlReader& e, ReadContext& ctx)
         rightParen->setTrack(ctx.track());
     }
 
-    if (ch->links() && ch->links()->mainElement() != ch) {
-        Chord* mainChord = toChord(ch->links()->mainElement());
-        Note* firstNote = notes.front();
-        Note* mainNote = firstNote ? toNote(firstNote->findLinkedInStaff(mainChord->staff())) : nullptr;
-        const NoteParenthesisInfo* mainNoteParenInfo = mainChord && mainNote ? mainChord->findNoteParenthesisInfo(mainNote) : nullptr;
-        Parenthesis* mainLeftParen = mainNoteParenInfo ? mainNoteParenInfo->leftParen() : nullptr;
-        Parenthesis* mainRightParen = mainNoteParenInfo ? mainNoteParenInfo->rightParen() : nullptr;
-
-        if (mainLeftParen && mainRightParen) {
-            leftParen->linkTo(mainLeftParen);
-            rightParen->linkTo(mainRightParen);
-        }
-    }
-
     NoteParenthesisInfo* noteParenInfo = new NoteParenthesisInfo(leftParen, rightParen, notes);
     ch->addNoteParenthesisInfo(noteParenInfo);
 }
@@ -4077,7 +4063,7 @@ void TRead::read(StaffType* t, XmlReader& e, ReadContext& ctx)
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
         if (tag == "name") {
-            t->setXmlName(e.readText());
+            t->setType(TConv::fromXml(e.readAsciiText(), StaffTypes::STANDARD));
         } else if (tag == "StaffLabel") {
             StaffLabel& staffLabel = t->staffLabel();
             readStaffLabel(staffLabel, e);
