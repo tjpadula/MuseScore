@@ -97,6 +97,7 @@ enum class Sid : short {
     sharedOnStaffNumeralsTrailingDotMultiple,
     sharedOnStaffNumeralsHyphenEnable,
     sharedOnStaffNumeralsHyphenThreshold,
+    staveSharingInstrChangePlayerNum,
 
     windsNameByGroup,
     vocalsNameByGroup,
@@ -187,6 +188,9 @@ enum class Sid : short {
     barWidth,
     doubleBarWidth,
     endBarWidth,
+    dashBarWidth,
+    dashBarDash,
+    dashBarGap,
     doubleBarDistance,
     endBarDistance,
     repeatBarlineDotSeparation,

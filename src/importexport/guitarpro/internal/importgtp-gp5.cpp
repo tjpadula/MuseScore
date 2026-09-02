@@ -55,6 +55,7 @@
 #include "engraving/dom/stafftext.h"
 #include "engraving/dom/stafftype.h"
 #include "engraving/dom/stringdata.h"
+#include "engraving/dom/tempotext.h"
 #include "engraving/dom/tie.h"
 #include "engraving/dom/timesig.h"
 #include "engraving/dom/tremolosinglechord.h"
@@ -62,6 +63,7 @@
 #include "engraving/dom/volta.h"
 #include "engraving/types/symid.h"
 #include "engraving/dom/stringtunings.h"
+#include "engraving/dom/capo.h"
 
 #include "engraving/editing/editchord.h"
 
@@ -291,7 +293,7 @@ Fraction GuitarPro5::readBeat(const Fraction& tick, int voice, Measure* measure,
                 cr = Factory::createChord(score->dummy()->segment());
             }
         }
-        cr->setParent(segment);
+        cr->setOwnershipParent(segment);
         cr->setTrack(track);
 
         TDuration d(l);
@@ -308,7 +310,7 @@ Fraction GuitarPro5::readBeat(const Fraction& tick, int voice, Measure* measure,
                 tuplet = Factory::createTuplet(measure);
                 tuplets[track2] = tuplet;
                 setTuplet(tuplet, tuple);
-                tuplet->setParent(measure);
+                tuplet->setOwnershipParent(measure);
             }
             tuplet->setTrack(cr->track());
             tuplet->setBaseLen(l);
@@ -342,7 +344,7 @@ Fraction GuitarPro5::readBeat(const Fraction& tick, int voice, Measure* measure,
                 if (dotted) {
                     // there is at most one dotted note in this guitar pro version
                     NoteDot* dot = Factory::createNoteDot(note);
-                    dot->setParent(note);
+                    dot->setOwnershipParent(note);
                     dot->setTrack(track);            // needed to know the staff it belongs to (and detect tablature)
                     dot->setVisible(true);
                     note->add(dot);
@@ -519,15 +521,25 @@ bool GuitarPro5::readMixChange(Measure* measure)
         readChar();
     }
     if (temp >= 0) {
-        if (last_segment) {
-            score->setTempo(last_segment->tick(), BeatsPerSecond::fromBPM(temp));
-            last_segment = nullptr;
-        }
         if (temp != previousTempo) {
+            if (last_segment && last_segment->tick() != measure->tick()) {
+                bool hasTempoText = false;
+                for (EngravingItem* e : last_segment->annotations()) {
+                    hasTempoText |= e->isTempoText();
+                }
+                if (!hasTempoText) {
+                    TempoText* tt = Factory::createTempoText(last_segment);
+                    tt->setTempo(BeatsPerSecond::fromBPM(temp));
+                    tt->setVisible(false);
+                    tt->setTrack(0);
+                    last_segment->add(tt);
+                }
+            }
             previousTempo = temp;
             setTempo(temp, measure);
             editedTempo = true;
         }
+        last_segment = nullptr;
         readChar();
         if (version > 500) {
             readChar();
@@ -580,7 +592,6 @@ bool GuitarPro5::readTracks()
 
         int frets        = readInt();
         int capo         = readInt();
-        part->setCapoFret(capo);
         /*int color        =*/ readInt();
 
         skip(version > 500 ? 49 : 44);
@@ -651,10 +662,19 @@ bool GuitarPro5::readTracks()
 
         if (capo > 0 && !engravingConfiguration()->guitarProImportExperimental()) {
             Segment* s = measure->getSegment(SegmentType::ChordRest, measure->tick());
-            StaffText* st = new StaffText(s);
-            st->setPlainText(u"Capo. fret " + String::number(capo));
-            st->setTrack(i * VOICES);
-            s->add(st);
+            const size_t track = i * VOICES;
+
+            CapoParams params;
+            params.active = true;
+            params.transposeMode = CapoParams::TransposeMode::TAB_ONLY;
+            params.fretPosition = capo;
+
+            Capo* capoEl = Factory::createCapo(score->dummy()->segment());
+            capoEl->setTrack(track);
+            capoEl->setParams(params);
+            s->add(capoEl);
+
+            staff->insertCapoParams({ 0, 1 }, params, true);
         }
 
         InstrChannel* ch = instr->channel(0);
@@ -1017,7 +1037,7 @@ bool GuitarPro5::read(IODevice* io)
             StringTunings* tun = Factory::createStringTunings(seg);
             tun->setStringData(sd);
             tun->setTrack(staff2track(s->idx()));
-            tun->setParent(seg);
+            tun->setOwnershipParent(seg);
             seg->add(tun);
 
             auto tuning = utils::standardTuningFor(p->instrument()->channel(0)->program(), (int)sd.strings());
@@ -1080,7 +1100,7 @@ bool GuitarPro5::read(IODevice* io)
                     sym->setSym(SymId::segnoSerpent2);
                 }
 
-                sym->setParent(measure);
+                sym->setOwnershipParent(measure);
                 sym->setTrack(0);
                 segment->add(sym);
                 auto iter = counter.find(articulations[i]);
@@ -1099,7 +1119,7 @@ bool GuitarPro5::read(IODevice* io)
                     "D.D.S. al Fine", "Da Coda", "Da Doppia Coda"
                 };
                 st->setPlainText(String::fromAscii(text[i - 4]));
-                st->setParent(s);
+                st->setOwnershipParent(s);
                 st->setTrack(0);
                 auto iter = counter.find(articulations[i]);
                 if (iter == counter.end()) {
@@ -1172,7 +1192,7 @@ GuitarPro::ReadNoteResult GuitarPro5::readNoteEffects(Note* note)
 
         gnote->setString(note->string());
         auto sd = note->part()->instrument()->stringData();
-        gnote->setFret(grace_pitch - sd->stringList().at(sd->stringList().size() - note->string() - 1).pitch);
+        gnote->setFret(fret);
         if (transition == 0) {
             // no transition
         } else if (transition == 1) {
@@ -1180,7 +1200,7 @@ GuitarPro::ReadNoteResult GuitarPro5::readNoteEffects(Note* note)
             Slur* slur1 = Factory::createSlur(score->dummy());
             slur1->setStartElement(gnote->chord());
             slur1->setEndElement(note->chord());
-            slur1->setParent(0);
+            slur1->setOwnershipParent(0);
             slur1->setTrack(note->staffIdx());
             slur1->setTrack2(note->staffIdx());
             slur1->setTick(gnote->chord()->tick());
@@ -1517,7 +1537,7 @@ GuitarPro::ReadNoteResult GuitarPro5::readNote(int string, Note* note)
         note->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
         note->setDeadNote(true);
     }
-    int pitch = staff->part()->instrument()->stringData()->getPitch(string, fretNumber + note->part()->capoFret(), nullptr);
+    int pitch = staff->part()->instrument()->stringData()->getPitch(string, fretNumber, staff, note->tick());
     note->setFret(fretNumber);
     note->setString(string);
     note->setPitch(pitch);
@@ -1722,7 +1742,7 @@ void GuitarPro5::addGlissandos()
         gliss->setStartElement(currentStart);
         gliss->setTick(currentStart->tick());
         gliss->setTrack(currentStart->track());
-        gliss->setParent(currentStart);
+        gliss->setOwnershipParent(currentStart);
         gliss->setGlissandoType(GlissandoType::STRAIGHT);
         gliss->setGlissandoShift(true);
         gliss->setEndElement(endNote);

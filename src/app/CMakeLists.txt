@@ -317,6 +317,18 @@ if (OS_IS_MAC)
 	message (STATUS "src/app/CMakeLists.txt RESOURCES_MAC_SOURCE_PATH: ${RESOURCES_MAC_SOURCE_PATH}")
 	message (STATUS "src/app/CMakeLists.txt MUSE_APP_INSTALL_RESOURCES_LOCATION: ${MUSE_APP_INSTALL_RESOURCES_LOCATION}")
 
+    # Embed the update helper so codesign --deep signs it with the bundle.
+    if (TARGET museupdater)
+        add_dependencies(MuseScoreStudio museupdater)
+        add_custom_command(TARGET MuseScoreStudio POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:museupdater>
+                $<TARGET_BUNDLE_DIR:MuseScoreStudio>/Contents/MacOS/museupdater
+            COMMENT "Embedding update helper (museupdater) into the app bundle"
+            VERBATIM
+        )
+    endif()
+
 endif (OS_IS_MAC)
 
 if (CC_IS_MINGW)
@@ -452,7 +464,17 @@ elseif(OS_IS_MAC)
             ${PROJECT_SOURCE_DIR}/fonts/leland/Leland.otf
             ${PROJECT_SOURCE_DIR}/fonts/leland/LelandText.otf
             ${PROJECT_SOURCE_DIR}/fonts/mscore-BC.ttf
-            ${PROJECT_SOURCE_DIR}/fonts/mscoreTab.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabRenaiss.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabPhalese.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabBonneuilDeVisee.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabBonneuilGaultier.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabDowland.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabLuteDidactic.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabModern.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabItalian.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabFrench.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabFrenchBaroqueHeadless.ttf
+            ${PROJECT_SOURCE_DIR}/fonts/MuseScoreTabFrenchBaroque.ttf
             ${PROJECT_SOURCE_DIR}/fonts/mscore/MScoreText.otf
             ${PROJECT_SOURCE_DIR}/fonts/musejazz/MuseJazzText.otf
             ${PROJECT_SOURCE_DIR}/fonts/petaluma/PetalumaScript.otf

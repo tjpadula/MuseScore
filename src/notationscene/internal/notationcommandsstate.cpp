@@ -70,6 +70,8 @@ static const std::vector<Command> HAS_SELECTION_REQUIRED_COMMANDS = {
     MIRROR_NOTEHEAD_COMMAND,
     MOVE_UP_COMMAND,
     MOVE_DOWN_COMMAND,
+    INCREASE_DYNAMIC_COMMAND,
+    DECREASE_DYNAMIC_COMMAND
 };
 
 static const std::vector<Command> UNDO_REDO_COMMANDS = {
@@ -292,9 +294,11 @@ void NotationCommandsState::init()
         updateCommandStates();
     });
 
-    interactive()->opened().onReceive(this, [this](const muse::Uri&) {
-        updateCommandStates();
-    });
+    if (interactive()) {
+        interactive()->opened().onReceive(this, [this](const muse::Uri&) {
+            updateCommandStates();
+        });
+    }
 
     controller()->selectionChanged().onNotify(this, [this]() {
         updateCommandStates(HAS_SELECTION_REQUIRED_COMMANDS);
@@ -357,7 +361,9 @@ void NotationCommandsState::init()
 void NotationCommandsState::deinit()
 {
     globalContext()->currentProjectChanged().disconnect(this);
-    interactive()->opened().disconnect(this);
+    if (interactive()) {
+        interactive()->opened().disconnect(this);
+    }
     controller()->selectionChanged().disconnect(this);
     controller()->stackChanged().disconnect(this);
     controller()->textEditingChanged().disconnect(this);
@@ -512,7 +518,7 @@ bool NotationCommandsState::isProjectOpened() const
         return false;
     }
 
-    if (!interactive()->isOpened(PROJECT_PAGE_URI).val) {
+    if (!interactive() || !interactive()->isOpened(PROJECT_PAGE_URI).val) {
         return false;
     }
 

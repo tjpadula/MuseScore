@@ -145,10 +145,12 @@ Item {
 
             function toggleMenuOpened() {
                 menuLoader.toggleOpened(item.subitems)
+                console.log("FlatButton toggleMenuOpened() ", navigation.name);
             }
 
             function handleMenuItem() {
                 Qt.callLater(noteInputModel.handleMenuItem, item.id)
+                console.log("FlatButton handleMenuItem() ", navigation.name, ", " , item.id);
             }
 
             onClicked: {

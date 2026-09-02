@@ -210,6 +210,55 @@ void NavigableAppMenuModel::setOpenedMenuAreaRect(QRect openedMenuAreaRect)
 
 bool NavigableAppMenuModel::eventFilter(QObject* watched, QEvent* event)
 {
+#if 1
+    
+    // This might work.
+    if ((event->type() != QEvent::Type::Timer) &&       // We get a lot of these, at least one per second.
+        (event->type() != QEvent::Type::SockAct)) {     // This can start screaming.
+        std::stringstream aStream;
+        // I find it hard to believe that QString does not have at least an output stream operator,
+        // but it doesn't.
+        std::string anEventTypeString = (ToString(event->type())).toStdString();
+        if (anEventTypeString.compare("QEvent::Type::") == 0) {
+            aStream << __PRETTY_FUNCTION__ << " unknown event enum: " << event->type();
+            aStream << std::endl;
+            fprintf (stderr, "%s", aStream.str().c_str());
+        } else {
+            //            aStream << __PRETTY_FUNCTION__ << " incoming event: " << anEventTypeString;
+            if ((event->type() == QEvent::Type::KeyPress) || (event->type() == QEvent::Type::KeyRelease)) {
+                aStream << __PRETTY_FUNCTION__ << " incoming event: " << anEventTypeString;
+                QKeyEvent* aKeyEvent = dynamic_cast<QKeyEvent*>(event);
+                if (aKeyEvent && (!aKeyEvent->isAutoRepeat())) {
+                    int aLatin1Char = -1;
+                    if (aKeyEvent->text().length() > 0) {
+                        QChar aSingleChar = aKeyEvent->text().front();
+                        aLatin1Char = aSingleChar.toLatin1();
+                    }
+                    aStream << ", text: " << aKeyEvent->text().toStdString() << " == " << aLatin1Char << ", key: 0x" <<  std::hex << aKeyEvent->key() << std::dec << ", native virtual key: " << aKeyEvent->nativeVirtualKey() << ", mods: ";
+                    if (aKeyEvent->modifiers() &  Qt::ShiftModifier) {
+                        aStream << "Shift ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::ControlModifier) {
+                        aStream << "Control ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::AltModifier) {
+                        aStream << "Option ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::MetaModifier) {
+                        aStream << "Command ";
+                    }
+                    if (aKeyEvent->modifiers() &  Qt::KeypadModifier) {     // arrows need this
+                        aStream << "Keypad ";
+                    }
+                    aStream << "watched: " << watched->objectName().toStdString();
+                }
+                aStream << std::endl;
+                fprintf (stderr, "%s", aStream.str().c_str());
+            }
+        }
+    }
+
+#endif
     bool isMenuOpened = !m_openedMenuId.isEmpty();
     if (event->type() == QEvent::MouseButtonPress && watched == appWindow()) {
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
