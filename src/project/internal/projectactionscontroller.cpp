@@ -25,6 +25,7 @@
 #include <QBuffer>
 #include <QEventLoop>
 #include <QFileInfo>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QUrl>
 #include <QUrlQuery>
@@ -295,6 +296,95 @@ bool ProjectActionsController::isFileSupported(const muse::io::path_t& path) con
 muse::Ret ProjectActionsController::openProject(const muse::rcommand::Params& params)
 {
     const QString url = params.at("url").toQString();
+    
+#if defined(Q_OS_IOS)
+    // If the UUID of the given file doesn't match our app's UUID, it was from a previous
+    // incarnation and no longer exists in the file system (and if it did, it would be
+    // inaccessible to this incarnation of the app). So don't bother the user.
+    // This will only work on an actual device, as the simulator path is different.
+    
+    // On a device, the param url looks like this:
+    // /var/mobile/Containers/Data/Application/9FA5120F-8D9F-415F-804B-20B23C756E7B/Documents/MuseScoreStudio5Development
+    
+    // On the simulator, the param url looks like this, the second UUID is the app (the first UUID is the simulator itself):
+//    file:///Users/tom/Library/Developer/CoreSimulator/Devices/3945CD6C-DC31-4847-874C-1A2294DC10BB/data/Containers/Data/Application/141EAD1F-B335-4378-8DD1-4F8505E68D64/Library/Application Support/MuseScore/MuseScoreStudio5Development/new_project.mscz
+    // and the simulator document directory looks like:
+    // /Users/tom/Library/Developer/CoreSimulator/Devices/3945CD6C-DC31-4847-874C-1A2294DC10BB/data/Containers/Data/Application/CC175991-FE34-4F3A-A70B-B5DB7AF34480/Documents/MuseScoreStudio5Development
+    
+//    LOGI() << "ProjectActionsController::openProject trying to open file: " << url << "\n";
+    std::string aSampleUUID = "01234567-89ab-cdef-0123-456789abcdef";
+    std::string aDocumentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString();
+    std::string aParamURL = url.toStdString();
+    std::string aSampleFilePathBase;
+    do {
+#if TARGET_OS_SIMULATOR
+        // Being on the simulator, the user name is part of the path, so the base path length is not constant.
+        // So we count slashes, which should be constant. If something changes, we'll just bail and let the
+        // regular opening process give it a try.
+        int aDocumentsSlashesToUUID = 12;
+        std::string::size_type aDocumentSlashPosition = 0;
+        for (int aCount = 0; aCount < aDocumentsSlashesToUUID; aCount++) {
+            aDocumentSlashPosition = aDocumentsPath.find("/", aDocumentSlashPosition);
+            if (aDocumentSlashPosition == std::string::npos) {
+                break;
+            }
+            aDocumentSlashPosition++;
+        }
+        // Is the resulting string long enough to have the UUID?
+        if (aDocumentsPath.length() < aDocumentSlashPosition + aSampleUUID.length()) {
+            break;
+        }
+        
+        int aSParamSlashesToUUID = 14;
+        std::string::size_type aParamSlashPosition = 0;
+        for (int aCount = 0; aCount < aSParamSlashesToUUID; aCount++) {
+            aParamSlashPosition = aParamURL.find("/", aParamSlashPosition);
+            if (aParamSlashPosition == std::string::npos) {
+                break;
+            }
+            aParamSlashPosition++;
+        }
+        if (aParamURL.length() < aParamSlashPosition + aSampleUUID.length()) {
+            break;
+        }
+        
+        // If we got to here, then we have found the desired slash location for both the local
+        // document path and for the param path, and they are both long enough to compare.
+        std::string anAppUUID = aDocumentsPath.substr(aDocumentSlashPosition, aSampleUUID.length());
+        std::string aParamUUID = aParamURL.substr(aParamSlashPosition,
+                                                  aSampleUUID.length());
+        if (aParamUUID.compare(anAppUUID) == 0) {
+            // UUID segments are the same, go ahead and try to open it.
+            break;
+        }
+#else
+        aSampleFilePathBase = "/var/mobile/Containers/Data/Application/";
+        std::string aParamPathBase = aDocumentsPath.substr(0, aSampleFilePathBase.length());
+        if (aParamURL.length() < (aSampleFilePathBase.length() + aSampleUUID.length())) {
+            // Given url isn't long enough to be a local file path we recognize, so bail.
+            break;
+        }
+        
+        if (aParamPathBase.compare(aSampleFilePathBase)) {
+            // The given url does not have a path base we recognize, so bail.
+            break;
+        }
+        
+        // At this point, the paths match up to the UUID field, so see if they match, too.
+        std::string anAppUUID = aDocumentsPath.substr(aSampleFilePathBase.length(), aSampleUUID.length());
+        std::string aParamUUID = aDocumentsPath.substr(aSampleFilePathBase.length(), aSampleUUID.length());
+        if (aParamUUID.compare(anAppUUID) == 0) {
+            // UUID segments are the same, go ahead and try to open it.
+            break;
+        }
+#endif  // TARGET_OS_SIMULATOR
+        
+        // The paths match but the UUIDs do not match, we can't open this file.
+        return muse::make_ok();
+    } while (0);
+    
+#endif
+    
     const QString displayNameOverride = params.at("display_name").toQString();
 
     Ret ret = openProject(ProjectFile(QUrl(url), displayNameOverride));
