@@ -88,7 +88,13 @@ void LoadingScreenView::draw(QPainter* painter)
     pen.setColor(versionNumberColor);
     painter->setPen(pen);
 
+#if defined(Q_OS_IOS)
+    painter->drawText(websiteRect.translated(0.0, -websiteBoundingRect.height() - versionNumberSpacing),
+                      Qt::AlignBottom | alignment | Qt::TextDontClip,
+                      muse::qtrc("appshell", "Version %1 for iOS").arg(muse::BaseApplication::appFullVersion().toString()));
+#else
     painter->drawText(websiteRect.translated(0.0, -websiteBoundingRect.height() - versionNumberSpacing),
                       Qt::AlignBottom | alignment | Qt::TextDontClip,
                       muse::qtrc("appshell", "Version %1").arg(muse::BaseApplication::appFullVersion().toString()));
+#endif
 }

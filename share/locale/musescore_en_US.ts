@@ -9977,7 +9977,12 @@ This action will not delete any of your scores.</translation>
         <translation>DevTools</translation>
     </message>
     <message>
-        <location filename="../../src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="93"/>
+        <location filename="../../src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="94"/>
+        <source>Version %1 for iOS</source>
+        <translation>Version %1 for iOS</translation>
+    </message>
+    <message>
+        <location filename="../../src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="98"/>
         <source>Version %1</source>
         <translation>Version %1</translation>
     </message>

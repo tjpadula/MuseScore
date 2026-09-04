@@ -9978,6 +9978,11 @@ Questa azione non eliminerà nessuna delle tue partiture.</translation>
     </message>
     <message>
         <location filename="../../src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="93"/>
+        <source>Version %1 for iOS</source>
+        <translation>Versione %1 per iOS</translation>
+    </message>
+    <message>
+        <location filename="../../src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="98"/>
         <source>Version %1</source>
         <translation>Versione %1</translation>
     </message>

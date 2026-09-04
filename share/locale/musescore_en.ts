@@ -10617,6 +10617,11 @@ This action will not delete any of your scores.</translation>
     </message>
     <message>
         <location filename="src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="1"/>
+        <source>Version %1 for iOS</source>
+        <translation type="unfinished">Version %1 for iOS</translation>
+    </message>
+    <message>
+        <location filename="src/appshell/widgets/splashscreen/loadingscreenview.cpp" line="1"/>
         <source>Version %1</source>
         <translation type="unfinished">Version %1</translation>
     </message>
