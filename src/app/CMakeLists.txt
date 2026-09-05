@@ -304,7 +304,7 @@ if (OS_IS_MAC)
 
         foreach (RESOURCE_ITEM ${RESOURCES_IOS_CONTENTS})
 
-            if ((RESOURCE_ITEM MATCHES "icns") OR (RESOURCE_ITEM MATCHES "LoadingScreen24"))
+            if ((RESOURCE_ITEM MATCHES "icns") OR (RESOURCE_ITEM MATCHES "LoadingScreen24") OR (RESOURCE_ITEM MATCHES "MSS 5.0 for iOS"))
                 target_sources(MuseScoreStudio PUBLIC ${RESOURCES_IOS_PATH}/${RESOURCE_ITEM})
                 #set_target_properties(MuseScoreStudio PROPERTIES RESOURCE "${RESOURCES_IOS_PATH}/${RESOURCE_ITEM}")
                 
