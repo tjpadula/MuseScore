@@ -52,6 +52,81 @@ Item {
         direction: NavigationPanel.Horizontal
         section: navSec
     }
+    
+    RowLayout {
+    	id: metaButtonRow
+    	
+    	anchors.left: parent.left
+        anchors.leftMargin: 4
+        anchors.right: parent.right
+        anchors.rightMargin: 4
+        
+		anchors.top: metaSeparator.bottom
+		
+        height: 28
+        
+        spacing: 4
+
+        visible: Qt.platform.os === "ios"
+        
+        StyledTextLabel {
+            id: helloWorld
+            Layout.alignment: Qt.AlignVCenter
+            Layout.fillWidth: false
+
+            text: "Hello, world!"
+            horizontalAlignment: Text.AlignLeft
+
+            visible: false
+        }
+        
+         ArrowKeyControl {
+            id: arrowKeyControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: parent.visible
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onSendAction: function(inAction) {
+//				console.log("ArrowKeyControl.onSendAction ", inAction);
+                model.sendAction(inAction)
+            }
+        }
+
+        MetaKeyControl {
+            id: metaKeyControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: parent.visible
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onMetaKeyChange: function(metaKeyName, state) {
+                model.setMetaKeyState(metaKeyName, state)
+            }
+
+            onSendAction: function(inAction) {
+                model.sendAction(inAction)
+            }
+        }
+	}
+
+	SeparatorLine { 
+		id: metaSeparator
+		Layout.topMargin: 2
+		Layout.bottomMargin: 2
+		orientation: Qt.Horizontal
+		visible: Qt.platform.os === "ios" 
+		
+		anchors.top:  statusBarRow.bottom
+	}
 
     RowLayout {
         id: statusBarRow
@@ -67,7 +142,9 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 4
 
-        height: parent.height
+		anchors.top: parent.top
+
+        height: 28
 
         spacing: 4
 
@@ -110,25 +187,6 @@ Item {
 
             navigationPanel: navPanel
             navigationOrder: 1
-        }
-
-        SeparatorLine { orientation: Qt.Vertical; visible: workspaceControl.visible }
-
-        MetaKeyControl {
-            id: metaKeyControl
-            Layout.alignment: Qt.AlignVCenter
-            Layout.preferredHeight: 28
-
-            enabled: true
-            visible: Qt.platform.os === "ios"
-
-            navigationPanel: navPanel
-            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
-
-            onMetaKeyChange: function(metaKeyName, state) {
-                model.setMetaKeyState(metaKeyName, state)
-            }
-
         }
 
         SeparatorLine { orientation: Qt.Vertical; visible: workspaceControl.visible }

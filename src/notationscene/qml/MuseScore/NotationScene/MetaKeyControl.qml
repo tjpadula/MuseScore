@@ -36,8 +36,11 @@ RowLayout {
     readonly property int metaKeyOrderMax: commandKeyButton.navigation.order + 1
 
     signal metaKeyChange(var metaKeyName, bool state)
+    signal sendAction(var inAction)
 
     spacing: 0
+
+    SeparatorLine { orientation: Qt.Vertical; visible: parent.visible }
 
     FlatButton {
         id: escapeKeyButton
@@ -46,7 +49,8 @@ RowLayout {
     	isNarrow: true
 	    implicitWidth: 64
     	margins: 2
-		
+		visible: parent.visible		
+
 		text: "\u238B"
         icon: IconCode.NONE
         iconFont: ui.theme.toolbarIconsFont
@@ -59,11 +63,11 @@ RowLayout {
 //        accessible.name: qsTrc("notation", "Escape Meta")
 
         onPressed: {
-            root.metaKeyChange("escape", true)
+//            root.sendAction("action://cancel")
         }
 
         onReleased: {
-            root.metaKeyChange("escape", false)
+            root.sendAction("action://cancel")
         }
     }
 
@@ -74,7 +78,7 @@ RowLayout {
         Layout.topMargin: 4
         Layout.bottomMargin: 7
     	orientation: Qt.Vertical
-    	visible: true 
+		visible: parent.visible		
     }
 
     FlatButton {
@@ -84,6 +88,7 @@ RowLayout {
     	isNarrow: true
 	    implicitWidth: 64
     	margins: 2
+		visible: parent.visible		
 		
 		text: "\u21E7"
         icon: IconCode.NONE
@@ -127,7 +132,7 @@ RowLayout {
         Layout.topMargin: 4
         Layout.bottomMargin: 7
     	orientation: Qt.Vertical
-    	visible: true 
+		visible: parent.visible		
     }
 
     FlatButton {
@@ -137,6 +142,7 @@ RowLayout {
     	isNarrow: true
 	    implicitWidth: 64
     	margins: 2
+		visible: parent.visible		
 		
 		text: "\u2303"
         icon: IconCode.NONE
@@ -180,7 +186,7 @@ RowLayout {
         Layout.topMargin: 4
         Layout.bottomMargin: 7
     	orientation: Qt.Vertical
-    	visible: true 
+		visible: parent.visible		
     }
 
     FlatButton {
@@ -190,6 +196,7 @@ RowLayout {
     	isNarrow: true
 	    implicitWidth: 64
     	margins: 2
+		visible: parent.visible		
 		
 		text: "\u2325"
         icon: IconCode.NONE
@@ -233,7 +240,7 @@ RowLayout {
         Layout.topMargin: 4
         Layout.bottomMargin: 7
     	orientation: Qt.Vertical
-    	visible: true 
+		visible: parent.visible		
     }
 
     FlatButton {
@@ -242,6 +249,7 @@ RowLayout {
  		text: "\u2318"
         icon: IconCode.NONE
         iconFont: ui.theme.toolbarIconsFont
+		visible: parent.visible		
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
@@ -286,7 +294,7 @@ RowLayout {
         Layout.topMargin: 4
         Layout.bottomMargin: 7
     	orientation: Qt.Vertical
-    	visible: true 
+		visible: parent.visible		
     }
 
     FlatButton {
@@ -300,6 +308,7 @@ RowLayout {
     	isNarrow: true
 	    implicitWidth: 64
     	margins: 2
+		visible: parent.visible		
 
         height: 28
         transparent: true
@@ -309,11 +318,14 @@ RowLayout {
 //        accessible.name: qsTrc("notation", "Delete Meta")
 
         onPressed: {
-            root.metaKeyChange("delete", true)
+//            root.sendAction("action://delete")
         }
 
         onReleased: {
-            root.metaKeyChange("delete", false)
+            root.sendAction("action://delete")
         }
 	}
+	
+	SeparatorLine { orientation: Qt.Vertical; visible: parent.visible }
+
 }

@@ -166,6 +166,7 @@ qt_add_qml_module(notationscene_qml
 
     QML_FILES
         AbstractElementPopup.qml
+		ArrowKeyControl.qml
         ConcertPitchControl.qml
         EditGridSizeDialog.qml
         EditPercussionShortcutDialog.qml
@@ -192,7 +193,7 @@ qt_add_qml_module(notationscene_qml
         internal/SearchPopup.qml
         internal/SelectionFilterSection.qml
         internal/VoicesPopup.qml
-	MetaKeyControl.qml
+		MetaKeyControl.qml
         NotationToolBar.qml
         NotationView.qml
         NoteInputBar.qml

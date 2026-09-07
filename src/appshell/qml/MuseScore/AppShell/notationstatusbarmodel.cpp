@@ -322,6 +322,13 @@ void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool st
 #endif
 }
 
+void NotationStatusBarModel::sendAction(const QString& inAction)
+{
+#if defined(Q_OS_IOS)
+	dispatch(codeFromQString(inAction));
+#endif
+}
+
 void NotationStatusBarModel::setCurrentViewMode(const QString& modeCode)
 {
     dispatch(codeFromQString(modeCode));
