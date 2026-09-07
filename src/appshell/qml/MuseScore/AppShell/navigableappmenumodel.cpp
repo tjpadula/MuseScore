@@ -29,7 +29,11 @@
 
 #include "log.h"
 
+#include "framework/global/internal/baseapplication.h"
+
+#if defined(Q_OS_IOS)
 #include "ui/internal/platform/ios/IOSEventTrampoline.h"
+#endif
 
 using namespace mu::appshell;
 using namespace muse::ui;
@@ -89,6 +93,18 @@ void NavigableAppMenuModel::load()
     });
 
     qApp->installEventFilter(this);
+
+#if defined(Q_OS_IOS)
+    // Give the event loop three more turns and re-install our filter so we will be the
+    // last installed, which should make us the first called.
+    QMetaObject::invokeMethod(qApp, [this]() {           // One puts us at 31st in line,
+        QMetaObject::invokeMethod(qApp, [this]() {       // two puts us at 16th in line,
+            QMetaObject::invokeMethod(qApp, [this]() {   // and three makes us first.
+                qApp->installEventFilter(this);
+            }, Qt::QueuedConnection);
+        }, Qt::QueuedConnection);
+    }, Qt::QueuedConnection);
+#endif
 }
 
 void NavigableAppMenuModel::handleMenuItem(const QString& itemId)
@@ -280,6 +296,12 @@ bool NavigableAppMenuModel::eventFilter(QObject* watched, QEvent* event)
          m_singlePointEvent = 0
      }
      */
+    
+    // Let's try modifying the event, this will only work if we are the very first event filter called.
+    QInputEvent* anInputEvent = dynamic_cast<QInputEvent*>(event);
+    if (anInputEvent) {
+        anInputEvent->setModifiers(muse::BaseApplication::baseApplication()->keyboardModifiers());
+    }
 #endif
     bool isMenuOpened = !m_openedMenuId.isEmpty();
     if (event->type() == QEvent::MouseButtonPress && watched == appWindow()) {
@@ -393,10 +415,11 @@ bool NavigableAppMenuModel::processEventForAppMenu(QEvent* event)
         break;
     }
     case QEvent::KeyRelease: {
+#if !defined(Q_OS_IOS)
         if (!isAltKey) {
             break;
         }
-
+#endif
         if (isNavigationStarted) {
             resetNavigation();
             restoreMUNavigationSystemState();

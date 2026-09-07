@@ -43,7 +43,9 @@
 #include <QtCore>
 #include <QtCore/qnamespace.h>
 
+#if defined(Q_OS_IOS)
 #include "ui/internal/platform/ios/IOSEventTrampoline.h"
+#endif
 
 using namespace mu::appshell;
 using namespace mu::notation;
@@ -245,7 +247,7 @@ void NotationStatusBarModel::setCurrentZoomPercentage(int zoomPercentage)
         return;
     }
 
-    dispatch(zoomTypeToActionCode(ZoomType::Percentage), ActionData::make_arg1<int>(zoomPercentage));
+    dispatch(zoomTypeToActionCode(ZoomType::Percentage), muse::actions::ActionData::make_arg1<int>(zoomPercentage));
 }
 
 ZoomType NotationStatusBarModel::currentZoomType() const
@@ -316,58 +318,7 @@ void NotationStatusBarModel::toggleConcertPitch()
 void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool state)
 {
 #if defined(Q_OS_IOS)
-    LOGI() << "NotationStatusBarModel::setMetaKeyState key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
-    // Create a QKeyEvent and bounce it off our trampoline into Objective-C land.
-    QEvent::Type anEventType = state ? QActionEvent::KeyPress : QActionEvent::KeyRelease;
-    int aKey = 0;
-    Qt::KeyboardModifiers aModifiers = Qt::NoModifier;
-    if (metaKeyName.compare ("shift") == 0) {
-        aKey = mu::engraving::Key_Shift;
-        aModifiers = Qt::ShiftModifier;
-    }
-    if (metaKeyName.compare ("control") == 0) {
-        aKey = mu::engraving::Key_Control;
-        aModifiers = Qt::ControlModifier;
-    }
-    if (metaKeyName.compare ("option") == 0) {
-        aKey = Qt::Key_Alt;
-        aModifiers = Qt::AltModifier;
-    }
-    if (metaKeyName.compare ("command") == 0) {
-        aKey = Qt::Key_Meta;
-        aModifiers = Qt::MetaModifier;
-    }
-    if (aModifiers != Qt::NoModifier) {
-        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, aKey, aModifiers);
-        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
-        return;
-    }
-    
-    // We were given something other than a modifier key, so let's see if
-    // we know about it. We don't actually have anything that sends a single
-    // char (yet).
-    if (metaKeyName.length() == 1) {
-        // It's a simple character key. We'll convert it from a plain unicode
-        // (ASCII) char so we can use that as the key.
-        aKey = (int)(metaKeyName.at(0).unicode());
-        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, aKey, aModifiers, metaKeyName);
-        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
-        return;
-    }
-
-    if (metaKeyName.compare ("delete") == 0) {
-        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, Qt::Key_Backspace, aModifiers);
-        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
-        return;
-    }
-    
-    if (metaKeyName.compare ("escape") == 0) {
-        QKeyEvent* aKeyEvent = new QKeyEvent(anEventType, Qt::Key_Escape, aModifiers);
-        IOSEventTrampoline::sendQKeyEvent(aKeyEvent);
-        return;
-    }
-    
-    LOGI() << "NotationStatusBarModel::setMetaKeyState did not recognize key: " << metaKeyName << ", state: " << (state ? "pressed" : "released") << "\n";
+    IOSEventTrampoline::sharedTrampoline()->setMetaKeyState(metaKeyName, state);
 #endif
 }
 
@@ -417,7 +368,7 @@ void NotationStatusBarModel::initAvailableZoomList()
             menuItem->setSelected(type == ZoomType::Percentage ? value == currZoomPercentage : true);
         }
 
-        menuItem->setArgs(ActionData::make_arg2<ZoomType, int>(type, value));
+        menuItem->setArgs(muse::actions::ActionData::make_arg2<ZoomType, int>(type, value));
 
         return menuItem;
     };
@@ -461,7 +412,7 @@ void NotationStatusBarModel::setCurrentZoom(const QString& zoomId)
 
     emit availableZoomListChanged();
 
-    dispatch(zoomTypeToActionCode(type), ActionData::make_arg1<int>(value));
+    dispatch(zoomTypeToActionCode(type), muse::actions::ActionData::make_arg1<int>(value));
 }
 
 int NotationStatusBarModel::minZoomPercentage() const
@@ -508,7 +459,7 @@ INotationAccessibilityPtr NotationStatusBarModel::accessibility() const
     return notation() ? notation()->accessibility() : nullptr;
 }
 
-void NotationStatusBarModel::dispatch(const ActionCode& code, const ActionData& args)
+void NotationStatusBarModel::dispatch(const ActionCode& code, const muse::actions::ActionData& args)
 {
     dispatcher()->dispatch(code, args);
 }

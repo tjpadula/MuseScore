@@ -103,6 +103,21 @@ RowLayout {
         onReleased: {
             root.metaKeyChange("shift", false)
         }
+
+        MultiPointTouchArea {
+			anchors.fill: parent
+			
+			// This stops Qt from converting the touch to a mouse point 
+			// for underlying or parent items.
+			minimumTouchPoints: 1
+			
+			onPressed: (touchPoints) => {
+				shiftKeyButton.pressed()
+			}
+			onReleased: (touchPoints) => {
+				shiftKeyButton.released()
+			}
+		}
     }
 
     SeparatorLine {
@@ -141,6 +156,21 @@ RowLayout {
         onReleased: {
             root.metaKeyChange("control", false)
         }
+
+        MultiPointTouchArea {
+			anchors.fill: parent
+			
+			// This stops Qt from converting the touch to a mouse point 
+			// for underlying or parent items.
+			minimumTouchPoints: 1
+			
+			onPressed: (touchPoints) => {
+				controlKeyButton.pressed()
+			}
+			onReleased: (touchPoints) => {
+				controlKeyButton.released()
+			}
+		}
     }
 
     SeparatorLine {
@@ -179,6 +209,21 @@ RowLayout {
         onReleased: {
             root.metaKeyChange("option", false)
         }
+
+        MultiPointTouchArea {
+			anchors.fill: parent
+			
+			// This stops Qt from converting the touch to a mouse point 
+			// for underlying or parent items.
+			minimumTouchPoints: 1
+			
+			onPressed: (touchPoints) => {
+				optionKeyButton.pressed()
+			}
+			onReleased: (touchPoints) => {
+				optionKeyButton.released()
+			}
+		}
     }
 
     SeparatorLine {
@@ -217,6 +262,21 @@ RowLayout {
         onReleased: {
             root.metaKeyChange("command", false)
         }
+        
+        MultiPointTouchArea {
+			anchors.fill: parent
+			
+			// This stops Qt from converting the touch to a mouse point 
+			// for underlying or parent items.
+			minimumTouchPoints: 1
+			
+			onPressed: (touchPoints) => {
+				commandKeyButton.pressed()
+			}
+			onReleased: (touchPoints) => {
+				commandKeyButton.released()
+			}
+		}
     }
     
     SeparatorLine {

@@ -330,6 +330,9 @@ muse::Ret ProjectActionsController::openProject(const muse::rcommand::Params& pa
             }
             aDocumentSlashPosition++;
         }
+        if (aDocumentSlashPosition == std::string::npos) {
+            break;
+        }
         // Is the resulting string long enough to have the UUID?
         if (aDocumentsPath.length() < aDocumentSlashPosition + aSampleUUID.length()) {
             break;
@@ -343,6 +346,9 @@ muse::Ret ProjectActionsController::openProject(const muse::rcommand::Params& pa
                 break;
             }
             aParamSlashPosition++;
+        }
+        if (aParamSlashPosition == std::string::npos) {
+            break;
         }
         if (aParamURL.length() < aParamSlashPosition + aSampleUUID.length()) {
             break;

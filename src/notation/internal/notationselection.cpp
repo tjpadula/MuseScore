@@ -350,7 +350,11 @@ void NotationSelection::doSelect(const std::vector<EngravingItem*>& elements, Se
 {
     TRACEFUNC;
 
+#if defined(Q_OS_IOS)
+    if (elements.size() == 1 && type == SelectType::ADD && BaseApplication::baseApplication()->keyboardModifiers() == Qt::KeyboardModifier::ControlModifier) {
+#else
     if (elements.size() == 1 && type == SelectType::ADD && QGuiApplication::keyboardModifiers() == Qt::KeyboardModifier::ControlModifier) {
+#endif
         if (score()->selection().isRange()) {
             score()->selection().setState(mu::engraving::SelState::LIST);
             score()->setUpdateAll();

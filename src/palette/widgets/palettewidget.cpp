@@ -37,6 +37,7 @@
 #include <QToolTip>
 #include <QWindow>
 
+#include "framework/global/internal/baseapplication.h"
 #include "modularity/ioc.h"
 #include "translation.h"
 #include "types/bytearray.h"
@@ -804,7 +805,11 @@ void PaletteWidget::leaveEvent(QEvent*)
 {
     if (m_currentIdx != -1) {
         QRect r = rectForCellAt(m_currentIdx);
+#if defined(Q_OS_IOS)
+        if (!(BaseApplication::baseApplication()->keyboardModifiers() & Qt::ShiftModifier)) {
+#else
         if (!(QGuiApplication::keyboardModifiers() & Qt::ShiftModifier)) {
+#endif
             m_currentIdx = -1;
         }
         update(r);

@@ -132,6 +132,8 @@
 #include "engraving/rw/rwregister.h"
 #include "engraving/rw/xmlreader.h"
 
+#include "framework/global/internal/baseapplication.h"
+
 #include "inotationviewstate.h"
 #include "notationerrors.h"
 #include "notation.h"
@@ -1073,8 +1075,12 @@ void NotationInteraction::startDrag(const std::vector<EngravingItem*>& elems,
     m_dragData.reset();
     m_dragData.elements = elems;
     m_dragData.elementOffset = eoffset;
+#if defined(Q_OS_IOS)
+    m_editData.modifiers = keyboardModifier(BaseApplication::baseApplication()->keyboardModifiers());
+#else
     m_editData.modifiers = keyboardModifier(QGuiApplication::keyboardModifiers());
-
+#endif
+    
     for (EngravingItem* e : m_dragData.elements) {
         bool draggable = isDraggable(e);
 
@@ -1104,7 +1110,11 @@ void NotationInteraction::startDrag(const std::vector<EngravingItem*>& elems,
         return;
     }
 
+#if defined(Q_OS_IOS)
+    m_dragData.ed.modifiers = keyboardModifier(BaseApplication::baseApplication()->keyboardModifiers());
+#else
     m_dragData.ed.modifiers = keyboardModifier(QGuiApplication::keyboardModifiers());
+#endif
     for (auto& group : m_dragData.dragGroups) {
         group->startDrag(m_dragData.ed);
     }
@@ -1175,8 +1185,11 @@ void NotationInteraction::drag(const PointF& fromPos, const PointF& toPos, DragM
     m_dragData.ed.moveDelta = moveDelta;
     m_dragData.ed.evtDelta = evtDelta;
     m_dragData.ed.pos = toPos;
+#if defined(Q_OS_IOS)
+    m_dragData.ed.modifiers = keyboardModifier(BaseApplication::baseApplication()->keyboardModifiers());
+#else
     m_dragData.ed.modifiers = keyboardModifier(QGuiApplication::keyboardModifiers());
-
+#endif
     m_dragData.ed.isEditMode = isEditingElement();
 
     if (isTextEditingStarted()) {

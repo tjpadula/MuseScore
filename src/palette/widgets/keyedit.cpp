@@ -29,6 +29,7 @@
 
 #include "keyedit.h"
 
+#include "framework/global/internal/baseapplication.h"
 #include "modularity/ioc.h"
 #include "translation.h"
 
@@ -301,7 +302,11 @@ void KeyCanvas::snap(Accidental* a)
         qreal prevWidth = prev->symWidth(prev->symId());
         x = prevX + prevWidth + accidentalGap;
     }
+#if defined(Q_OS_IOS)
+    if (!BaseApplication::baseApplication()->keyboardModifiers().testFlag(Qt::ControlModifier)) {
+#else
     if (!QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+#endif
         a->mutldata()->setPosX(x);
     }
 }
