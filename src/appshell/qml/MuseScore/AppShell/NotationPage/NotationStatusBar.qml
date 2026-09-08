@@ -96,10 +96,26 @@ Item {
                 model.sendAction(inAction)
             }
         }
+        
+        ActionKeyControl {
+            id: actionKeyControl
+            Layout.alignment: Qt.AlignCenter
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: parent.visible
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onSendAction: function(inAction) {
+                model.sendAction(inAction)
+            }
+        }
 
         MetaKeyControl {
             id: metaKeyControl
-            Layout.alignment: Qt.AlignVCenter
+            Layout.alignment: Qt.AlignVCenter + Qt.AlignRight
             Layout.preferredHeight: 28
 
             enabled: true

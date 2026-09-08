@@ -166,6 +166,7 @@ qt_add_qml_module(notationscene_qml
 
     QML_FILES
         AbstractElementPopup.qml
+		ActionKeyControl.qml
 		ArrowKeyControl.qml
         ConcertPitchControl.qml
         EditGridSizeDialog.qml

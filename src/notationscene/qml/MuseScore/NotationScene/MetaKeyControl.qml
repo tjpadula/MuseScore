@@ -43,34 +43,49 @@ RowLayout {
     SeparatorLine { orientation: Qt.Vertical; visible: parent.visible }
 
     FlatButton {
-        id: escapeKeyButton
+        id: commandKeyButton
+
+ 		text: "\u2318"
+        icon: IconCode.NONE
+        iconFont: ui.theme.toolbarIconsFont
+		visible: parent.visible		
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
 	    implicitWidth: 64
     	margins: 2
-		visible: parent.visible		
-
-		text: "\u238B"
-        icon: IconCode.NONE
-        iconFont: ui.theme.toolbarIconsFont
 
         height: 28
         transparent: true
 
         navigation.panel: root.navigationPanel
-        navigation.order: root.navigationOrderMin
-//        accessible.name: qsTrc("notation", "Escape Meta")
+        navigation.order: optionKeyButton.navigation.order + 1
+//        accessible.name: qsTrc("notation", "Command Meta")
 
         onPressed: {
-//            root.sendAction("action://cancel")
+            root.metaKeyChange("command", true)
         }
 
         onReleased: {
-            root.sendAction("action://cancel")
+            root.metaKeyChange("command", false)
         }
+        
+        MultiPointTouchArea {
+			anchors.fill: parent
+			
+			// This stops Qt from converting the touch to a mouse point 
+			// for underlying or parent items.
+			minimumTouchPoints: 1
+			
+			onPressed: (touchPoints) => {
+				commandKeyButton.pressed()
+			}
+			onReleased: (touchPoints) => {
+				commandKeyButton.released()
+			}
+		}
     }
-
+    
     SeparatorLine {
     	Layout.fillHeight: false
         Layout.leftMargin: 2
@@ -81,8 +96,9 @@ RowLayout {
 		visible: parent.visible		
     }
 
+
     FlatButton {
-        id: shiftKeyButton
+        id: optionKeyButton
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
@@ -90,7 +106,7 @@ RowLayout {
     	margins: 2
 		visible: parent.visible		
 		
-		text: "\u21E7"
+		text: "\u2325"
         icon: IconCode.NONE
         iconFont: ui.theme.toolbarIconsFont
 
@@ -98,15 +114,15 @@ RowLayout {
         transparent: true
 
         navigation.panel: root.navigationPanel
-        navigation.order: escapeKeyButton.navigation.order + 1
-//        accessible.name: qsTrc("notation", "Shift Meta")
+        navigation.order: controlKeyButton.navigation.order + 1
+//        accessible.name: qsTrc("notation", "Option Meta")
 
         onPressed: {
-            root.metaKeyChange("shift", true)
+            root.metaKeyChange("option", true)
         }
 
         onReleased: {
-            root.metaKeyChange("shift", false)
+            root.metaKeyChange("option", false)
         }
 
         MultiPointTouchArea {
@@ -117,10 +133,10 @@ RowLayout {
 			minimumTouchPoints: 1
 			
 			onPressed: (touchPoints) => {
-				shiftKeyButton.pressed()
+				optionKeyButton.pressed()
 			}
 			onReleased: (touchPoints) => {
-				shiftKeyButton.released()
+				optionKeyButton.released()
 			}
 		}
     }
@@ -189,8 +205,8 @@ RowLayout {
 		visible: parent.visible		
     }
 
-    FlatButton {
-        id: optionKeyButton
+     FlatButton {
+        id: shiftKeyButton
 
 	    buttonType: FlatButton.Horizontal
     	isNarrow: true
@@ -198,7 +214,7 @@ RowLayout {
     	margins: 2
 		visible: parent.visible		
 		
-		text: "\u2325"
+		text: "\u21E7"
         icon: IconCode.NONE
         iconFont: ui.theme.toolbarIconsFont
 
@@ -206,15 +222,15 @@ RowLayout {
         transparent: true
 
         navigation.panel: root.navigationPanel
-        navigation.order: controlKeyButton.navigation.order + 1
-//        accessible.name: qsTrc("notation", "Option Meta")
+        navigation.order: escapeKeyButton.navigation.order + 1
+//        accessible.name: qsTrc("notation", "Shift Meta")
 
         onPressed: {
-            root.metaKeyChange("option", true)
+            root.metaKeyChange("shift", true)
         }
 
         onReleased: {
-            root.metaKeyChange("option", false)
+            root.metaKeyChange("shift", false)
         }
 
         MultiPointTouchArea {
@@ -225,107 +241,13 @@ RowLayout {
 			minimumTouchPoints: 1
 			
 			onPressed: (touchPoints) => {
-				optionKeyButton.pressed()
+				shiftKeyButton.pressed()
 			}
 			onReleased: (touchPoints) => {
-				optionKeyButton.released()
+				shiftKeyButton.released()
 			}
 		}
     }
-
-    SeparatorLine {
-    	Layout.fillHeight: false
-        Layout.leftMargin: 2
-        Layout.rightMargin: 2
-        Layout.topMargin: 4
-        Layout.bottomMargin: 7
-    	orientation: Qt.Vertical
-		visible: parent.visible		
-    }
-
-    FlatButton {
-        id: commandKeyButton
-
- 		text: "\u2318"
-        icon: IconCode.NONE
-        iconFont: ui.theme.toolbarIconsFont
-		visible: parent.visible		
-
-	    buttonType: FlatButton.Horizontal
-    	isNarrow: true
-	    implicitWidth: 64
-    	margins: 2
-
-        height: 28
-        transparent: true
-
-        navigation.panel: root.navigationPanel
-        navigation.order: optionKeyButton.navigation.order + 1
-//        accessible.name: qsTrc("notation", "Command Meta")
-
-        onPressed: {
-            root.metaKeyChange("command", true)
-        }
-
-        onReleased: {
-            root.metaKeyChange("command", false)
-        }
-        
-        MultiPointTouchArea {
-			anchors.fill: parent
-			
-			// This stops Qt from converting the touch to a mouse point 
-			// for underlying or parent items.
-			minimumTouchPoints: 1
-			
-			onPressed: (touchPoints) => {
-				commandKeyButton.pressed()
-			}
-			onReleased: (touchPoints) => {
-				commandKeyButton.released()
-			}
-		}
-    }
-    
-    SeparatorLine {
-    	Layout.fillHeight: false
-        Layout.leftMargin: 2
-        Layout.rightMargin: 2
-        Layout.topMargin: 4
-        Layout.bottomMargin: 7
-    	orientation: Qt.Vertical
-		visible: parent.visible		
-    }
-
-    FlatButton {
-        id: deleteKeyButton
-
- 		text: "\u232B"
-        icon: IconCode.NONE
-        iconFont: ui.theme.toolbarIconsFont
-
-	    buttonType: FlatButton.Horizontal
-    	isNarrow: true
-	    implicitWidth: 64
-    	margins: 2
-		visible: parent.visible		
-
-        height: 28
-        transparent: true
-
-        navigation.panel: root.navigationPanel
-        navigation.order: commandKeyButton.navigation.order + 1
-//        accessible.name: qsTrc("notation", "Delete Meta")
-
-        onPressed: {
-//            root.sendAction("action://delete")
-        }
-
-        onReleased: {
-            root.sendAction("action://delete")
-        }
-	}
-	
+   
 	SeparatorLine { orientation: Qt.Vertical; visible: parent.visible }
-
 }
