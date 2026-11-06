@@ -33,21 +33,15 @@
 #include <qobject.h>
 
 #include "async/async.h"
-#include "async/processevents.h"
 #include "defer.h"
 #include "rcommand/commandtypes.h"
 #include "translation.h"
-
-#include "cloud/clouderrors.h"
-#include "cloud/qml/Muse/Cloud/enums.h"
-#include "engraving/infrastructure/mscio.h"
-#include "engraving/engravingerrors.h"
 
 #include "notation/imasternotation.h"
 #include "notation/inotationinteraction.h"
 #include "notation/inotationselection.h"
 
-#include "projecterrors.h"
+#include "inotationproject.h"
 
 #include "../projectcommands.h"
 #include "rcommand/actiontocommand.h"
@@ -69,9 +63,6 @@ static const muse::Uri UPLOAD_PROGRESS_URI("musescore://project/upload/progress"
 
 static const QString MUSESCORE_URL_SCHEME("musescore");
 static const QString OPEN_SCORE_URL_HOSTNAME("open-score");
-
-static constexpr int RETRY_SAVE_BTN_ID = int(IInteractive::Button::CustomButton);
-static constexpr int SAVE_AS_BTN_ID    = RETRY_SAVE_BTN_ID + 1;
 
 auto openArgs = [](const rcommand::Command& command, const ActionData& args) -> muse::rcommand::CommandQuery {
     rcommand::CommandQuery query(command);
@@ -141,6 +132,14 @@ void ProjectActionsController::init()
         rcommand::registerActionToCommand(this, actionToCommand, commandDispatcher(), dispatcher());
     }
 
+    saveProjectScenario()->busyChanged().onNotify(this, [this]() {
+        m_busyChanged.notify();
+    });
+
+    openProjectScenario()->busyChanged().onNotify(this, [this]() {
+        m_busyChanged.notify();
+    });
+
     // listen changes
     globalContext()->currentProjectChanged().onNotify(this, [this]() {
         auto project = globalContext()->currentProject();
@@ -181,7 +180,9 @@ muse::async::Notification ProjectActionsController::needSaveChanged() const
 
 bool ProjectActionsController::isBusy(BusyStatus status) const
 {
-    return m_busyStatuses.contains(status);
+    return m_busyStatuses.contains(status)
+           || saveProjectScenario()->isBusy(status)
+           || openProjectScenario()->isBusy(status);
 }
 
 void ProjectActionsController::setBusy(BusyStatus status, bool isBusy)
@@ -264,6 +265,9 @@ bool ProjectActionsController::canReceiveAction(const ActionCode& code) const
     return true;
 }
 
+#if 0
+// Merge indicated that loads of methods have gone away, probably to some other object.
+// But we don't know which object that is yet.
 bool ProjectActionsController::isUrlSupported(const QUrl& url) const
 {
     if (url.isLocalFile()) {
@@ -827,13 +831,23 @@ muse::async::Notification ProjectActionsController::projectBeingDownloadedChange
 {
     return m_projectBeingDownloadedChanged;
 }
-
-Ret ProjectActionsController::openPageIfNeed(Uri pageUri)
+#endif
+muse::Ret ProjectActionsController::openPageIfNeed(muse::Uri pageUri)
 {
     if (!interactive()->isOpened(pageUri).val) {
         interactive()->open(pageUri);
     }
     return make_ret(Ret::Code::Ok);
+}
+
+muse::Ret ProjectActionsController::openProject(const muse::io::path_t& path, const QString& displayNameOverride)
+{
+    return openProjectScenario()->openProject(path, displayNameOverride);
+}
+
+muse::Ret ProjectActionsController::openProject(const muse::rcommand::Params& params)
+{
+    return openProjectScenario()->openProject(params);
 }
 
 bool ProjectActionsController::isProjectOpened(const muse::io::path_t& scorePath) const
@@ -890,7 +904,7 @@ muse::Ret ProjectActionsController::newProject()
 
     auto promise = interactive()->open(NEW_SCORE_URI);
     promise.onResolve(this, [this](const Val&) {
-        Ret ret = doFinishOpenProject();
+        Ret ret = openProjectScenario()->finishOpening();
 
         if (!ret) {
             LOGE() << ret.toString();
@@ -980,179 +994,29 @@ IInteractive::Button ProjectActionsController::askAboutSavingScore(INotationProj
     return result.standardButton();
 }
 
-Ret ProjectActionsController::canSaveProject() const
-{
-    auto project = currentNotationProject();
-    if (!project) {
-        LOGW() << "no current project";
-        return make_ret(Err::NoProjectError);
-    }
-
-    return project->canSave();
-}
-
-bool ProjectActionsController::saveProject(const muse::io::path_t& path)
-{
-    if (!path.empty()) {
-        if (isBusy(BusyStatus::Saving)) {
-            return false;
-        }
-
-        setBusy(BusyStatus::Saving, true);
-        DEFER {
-            setBusy(BusyStatus::Saving, false);
-        };
-
-        return saveProjectAt(SaveLocation(SaveLocationType::Local, path));
-    }
-
-    return saveProject(SaveMode::Save);
-}
-
 muse::Ret ProjectActionsController::saveProject(SaveMode saveMode, SaveLocationType saveLocationType, bool force)
 {
-    if (isBusy(BusyStatus::Saving)) {
-        return make_ret(Ret::Code::Busy);
-    }
+    return saveProjectScenario()->saveProject(saveMode, saveLocationType, force);
+}
 
-    setBusy(BusyStatus::Saving, true);
-    DEFER {
-        setBusy(BusyStatus::Saving, false);
-    };
-
-    INotationProjectPtr project = currentNotationProject();
-
-    const bool isExistingSave = saveMode == SaveMode::Save && !project->isNewlyCreated();
-    const bool wantNewCloudSave = saveLocationType == SaveLocationType::Cloud && !project->isCloudProject();
-    if (isExistingSave && !wantNewCloudSave) {
-        // Under these conditions, we can save without asking...
-        SaveLocation location;
-        if (project->isCloudProject()) {
-            location = SaveLocation(SaveLocationType::Cloud, project->cloudInfo());
-        } else {
-            location = SaveLocation(SaveLocationType::Local);
-        }
-        return saveProjectAt(location, saveMode, force);
-    }
-
-    RetVal<SaveLocation> response = openSaveProjectScenario()->askSaveLocation(project, saveMode, saveLocationType);
-    if (!response.ret) {
-        LOGE() << response.ret.toString();
-        return response.ret;
-    }
-
-    return saveProjectAt(response.val, saveMode, force);
+muse::Ret ProjectActionsController::saveProject(const muse::io::path_t& path)
+{
+    return saveProjectScenario()->saveProject(path);
 }
 
 muse::Ret ProjectActionsController::publish()
 {
-    if (isBusy(BusyStatus::Publishing)) {
-        return make_ret(Ret::Code::Busy);
-    }
-
-    setBusy(BusyStatus::Publishing, true);
-    DEFER {
-        setBusy(BusyStatus::Publishing, false);
-    };
-
-    Ret ret = canSaveProject();
-    if (!ret) {
-        askIfUserAgreesToSaveProjectWithErrors(ret, SaveLocationType::Cloud);
-        return ret;
-    }
-
-    auto project = currentNotationProject();
-
-    RetVal<CloudProjectInfo> info = openSaveProjectScenario()->askPublishLocation(project);
-    if (!info.ret) {
-        return info.ret;
-    }
-
-    AudioFile audio = exportMp3(project->masterNotation()->notation());
-    if (audio.isValid()) {
-        uploadProject(info.val, audio, /*openEditUrl=*/ true, /*publishMode=*/ true);
-    }
-
-    return make_ok();
+    return saveProjectScenario()->publish();
 }
 
-muse::Ret ProjectActionsController::shareAudio(const AudioFile& existingAudio)
+muse::Ret ProjectActionsController::sharedAudio()
 {
-    if (isBusy(BusyStatus::AudioSharing)) {
-        return make_ret(Ret::Code::Busy);
-    }
-
-    setBusy(BusyStatus::AudioSharing, true);
-
-    bool isSharingFinished = true;
-    DEFER {
-        if (isSharingFinished) {
-            setBusy(BusyStatus::AudioSharing, false);
-        }
-    };
-
-    auto project = currentNotationProject();
-    RetVal<CloudAudioInfo> retVal = openSaveProjectScenario()->askShareAudioLocation(project);
-    if (!retVal.ret) {
-        return retVal.ret;
-    }
-
-    AudioFile audio;
-    if (existingAudio.isValid()) {
-        audio = existingAudio;
-    } else {
-        audio = exportMp3(project->masterNotation()->notation());
-        if (!audio.isValid()) {
-            return make_ret(Ret::Code::BadData);
-        }
-    }
-
-    uploadAudioToAudioCom(audio, project, retVal.val);
-
-    isSharingFinished = false;
-
-    return make_ok();
-}
-
-void ProjectActionsController::uploadAudioToAudioCom(const AudioFile& audio, const INotationProjectPtr& project,
-                                                     const CloudAudioInfo& info)
-{
-    m_uploadingAudioProgress = audioComService()->uploadAudio(audio.device, audio.format, info.name,
-                                                              project->cloudAudioInfo().url, info.visibility,
-                                                              info.replaceExisting);
-    LOGD() << "Uploading audio started";
-    showUploadProgressDialog();
-
-    m_uploadingAudioProgress->progressChanged().onReceive(this, [](int64_t current, int64_t total, const std::string&) {
-        if (total > 0) {
-            LOGD() << "Uploading audio progress: " << current << " / " << total << " bytes";
-        }
-    });
-
-    m_uploadingAudioProgress->finished().onReceive(this, [this, project, info](const ProgressResult& res) {
-        LOGD() << "Uploading audio finished";
-
-        if (!res.ret) {
-            LOGE() << res.ret.toString();
-            onAudioUploadFailed(res.ret);
-        } else {
-            ValMap resMap = res.val.toMap();
-            onAudioSuccessfullyUploaded(resMap["editUrl"].toQString());
-            if (!info.replaceExisting) {
-                CloudAudioInfo newInfo = project->cloudAudioInfo();
-                newInfo.url = QUrl(resMap["url"].toQString());
-                project->setCloudAudioInfo(newInfo);
-            }
-        }
-
-        m_uploadingAudioProgress->started().disconnect(this);
-        m_uploadingAudioProgress->progressChanged().disconnect(this);
-        m_uploadingAudioProgress->finished().disconnect(this);
-    });
+    return saveProjectScenario()->shareAudio();
 }
 
 muse::Ret ProjectActionsController::saveProjectAt(const muse::rcommand::Params& params)
 {
+#if 0
     const std::string& path = params.at("path").toString();
     if (!path.empty()) {
         return saveProjectAt(SaveLocation(muse::io::path_t(path)));
@@ -2098,6 +1962,8 @@ void ProjectActionsController::warnProjectCannotBeOpened(const Ret& ret, const m
     }
 
     interactive()->error(title, body);
+#endif
+    return saveProjectScenario()->saveProjectAt(params);
 }
 
 muse::Ret ProjectActionsController::importPdf()
@@ -2152,47 +2018,6 @@ muse::Ret ProjectActionsController::printScore()
 
     printProvider()->printNotation(notation);
     return make_ok();
-}
-
-async::Promise<io::path_t> ProjectActionsController::selectScoreOpeningFile() const
-{
-    std::string allExt = "*.mscz *.mxl *.musicxml *.xml *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx "
-                         "*.ove *.scw *.bmw *.bww *.gtp *.gp3 *.gp4 *.gp5 *.gpx *.gp *.ptb *.mei *.mnx *.json *.tef *.mscx *.mscs *.mscz~";
-
-    std::vector<std::string> filter { muse::trc("project", "All supported files") + " (" + allExt + ")",
-                                      muse::trc("project", "MuseScore files") + " (*.mscz)",
-                                      muse::trc("project", "MusicXML files") + " (*.mxl *.musicxml *.xml)",
-                                      muse::trc("project", "MIDI files") + " (*.mid *.midi *.kar)",
-                                      muse::trc("project", "MNX files [experimental]") + " (*.mnx *.json)",
-                                      muse::trc("project", "MuseData files") + " (*.md)",
-                                      muse::trc("project", "Capella files") + " (*.cap *.capx)",
-                                      muse::trc("project", "BB files [experimental]") + " (*.mgu *.sgu)",
-                                      muse::trc("project", "Overture / Score Writer files [experimental]") + " (*.ove *.scw)",
-                                      muse::trc("project", "Bagpipe Music Writer files [experimental]") + " (*.bmw *.bww)",
-                                      muse::trc("project", "Guitar Pro files") + " (*.gtp *.gp3 *.gp4 *.gp5 *.gpx *.gp)",
-                                      muse::trc("project", "Power Tab Editor files [experimental]") + " (*.ptb)",
-                                      muse::trc("project", "MEI files") + " (*.mei)",
-                                      muse::trc("project", "TablEdit files [experimental]") + " (*.tef)",
-                                      muse::trc("project", "Uncompressed MuseScore folders [experimental]") + " (*.mscx)",
-                                      muse::trc("project", "MuseScore developer files") + " (*.mscs)",
-                                      muse::trc("project", "MuseScore backup files") + " (*.mscz~)" };
-
-    muse::io::path_t defaultDir = configuration()->lastOpenedProjectsPath();
-
-    if (defaultDir.empty()) {
-        defaultDir = configuration()->userProjectsPath();
-    }
-
-    if (defaultDir.empty()) {
-        defaultDir = configuration()->defaultUserProjectsPath();
-    }
-
-    return interactive()->selectOpeningFile(muse::trc("project", "Open"), defaultDir, filter);
-}
-
-QUrl ProjectActionsController::scoreManagerUrl() const
-{
-    return museScoreComService()->scoreManagerUrl();
 }
 
 muse::Ret ProjectActionsController::openProjectProperties()
