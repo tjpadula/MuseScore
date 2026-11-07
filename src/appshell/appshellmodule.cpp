@@ -27,12 +27,10 @@
 
 #include "modularity/ioc.h"
 
-#include "ui/iuiactionsregister.h"
 #include "interactive/iinteractiveuriregister.h"
 #include "rcommand/icommandsregister.h"
 #include "rcommand/icommandsstate.h"
 
-#include "internal/applicationuiactions.h"
 #include "internal/appshellcommandscontroller.h"
 #include "internal/appshellconfiguration.h"
 #include "internal/appshellstate.h"
@@ -40,6 +38,8 @@
 #include "internal/sessionsmanager.h"
 #include "internal/appshellcommandsregister.h"
 #include "internal/appshellcommandsstate.h"
+#include "internal/shortcutresolver.h"
+#include "internal/extensioncontextresolver.h"
 
 #ifdef Q_OS_MAC
 #if defined(Q_OS_IOS)
@@ -54,6 +54,8 @@ using namespace mu::appshell;
 using namespace muse;
 using namespace muse::modularity;
 using namespace muse::dock;
+using namespace muse::shortcuts;
+using namespace muse::extensions;
 
 static const std::string mname("appshell");
 
@@ -75,6 +77,7 @@ void AppShellModule::resolveImports()
     if (ir) {
         ir->registerPageUri(Uri("musescore://home"));
         ir->registerPageUri(Uri("musescore://notation"));
+        ir->registerPageUri(Uri("musescore://notation/review"));
         ir->registerPageUri(Uri("musescore://sequencer"));
         ir->registerPageUri(Uri("musescore://publish"));
         ir->registerPageUri(Uri("musescore://devtools"));
@@ -114,13 +117,15 @@ void AppShellContext::registerExports()
 {
     m_appshellState = std::make_shared<AppShellState>(iocContext());
     m_commandsController = std::make_shared<AppshellCommandsController>(iocContext());
-    m_applicationUiActions = std::make_shared<ApplicationUiActions>(m_commandsController, iocContext());
     m_sessionsManager = std::make_shared<SessionsManager>(iocContext());
+    m_extensionContextResolver = std::make_shared<ExtensionContextResolver>(iocContext());
 
     ioc()->registerExport<IAppShellState>(mname, m_appshellState);
     ioc()->registerExport<IStartupScenario>(mname, new StartupScenario(iocContext()));
     ioc()->registerExport<ISessionsManager>(mname, m_sessionsManager);
     ioc()->registerExport<IAppshellCommandsController>(mname, m_commandsController);
+    ioc()->registerExport<IShortcutsResolver>(mname, new ShortcutResolver(iocContext()));
+    ioc()->registerExport<IExtensionContextResolver>(mname, m_extensionContextResolver);
 
 #ifdef Q_OS_MAC
     ioc()->registerExport<IAppMenuModelHook>(mname, std::make_shared<MacOSAppMenuModelHook>());
@@ -131,11 +136,6 @@ void AppShellContext::registerExports()
 
 void AppShellContext::resolveImports()
 {
-    auto ar = ioc()->resolve<muse::ui::IUiActionsRegister>(mname);
-    if (ar) {
-        ar->reg(m_applicationUiActions);
-    }
-
     auto cs = ioc()->resolve<muse::rcommand::ICommandsState>(mname);
     if (cs) {
         cs->reg(std::make_shared<AppshellCommandsState>(iocContext()));
@@ -151,10 +151,12 @@ void AppShellContext::onInit(const muse::IApplication::RunMode& mode)
 {
     m_sessionsManager->init();
 
-    if (mode == IApplication::RunMode::GuiApp) {
-        m_applicationUiActions->init();
-        m_commandsController->init();
+    if (mode != IApplication::RunMode::GuiApp) {
+        return;
     }
+
+    m_commandsController->init();
+    m_extensionContextResolver->init();
 }
 
 void AppShellContext::onDeinit()

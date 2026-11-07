@@ -37,6 +37,11 @@ FocusScope {
     property string thumbnailUrl: ""
     property bool isCreateNew: false
     property bool isNoResultsFound: false
+    property var processingStatus: undefined
+    readonly property bool isProcessing: root.processingStatus !== undefined
+    property int convertType: 0
+    property int convertId: 0
+    property var uploadId: undefined
     property bool isCloud: false
     property int cloudScoreId: 0
     property bool showRemoveFromRecentFiles: false
@@ -47,6 +52,10 @@ FocusScope {
     signal revealInFileBrowserRequested(string scorePath)
     signal viewOnlineRequested(int scoreId)
     signal removeFromRecentFilesRequested(string scorePath)
+    signal deleteScoreRequested(int scoreId, string scoreName)
+    signal retryRequested()
+    signal cancelUploadRequested(int uploadId)
+    signal cancelConversionRequested(int convertType, int convertId)
 
     NavigationControl {
         id: navCtrl
@@ -54,7 +63,19 @@ FocusScope {
         enabled: root.enabled && root.visible
 
         accessible.role: MUAccessible.Button
-        accessible.name: root.name
+        accessible.name: {
+            if (root.isProcessing) {
+                if (root.processingStatus === ScoreProcessingPlaceholder.Failed) {
+                    //: %1 is the name of the score whose conversion failed
+                    return qsTrc("project/convert", "Processing failed: %1").arg(root.name)
+                }
+
+                //: %1 is the name of the score being converted
+                return qsTrc("project", "Processing %1").arg(root.name)
+            }
+
+            return root.name
+        }
 
         onActiveChanged: function(active) {
             if (active) {
@@ -69,7 +90,7 @@ FocusScope {
         id: rootMouseArea
         anchors.fill: parent
 
-        enabled: root.enabled
+        enabled: root.enabled && !root.isProcessing
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
 
@@ -113,6 +134,10 @@ FocusScope {
                     sourceComponent: {
                         if (root.isCreateNew) {
                             return createNewComp
+                        }
+
+                        if (root.isProcessing) {
+                            return processingComp
                         }
 
                         if (root.isNoResultsFound) {
@@ -194,12 +219,15 @@ FocusScope {
                 anchors.topMargin: 8
                 anchors.right: parent.right
                 anchors.rightMargin: 8
-                visible: menuModel.length > 0
-                         && (rootMouseArea.containsMouse
-                             || mouseArea.containsMouse
-                             || root.navigation.active
-                             || navigation.active
-                             || isMenuOpenedByButton)
+
+                readonly property bool isHovered: rootMouseArea.containsMouse
+                                                   || contextMenu.mouseArea.containsMouse
+                                                   || root.navigation.active
+                                                   || contextMenu.navigation.active
+                                                   || contextMenu.isMenuOpenedByButton
+
+                visible: contextMenu.menuModel.length > 0 && !root.isProcessing && contextMenu.isHovered
+                transparent: !contextMenu.isMenuOpenedByButton && !rootMouseArea.containsMouse
 
                 isCreateNew: root.isCreateNew
                 isNoResultsFound: root.isNoResultsFound
@@ -214,6 +242,7 @@ FocusScope {
                 onViewOnlineRequested: root.viewOnlineRequested(root.cloudScoreId)
                 onRevealInFileBrowserRequested: root.revealInFileBrowserRequested(root.path)
                 onRemoveFromRecentFilesRequested: root.removeFromRecentFilesRequested(root.path)
+                onDeleteScoreRequested: root.deleteScoreRequested(root.cloudScoreId, root.name)
             }
 
             Loader {
@@ -301,7 +330,7 @@ FocusScope {
 
                 font.capitalization: Font.AllUppercase
 
-                visible: !root.isCreateNew && !root.isNoResultsFound
+                visible: !root.isCreateNew && !root.isNoResultsFound && !root.isProcessing
             }
         }
     }
@@ -320,6 +349,28 @@ FocusScope {
 
                 font.pixelSize: 50
                 color: "black"
+            }
+        }
+    }
+
+    Component {
+        id: processingComp
+
+        ScoreProcessingPlaceholder {
+            status: root.processingStatus
+            iconSize: 24
+
+            navigationPanel: root.navigation.panel
+            navigationRow: root.navigation.row
+            navigationColumn: root.navigation.column + 2
+
+            onRetryRequested: root.retryRequested()
+            onCancelRequested: {
+                if (Boolean(root.uploadId)) {
+                    root.cancelUploadRequested(root.uploadId)
+                } else {
+                    root.cancelConversionRequested(root.convertType, root.convertId)
+                }
             }
         }
     }

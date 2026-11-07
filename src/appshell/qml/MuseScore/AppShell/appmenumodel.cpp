@@ -48,6 +48,7 @@
 #include "audio/main/audiocommands.h"
 #include "multiwindows/multiwindowscommands.h"
 #include "extensions/extensionscommands.h"
+#include "testflow/testflowcommands.h"
 
 using namespace muse;
 using namespace mu::appshell;
@@ -55,7 +56,6 @@ using namespace muse::ui;
 using namespace muse::uicomponents;
 using namespace mu::project;
 using namespace muse::workspace;
-using namespace muse::actions;
 using namespace muse::extensions;
 using namespace mu::notation;
 using namespace mu::playback;
@@ -67,6 +67,7 @@ using namespace muse::musesampler;
 using namespace muse::vst;
 using namespace muse::audio;
 using namespace muse::mi;
+using namespace muse::testflow;
 
 AppMenuModel::AppMenuModel(QObject* parent)
     : AbstractMenuModel(parent)
@@ -125,7 +126,7 @@ bool AppMenuModel::isGlobalMenuAvailable()
 
 void AppMenuModel::setupConnections()
 {
-    recentFilesController()->recentFilesListChanged().onNotify(this, [this]() {
+    recentFilesController()->recentFilesListChanged().onReceive(this, [this](const RecentFilesChange&) {
         MenuItem& recentMenuItem = findMenu("menu-file-open");
         MenuItemList recentSubMenuItems = makeRecentSubMenuItems();
         recentMenuItem.setSubitems(recentSubMenuItems);
@@ -151,7 +152,7 @@ void AppMenuModel::setupConnections()
 		});
     }
 
-    globalContext()->currentNotationChanged().onNotify(this, [this]() {
+    projectSession()->currentNotationChanged().onNotify(this, [this]() {
         auto stack = undoStack();
         if (stack) {
             stack->stackChanged().onNotify(this, [this]() {
@@ -211,11 +212,10 @@ MenuItem* AppMenuModel::makeFileMenu()
         }),
         makeMenu(TranslatableString("appshell/menu/file", "Pu&blish online"), {
             makeMenuItem(PROJECT_PUBLISH_COMMAND),
-            makeMenuItem(PROJECT_SHARED_AUDIO_COMMAND),
+            makeMenuItem(PROJECT_SHARE_AUDIO_COMMAND),
         }),
         makeSeparator(),
-        makeMenuItem(PROJECT_IMPORT_PDF_COMMAND),
-        makeMenuItem(PROJECT_IMPORT_AUDIO_TO_SCORE_COMMAND),
+        makeMenuItem(PROJECT_CONVERT_TO_SCORE_COMMAND),
         makeMenuItem(PROJECT_EXPORT_COMMAND),
         makeSeparator(),
         makeMenuItem(PROJECT_PROPERTIES_COMMAND),
@@ -247,8 +247,8 @@ MenuItem* AppMenuModel::makeEditMenu()
         makeMenuItem(COPY_PASTE_SWAP_COMMAND),
         makeMenuItem(DELETE_COMMAND),
         makeSeparator(),
-        makeMenuItem(SELECT_ALL_COMMAND),
-        makeMenuItem(SELECT_SECTION_COMMAND),
+        makeMenuItem(SelectAllCommand::id),
+        makeMenuItem(SelectSectionCommand::id),
         makeMenuItem(SHOW_SEARCH_COMMAND),
         makeSeparator(),
         makeMenuItem(APP_PREFERENCES_COMMAND, MenuItemRole::PreferencesRole)
@@ -259,7 +259,7 @@ MenuItem* AppMenuModel::makeEditMenu()
 
 mu::notation::INotationUndoStackPtr AppMenuModel::undoStack() const
 {
-    mu::notation::INotationPtr notation = globalContext()->currentNotation();
+    mu::notation::INotationPtr notation = projectSession()->currentNotation();
     return notation ? notation->undoStack() : nullptr;
 }
 
@@ -524,11 +524,11 @@ MenuItem* AppMenuModel::makeDiagnosticsMenu()
         };
 
         MenuItemList extensionsItems {
-            makeMenuItem("command://extensions/open-apidump"),
+            makeMenuItem(OPEN_APIDUMP_COMMAND),
         };
 
         MenuItemList testflowItems {
-            makeMenuItem("testflow-show-scripts"),
+            makeMenuItem(TESTFLOW_OPEN_SCRIPTS_COMMAND),
         };
 
 #ifdef MUSE_MODULE_VST

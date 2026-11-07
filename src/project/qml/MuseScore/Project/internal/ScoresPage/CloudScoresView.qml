@@ -90,6 +90,20 @@ ScoresView {
             onViewOnlineRequested: function(scoreId) {
                 root.viewOnlineRequested(scoreId)
             }
+
+            onDeleteScoreRequested: function(scoreId, scoreName) {
+                root.deleteScoreRequested(scoreId, scoreName)
+            }
+
+            onRetryRequested: cloudScoresModel.retryAllConversions()
+
+            onCancelUploadRequested: function(uploadId) {
+                cloudScoresModel.cancelUpload(uploadId)
+            }
+
+            onCancelConversionRequested: function(convertType, convertId) {
+                cloudScoresModel.cancelConversion(convertType, convertId)
+            }
         }
     }
 
@@ -122,6 +136,20 @@ ScoresView {
 
             onViewOnlineRequested: function(scoreId) {
                 root.viewOnlineRequested(scoreId)
+            }
+
+            onDeleteScoreRequested: function(scoreId, scoreName) {
+                root.deleteScoreRequested(scoreId, scoreName)
+            }
+
+            onRetryRequested: cloudScoresModel.retryAllConversions()
+
+            onCancelUploadRequested: function(uploadId) {
+                cloudScoresModel.cancelUpload(uploadId)
+            }
+
+            onCancelConversionRequested: function(convertType, convertId) {
+                cloudScoresModel.cancelConversion(convertType, convertId)
             }
         }
     }

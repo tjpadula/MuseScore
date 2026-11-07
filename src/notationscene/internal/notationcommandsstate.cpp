@@ -24,6 +24,7 @@
  #include "global/containers.h"
 
  #include "../notationcommands.h"
+#include "rcommand/commandtypes.h"
 
 using namespace muse;
 using namespace muse::rcommand;
@@ -48,18 +49,18 @@ static const std::vector<Command> HAS_SELECTION_REQUIRED_COMMANDS = {
     COPY_COMMAND,
     COPY_PASTE_SWAP_COMMAND,
     DELETE_COMMAND,
-    FLIP_COMMAND,
+    FlipCommand::id,
     FLIP_HORIZONTALLY_COMMAND,
-    GOTO_NEXT_SEGMENT_ELEMENT_COMMAND,
-    GOTO_PREV_SEGMENT_ELEMENT_COMMAND,
-    GOTO_UPNOTE_IN_CHORD_COMMAND,
-    GOTO_DOWNNOTE_IN_CHORD_COMMAND,
-    GOTO_TOPNOTE_IN_CHORD_COMMAND,
-    GOTO_BOTTOMNOTE_IN_CHORD_COMMAND,
-    SELECT_SIMILAR_COMMAND,
-    SELECT_SIMILAR_IN_STAFF_COMMAND,
-    SELECT_SIMILAR_IN_RANGE_COMMAND,
-    SELECT_NOTES_IN_CHORD_COMMAND,
+    SelectNextSegmentCommand::id,
+    SelectPrevSegmentCommand::id,
+    SelectUpNoteInChordCommand::id,
+    SelectDownNoteInChordCommand::id,
+    SelectTopNoteInChordCommand::id,
+    SelectBottomNoteInChordCommand::id,
+    SelectSimilarCommand::id,
+    SelectSimilarInStaffCommand::id,
+    SelectSimilarInRangeCommand::id,
+    SelectNotesInChordCommand::id,
     OPEN_SELECTION_OPTIONS_COMMAND,
     SET_DOUBLE_DURATION_COMMAND,
     SET_HALVE_DURATION_COMMAND,
@@ -108,6 +109,10 @@ static const std::vector<Command> LYRICS_EDITING_COMMANDS = {
     EDITLYRIC_NEXT_SYLLABLE_COMMAND,
     EDITLYRIC_ADD_MELISMA_COMMAND,
     EDITLYRIC_ADD_VERSE_COMMAND
+};
+
+static const std::vector<Command> NOT_TEXT_EDITING_COMMANDS = {
+    TOGGLE_MMREST_COMMAND,
 };
 
 static const std::map<Command, NoteInputMethod> NOTE_INPUT_COMMANDS = {
@@ -173,7 +178,7 @@ static const std::map<Command, voice_idx_t> VOICE_COMMANDS = {
 };
 
 static const std::vector<Command> NOTE_COMMANDS = {
-    ADD_NOTE_COMMAND,
+    AddNoteCommand::id,
     ENTER_NOTE_C_COMMAND,
     ENTER_NOTE_D_COMMAND,
     ENTER_NOTE_E_COMMAND,
@@ -198,7 +203,7 @@ static const std::vector<Command> NOTE_COMMANDS = {
     INSERT_NOTE_B_COMMAND
 };
 
-static const std::vector<Command> NOTE_OR_REST_SELECTED_COMMANDS = {
+static const std::vector<Command> TUPLET_COMMANDS = {
     OPEN_TUPLET_CONFIGURE_COMMAND,
     ADD_TUPLET_COMMAND,
     ADD_DUPLET_COMMAND,
@@ -209,22 +214,25 @@ static const std::vector<Command> NOTE_OR_REST_SELECTED_COMMANDS = {
     ADD_SEPTUPLET_COMMAND,
     ADD_OCTUPLET_COMMAND,
     ADD_NONUPLET_COMMAND,
+};
+
+static const std::vector<Command> NOTE_OR_REST_SELECTED_COMMANDS = {
     ADD_DYNAMIC_COMMAND,
     ADD_HAIRPIN_COMMAND,
     ADD_HAIRPIN_REVERSE_COMMAND
 };
 
 static const std::map<Command, MoveSelectionType> MOVE_SELECTION_COMMANDS = {
-    { GOTO_FIRST_ELEMENT_COMMAND, MoveSelectionType::EngravingItem },
-    { GOTO_LAST_ELEMENT_COMMAND, MoveSelectionType::EngravingItem },
-    { GOTO_NEXT_ELEMENT_COMMAND, MoveSelectionType::EngravingItem },
-    { GOTO_PREV_ELEMENT_COMMAND, MoveSelectionType::EngravingItem },
-    { GOTO_NEXT_TRACK_COMMAND, MoveSelectionType::Track },
-    { GOTO_PREV_TRACK_COMMAND, MoveSelectionType::Track },
-    { GOTO_NEXT_FRAME_COMMAND, MoveSelectionType::Frame },
-    { GOTO_PREV_FRAME_COMMAND, MoveSelectionType::Frame },
-    { GOTO_NEXT_SYSTEM_COMMAND, MoveSelectionType::System },
-    { GOTO_PREV_SYSTEM_COMMAND, MoveSelectionType::System }
+    { SelectFirstItemCommand::id, MoveSelectionType::EngravingItem },
+    { SelectLastItemCommand::id, MoveSelectionType::EngravingItem },
+    { SelectNextItemCommand::id, MoveSelectionType::EngravingItem },
+    { SelectPrevItemCommand::id, MoveSelectionType::EngravingItem },
+    { SelectNextTrackCommand::id, MoveSelectionType::Track },
+    { SelectPrevTrackCommand::id, MoveSelectionType::Track },
+    { SelectNextFrameCommand::id, MoveSelectionType::Frame },
+    { SelectPrevFrameCommand::id, MoveSelectionType::Frame },
+    { SelectNextSystemCommand::id, MoveSelectionType::System },
+    { SelectPrevSystemCommand::id, MoveSelectionType::System }
 };
 
 static const std::vector<Command> LAYOUT_BREAK_COMMANDS = {
@@ -259,6 +267,21 @@ static const std::vector<Command> TAB_COMMANDS = {
     SET_DURATION_512TH_TAB_COMMAND,
     SET_DURATION_1024TH_TAB_COMMAND,
     ENTER_REST_TAB_COMMAND,
+    ENTER_FRET_0_COMMAND,
+    ENTER_FRET_1_COMMAND,
+    ENTER_FRET_2_COMMAND,
+    ENTER_FRET_3_COMMAND,
+    ENTER_FRET_4_COMMAND,
+    ENTER_FRET_5_COMMAND,
+    ENTER_FRET_6_COMMAND,
+    ENTER_FRET_7_COMMAND,
+    ENTER_FRET_8_COMMAND,
+    ENTER_FRET_9_COMMAND,
+    ENTER_FRET_10_COMMAND,
+    ENTER_FRET_11_COMMAND,
+    ENTER_FRET_12_COMMAND,
+    ENTER_FRET_13_COMMAND,
+    ENTER_FRET_14_COMMAND,
     GOTO_STRING_ABOVE_COMMAND,
     GOTO_STRING_BELOW_COMMAND
 };
@@ -290,7 +313,7 @@ void NotationCommandsState::init()
         return;
     }
 
-    globalContext()->currentProjectChanged().onNotify(this, [this]() {
+    projectSession()->projectChanged().onNotify(this, [this]() {
         updateCommandStates();
     });
 
@@ -306,6 +329,7 @@ void NotationCommandsState::init()
         updateCommandStates({ TOGGLE_REST_COMMAND });
         updateCommandStates(commands(VOICE_COMMANDS));
         updateCommandStates(NOTE_OR_REST_SELECTED_COMMANDS);
+        updateCommandStates(TUPLET_COMMANDS);
         updateCommandStates(commands(MOVE_SELECTION_COMMANDS));
         updateCommandStates(LAYOUT_BREAK_COMMANDS);
         updateCommandStates(TAB_COMMANDS);
@@ -319,6 +343,7 @@ void NotationCommandsState::init()
         updateCommandStates(TEXT_EDITING_COMMANDS);
         updateCommandStates(LYRICS_EDITING_COMMANDS);
         updateCommandStates(LAYOUT_BREAK_COMMANDS);
+        updateCommandStates(NOT_TEXT_EDITING_COMMANDS);
     });
 
     controller()->isNoteInputAllowedChanged().onReceive(this, [this](bool) {
@@ -337,6 +362,8 @@ void NotationCommandsState::init()
         updateCommandStates(commands(VOICE_COMMANDS));
         updateCommandStates(NOTE_COMMANDS);
         updateCommandStates(NOTE_OR_REST_SELECTED_COMMANDS);
+        updateCommandStates(TUPLET_COMMANDS);
+        updateCommandStates(TAB_COMMANDS);
     });
 
     controller()->scoreConfigChanged().onReceive(this, [this](ScoreConfigType configType) {
@@ -360,7 +387,7 @@ void NotationCommandsState::init()
 
 void NotationCommandsState::deinit()
 {
-    globalContext()->currentProjectChanged().disconnect(this);
+    projectSession()->projectChanged().disconnect(this);
     if (interactive()) {
         interactive()->opened().disconnect(this);
     }
@@ -425,6 +452,10 @@ CommandState NotationCommandsState::doCommandState(const Command& command) const
         return CommandState(controller()->isLyricsEditing(), false);
     }
 
+    if (muse::contains(NOT_TEXT_EDITING_COMMANDS, command)) {
+        return CommandState(!controller()->isTextEditing(), false);
+    }
+
     if (muse::contains(NOTE_INPUT_COMMANDS, command)) {
         return CommandState(controller()->isNoteInputAllowed(),
                             controller()->isNoteInputMode() && controller()->noteInputMethod() == NOTE_INPUT_COMMANDS.at(command));
@@ -466,8 +497,18 @@ CommandState NotationCommandsState::doCommandState(const Command& command) const
         return CommandState(true, controller()->currentVoice() == VOICE_COMMANDS.at(command));
     }
 
+    if (command == ADD_DYNAMIC_COMMAND) {
+        return CommandState(controller()->isNoteOrRestSelected() || controller()->isHairpinSelected(), false);
+    }
+
     if (muse::contains(NOTE_OR_REST_SELECTED_COMMANDS, command)) {
         return CommandState(controller()->isNoteOrRestSelected(), false);
+    }
+
+    if (muse::contains(TUPLET_COMMANDS, command)) {
+        // Re-pitch must not change durations
+        const bool isRepitch = controller()->isNoteInputMode() && controller()->noteInputMethod() == NoteInputMethod::REPITCH;
+        return CommandState(controller()->isNoteOrRestSelected() && !isRepitch, false);
     }
 
     if (muse::contains(LAYOUT_BREAK_COMMANDS, command)) {
@@ -514,7 +555,7 @@ async::Channel<Command, CommandState> NotationCommandsState::commandStateChanged
 
 bool NotationCommandsState::isProjectOpened() const
 {
-    if (!globalContext()->currentProject()) {
+    if (!projectSession()->project()) {
         return false;
     }
 

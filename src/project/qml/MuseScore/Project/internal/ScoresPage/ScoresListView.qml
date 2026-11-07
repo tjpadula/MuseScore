@@ -48,6 +48,10 @@ Item {
     signal revealInFileBrowserRequested(var scorePath)
     signal viewOnlineRequested(var scoreId)
     signal removeFromRecentFilesRequested(var scorePath)
+    signal deleteScoreRequested(var scoreId, var scoreName)
+    signal retryRequested()
+    signal cancelConversionRequested(int convertType, int convertId)
+    signal cancelUploadRequested(int uploadId)
 
     component ColumnItem : QtObject {
         property string header
@@ -208,6 +212,8 @@ Item {
                     model: searchFilterModel
 
                     delegate: ScoreListItem {
+                        id: item
+
                         required property int index
 
                         columns: root.columns
@@ -217,12 +223,16 @@ Item {
                         columnSpacing: view.columnSpacing
                         showRemoveFromRecentFiles: root.allowRemoveFromRecentFiles
 
+                        mouseArea.enabled: !item.isProcessing
+
                         navigation.panel: navPanel
                         navigation.row: index + 1
                         navigation.column: 0
 
                         onClicked: {
-                            root.openScoreRequested(score.path, score.name)
+                            if (!item.isProcessing) {
+                                root.openScoreRequested(score.path, score.name)
+                            }
                         }
 
                         onRevealInFileBrowserRequested: function(scorePath) {
@@ -235,6 +245,20 @@ Item {
 
                         onRemoveFromRecentFilesRequested: function(scorePath) {
                             root.removeFromRecentFilesRequested(scorePath)
+                        }
+
+                        onDeleteScoreRequested: function(scoreId, scoreName) {
+                            root.deleteScoreRequested(scoreId, scoreName)
+                        }
+
+                        onRetryRequested: root.retryRequested()
+
+                        onCancelUploadRequested: function(uploadId) {
+                            root.cancelUploadRequested(uploadId)
+                        }
+
+                        onCancelConversionRequested: function(convertType, convertId) {
+                            root.cancelConversionRequested(convertType, convertId)
                         }
                     }
                 }

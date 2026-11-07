@@ -41,6 +41,7 @@ FlatButton {
     signal revealInFileBrowserRequested()
     signal viewOnlineRequested()
     signal removeFromRecentFilesRequested()
+    signal deleteScoreRequested()
 
     function show(position, item) {
         let target = item ? item : root
@@ -62,6 +63,14 @@ FlatButton {
         menuLoader.close()
     }
 
+    readonly property string revealInFileBrowserTitle: {
+        switch (Qt.platform.os) {
+        case "windows": return qsTrc("project", "Show in Explorer")
+        case "osx": return qsTrc("project", "Show in Finder")
+        default: return qsTrc("project", "Show in File Manager")
+        }
+    }
+
     readonly property var menuModel: {
         if (root.isCreateNew || root.isNoResultsFound) {
             return []
@@ -72,14 +81,21 @@ FlatButton {
         ]
 
         if (root.isCloud) {
-            result.push({ id: "view-online", title: qsTrc("project", "View online") })
+            result.push({ id: "view-online", title: qsTrc("project", "View online"), icon: IconCode.OPEN_LINK })
         } else {
-            result.push({ id: "reveal-in-file-browser", title: qsTrc("project", "Reveal in file browser") })
+            result.push({ id: "reveal-in-file-browser", title: root.revealInFileBrowserTitle })
+        }
+
+        if (root.showRemoveFromRecentFiles || root.isCloud) {
+            result.push({}) // separator
         }
 
         if (root.showRemoveFromRecentFiles) {
-            result.push({}) // separator
             result.push({ id: "remove-from-recent-files", title: qsTrc("project", "Remove from recent files list") })
+        }
+
+        if (root.isCloud) {
+            result.push({ id: "delete-score", title: qsTrc("project", "Delete score"), icon: IconCode.DELETE_TANK })
         }
 
         return result
@@ -111,6 +127,9 @@ FlatButton {
                 break
             case "remove-from-recent-files":
                 root.removeFromRecentFilesRequested()
+                break
+            case "delete-score":
+                root.deleteScoreRequested()
                 break
             }
         }

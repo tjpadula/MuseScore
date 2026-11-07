@@ -93,7 +93,8 @@ void ChangeClefType::flip()
     clef->staff()->setClef(clef);
     Segment* segment = clef->segment();
     updateNoteLines(segment, clef->track());
-    clef->triggerLayoutAll(); // TODO: reduce layout to clef range
+    clef->triggerLayout();
+    clef->score()->setLayout(clef->staff()->nextClefTick(segment->tick()), clef->staffIdx());
 
     concertClef     = ocl;
     transposingClef = otc;
@@ -250,14 +251,13 @@ void EditClef::undoChangeClef(Transaction&, Score* score, Staff* ostaff, Engravi
             if (gclef) {
                 clef = toClef(gclef->linkedClone());
                 clef->setScore(staffScore);
+                clef->setOwnershipParent(destSeg);
             } else {
-                clef = Factory::createClef(staffScore->dummy()->segment());
+                clef = Factory::createClef(destSeg);
                 clef->setClefType(ct);
                 gclef = clef;
             }
             clef->setTrack(track);
-            clef->setOwnershipParent(destSeg);
-            clef->setIsHeader(st == SegmentType::HeaderClef);
             staffScore->doUndoAddElement(clef);
         }
         if (forInstrumentChange) {

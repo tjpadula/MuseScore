@@ -146,7 +146,7 @@ jobs:
         # Use same OS versions as used in real build workflows.
         os:
         - ubuntu-22.04 # linux_x64, backend, linux_arm64
-        - macos-latest
+        - xcode-27 # macos
         - windows-2025 # windows_x64, windows_portable
     runs-on: ${{ matrix.os }}
     steps:
@@ -184,7 +184,7 @@ jobs:
         ARTIFACT_NAME="$(<"${ARTIFACTS_DIR}/env/artifact_name.env")"
 
         echo "Hello, world!" >"${ARTIFACTS_DIR}/${ARTIFACT_NAME}"
-        buildscripts/ci/tools/checksum.sh
+        muse/buildscripts/ci/tools/checksum.sh
 
         UPLOAD_ARTIFACT_NAME="$(tr '":<>|*?/\\’' '_' <<<"MU4_${BUILD_NUMBER}_Dummy-${{ matrix.os }}_${BUILD_BRANCH}")"
         echo "UPLOAD_ARTIFACT_NAME=${UPLOAD_ARTIFACT_NAME}" | tee -a "${GITHUB_ENV}"

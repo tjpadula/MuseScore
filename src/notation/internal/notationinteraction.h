@@ -102,9 +102,9 @@ public:
     // Select
     INotationSelectionPtr selection() const override;
     muse::async::Notification selectionChanged() const override;
-    void select(const std::vector<EngravingItem*>& elements, SelectType type = SelectType::REPLACE, staff_idx_t staffIndex = 0) override;
-    void select(SelectionTarget target) override;
-    void addToSelection(SelectionTarget target) override;
+    muse::Ret select(const std::vector<EngravingItem*>& items, SelectType type = SelectType::REPLACE, staff_idx_t staffIdx = 0) override;
+    muse::Ret select(SelectionTarget target) override;
+    muse::Ret addToSelection(SelectionTarget target) override;
 
     void selectAndStartEditIfNeeded(EngravingItem* element) override;
 
@@ -115,7 +115,6 @@ public:
     // Change selection
     bool moveSelectionAvailable(MoveSelectionType type) const override;
     void moveSelectionDeprecated(MoveDirection d, MoveSelectionType type) override;
-    void expandSelection(ExpandSelectionMode mode) override;
 
     EngravingItem* contextItem() const override;
 
@@ -184,6 +183,7 @@ public:
 
     // Grip edit
     bool isGripEditStarted() const override;
+    bool isStartEndGripSelected() const override;
     bool isHitGrip(const muse::PointF& pos) const override;
     void startEditGrip(const muse::PointF& pos) override;
     void startEditGrip(EngravingItem* element, mu::engraving::Grip grip) override;
@@ -301,6 +301,7 @@ public:
     void resetBeamMode() override;
     void resetShapesAndPosition() override;
     void resetToDefaultLayout() override;
+    void freezeSelectionPosition() override;
 
     ScoreConfig scoreConfig() const override;
     void setScoreConfig(const ScoreConfig& config) override;
@@ -460,8 +461,11 @@ private:
 
     EngravingItem* dropTarget(mu::engraving::EditData& ed) const;
     bool prepareDropStandardElement(const muse::PointF& pos, Qt::KeyboardModifiers modifiers);
-    bool prepareDropMeasureAnchorElement(const muse::PointF& pos);
+    bool prepareDropMeasureBaseAnchorElement(const muse::PointF& pos);
     bool prepareDropTimeAnchorElement(const muse::PointF& pos);
+    std::vector<muse::RectF> dropHighlightRects(const mu::engraving::EngravingItem* dropElem,
+                                                const mu::engraving::EngravingItem* targetElem,
+                                                mu::engraving::KeyboardModifiers modifiers) const;
     bool dropCanvas(EngravingItem* e);
     void resetDropData();
 
