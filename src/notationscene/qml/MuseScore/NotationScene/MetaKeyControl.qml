@@ -57,17 +57,47 @@ RowLayout {
 
         height: 28
         transparent: true
-
+        
         navigation.panel: root.navigationPanel
         navigation.order: optionKeyButton.navigation.order + 1
 //        accessible.name: qsTrc("notation", "Command Meta")
 
+        property double startTime: 0
+        property bool latched: false
+        property string metaKeyName: "option"
+
         onPressed: {
-            root.metaKeyChange("command", true)
+//			console.log("Command key onPressed.");
+			
+			if (!latched) {
+				root.metaKeyChange(metaKeyName, true)
+				startTime = new Date().getTime()
+				
+				// Assigning this as just 'color' leads to the menu bar
+				// being affected, so there needs to be a way to keep it
+				// local. Qt is mysterious.
+//				commandKeyButton.defaultBackgroundComponent.background.color = hoverHitColor
+//				opacity = ui.theme.buttonOpacityHit
+			}
         }
 
         onReleased: {
-            root.metaKeyChange("command", false)
+//			console.log("Command key onReleased.");
+			
+			// Only send release if more than 0.25 sec
+			// has elapsed, or if we were latched.
+			if ((latched) || ((new Date().getTime() - startTime) > 250)) {
+//				console.log("Latched or released > 250mSec, unlatching.");
+				root.metaKeyChange(metaKeyName, false)
+				latched = false
+				
+//				color = "transparent"
+//				opacity = ui.theme.buttonOpacityNormal
+
+			} else {
+				latched = true
+//				console.log("Not latched and released < 250mSec, latching.");
+			}
         }
         
         MultiPointTouchArea {
@@ -117,15 +147,31 @@ RowLayout {
         navigation.order: controlKeyButton.navigation.order + 1
 //        accessible.name: qsTrc("notation", "Option Meta")
 
+        property double startTime: 0
+        property bool latched: false
+        property string metaKeyName: "option"
+
         onPressed: {
-            root.metaKeyChange("option", true)
+			if (!latched) {
+				root.metaKeyChange(metaKeyName, true)
+				startTime = new Date().getTime()
+			}
         }
 
-        onReleased: {
-            root.metaKeyChange("option", false)
+        onReleased: {			
+			// Only send release if more than 0.25 sec
+			// has elapsed, or if we were latched.
+			if ((latched) || ((new Date().getTime() - startTime) > 250)) {
+//				console.log("Latched or released > 250mSec, unlatching.");
+				root.metaKeyChange(metaKeyName, false)
+				latched = false
+			} else {
+				latched = true
+//				console.log("Not latched and released < 250mSec, latching.");
+			}
         }
 
-        MultiPointTouchArea {
+       MultiPointTouchArea {
 			anchors.fill: parent
 			
 			// This stops Qt from converting the touch to a mouse point 
@@ -171,15 +217,31 @@ RowLayout {
         navigation.order: shiftKeyButton.navigation.order + 1
 //        accessible.name: qsTrc("notation", "Control Meta")
 
+        property double startTime: 0
+        property bool latched: false
+        property string metaKeyName: "control"
+
         onPressed: {
-            root.metaKeyChange("control", true)
+			if (!latched) {
+				root.metaKeyChange(metaKeyName, true)
+				startTime = new Date().getTime()
+			}
         }
 
-        onReleased: {
-            root.metaKeyChange("control", false)
-        }
-
-        MultiPointTouchArea {
+        onReleased: {			
+			// Only send release if more than 0.25 sec
+			// has elapsed, or if we were latched.
+			if ((latched) || ((new Date().getTime() - startTime) > 250)) {
+//				console.log("Latched or released > 250mSec, unlatching.");
+				root.metaKeyChange(metaKeyName, false)
+				latched = false
+			} else {
+				latched = true
+//				console.log("Not latched and released < 250mSec, latching.");
+			}
+		}
+        
+       MultiPointTouchArea {
 			anchors.fill: parent
 			
 			// This stops Qt from converting the touch to a mouse point 
@@ -225,12 +287,28 @@ RowLayout {
         navigation.order: escapeKeyButton.navigation.order + 1
 //        accessible.name: qsTrc("notation", "Shift Meta")
 
+        property double startTime: 0
+        property bool latched: false
+        property string metaKeyName: "shift"
+
         onPressed: {
-            root.metaKeyChange("shift", true)
+			if (!latched) {
+				root.metaKeyChange(metaKeyName, true)
+				startTime = new Date().getTime()
+			}
         }
 
-        onReleased: {
-            root.metaKeyChange("shift", false)
+        onReleased: {			
+			// Only send release if more than 0.25 sec
+			// has elapsed, or if we were latched.
+			if ((latched) || ((new Date().getTime() - startTime) > 250)) {
+//				console.log("Latched or released > 250mSec, unlatching.");
+				root.metaKeyChange(metaKeyName, false)
+				latched = false
+			} else {
+				latched = true
+//				console.log("Not latched and released < 250mSec, latching.");
+			}
         }
 
         MultiPointTouchArea {

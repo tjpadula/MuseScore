@@ -47,6 +47,8 @@
 
 #if defined(Q_OS_IOS)
 #include "ui/internal/platform/ios/IOSEventTrampoline.h"
+#include "shortcuts_v2/icommandshortcutsregister.h"
+#include "shortcuts_v2/qml/Muse/Shortcuts/platform/ios/iosshortcutsinstancemodel.h"
 #endif
 
 #include "notationscene/notationcommands.h"
@@ -311,13 +313,19 @@ void NotationStatusBarModel::setMetaKeyState(const QString& metaKeyName, bool st
 {
 #if defined(Q_OS_IOS)
     IOSEventTrampoline::sharedTrampoline()->setMetaKeyState(metaKeyName, state);
+//    if (muse::shortcuts::giOSShortcuts) {
+//        muse::shortcuts::giOSShortcuts->activate(metaKeyName);
+//    }
 #endif
 }
 
 void NotationStatusBarModel::sendAction(const QString& inAction)
 {
 #if defined(Q_OS_IOS)
-    dispatch(Command(inAction.toStdString()));
+//    dispatch(Command(inAction.toStdString()));
+    if (muse::shortcuts::giOSShortcuts) {
+        muse::shortcuts::giOSShortcuts->activate(inAction);
+    }
 #endif
 }
 

@@ -69,7 +69,7 @@ RowLayout {
         }
 
         onReleased: {
-            root.sendAction("action://cancel")
+            root.sendAction("Esc")
         }
     }
 
@@ -108,7 +108,7 @@ RowLayout {
         }
 
         onReleased: {
-            root.sendAction("action://delete")
+            root.sendAction("Del")
         }
 	}
 	

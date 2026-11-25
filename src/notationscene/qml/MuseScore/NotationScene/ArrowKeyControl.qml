@@ -62,9 +62,7 @@ RowLayout {
         navigation.order: root.navigationOrderMin
 
         onReleased: {
-            root.sendAction("nav-left")
-            root.sendAction("notation-move-left")
-            root.sendAction("prev-text-element")
+            root.sendAction("Left")
         }
 
         MultiPointTouchArea {
@@ -108,10 +106,7 @@ RowLayout {
         navigation.order: escapeKeyButton.navigation.order + 1
 
         onReleased: {
-            root.sendAction("nav-up")
-            root.sendAction("pitch-up")
-            root.sendAction("prev-lyric-verse")
-            root.sendAction("string-above")            
+            root.sendAction("Up")
         }
         
         MultiPointTouchArea {
@@ -154,10 +149,7 @@ RowLayout {
         navigation.order: shiftKeyButton.navigation.order + 1
 
         onReleased: {
-            root.sendAction("nav-down")
-            root.sendAction("pitch-down")
-            root.sendAction("next-lyric-verse")
-            root.sendAction("string-below")            
+            root.sendAction("Down")
         }
 
         MultiPointTouchArea {
@@ -201,9 +193,7 @@ RowLayout {
         navigation.order: controlKeyButton.navigation.order + 1
 
         onReleased: {
-            root.sendAction("nav-right")
-            root.sendAction("notation-move-right")
-            root.sendAction("next-text-element")
+            root.sendAction("Right")
         }
 
         MultiPointTouchArea {
