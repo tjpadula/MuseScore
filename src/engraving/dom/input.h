@@ -23,12 +23,12 @@
 #ifndef MU_ENGRAVING_INPUT_H
 #define MU_ENGRAVING_INPUT_H
 
+#include <optional>
 #include <set>
 
 #include "accidental.h"
 #include "chord.h"
 #include "durationtype.h"
-#include "mscore.h"
 #include "noteval.h"
 
 #include "../types/types.h"
@@ -43,6 +43,8 @@ class Segment;
 class Selection;
 class Slur;
 class Staff;
+enum class TupletNumberType : unsigned char;
+enum class TupletBracketType : unsigned char;
 
 // no ordinal for the visual repres. of string
 // (topmost in TAB varies according to visual order and presence of bass strings)
@@ -53,7 +55,30 @@ static constexpr int VISUAL_INVALID_STRING_INDEX = -100;
 //---------------------------------------------------------
 
 enum class NoteEntryMethod : char {
-    UNKNOWN, BY_NOTE_NAME, BY_DURATION, REPITCH, RHYTHM, REALTIME_AUTO, REALTIME_MANUAL, TIMEWISE
+    UNKNOWN, DEFAULT, BY_NOTE_NAME, BY_DURATION, REPITCH, RHYTHM, REALTIME_AUTO, REALTIME_MANUAL, TIMEWISE
+};
+
+//---------------------------------------------------------
+//   PendingTuplet
+//    A tuplet asked for in By duration or Rhythm input. It
+//    waits at the input position where it was asked for, and
+//    the next duration sizes it and enters its first note or
+//    rest.
+//---------------------------------------------------------
+
+struct PendingTuplet {
+    Fraction ratio;
+    TupletNumberType numberType {};
+    TupletBracketType bracketType {};
+    bool autoBaseLen = false;
+    // the duration is the subdivision, rather than the length divided
+    bool durationAsSubdivision = false;
+    // given when it starts waiting, see InputState::forgetPendingTuplets()
+    int number = 0;
+
+    Fraction tick;
+    track_idx_t track = muse::nidx;
+    bool beyondScore = false;
 };
 
 //---------------------------------------------------------
@@ -92,7 +117,7 @@ public:
     const NoteValList& notes() const { return m_notes; }
     void setNotes(const NoteValList& v) { m_notes = v; }
 
-    voice_idx_t voice() const { return m_track == muse::nidx ? 0 : (m_track % VOICES); }
+    voice_idx_t voice() const { return m_track == muse::nidx ? 0 : (m_track % MAX_VOICES); }
     void setVoice(voice_idx_t v);
     track_idx_t track() const { return m_track; }
     void setTrack(track_idx_t v) { m_prevTrack = m_track; m_track = v; }
@@ -127,6 +152,16 @@ public:
 
     Slur* slur() const { return m_slur; }
     void setSlur(Slur* s) { m_slur = s; }
+
+    const std::optional<PendingTuplet>& pendingTuplet() const { return m_pendingTuplet; }
+    void setPendingTuplet(const std::optional<PendingTuplet>& t);
+    bool pendingTupletHere() const;
+    void movePendingTupletHere();
+    void moveToDrumVoice(voice_idx_t v);
+    std::optional<voice_idx_t> otherDrumVoice() const;
+    void forgetPendingTuplets();
+    void restoreFromUndoStack(const InputState& state);
+    void keepPendingTupletFrom(const InputState& state);
 
     void update(Selection& selection);
     void moveInputPos(EngravingItem* e);
@@ -169,6 +204,12 @@ private:
     std::set<SymId> m_articulationIds;
 
     bool m_beyondScore = false;
+
+    std::optional<PendingTuplet> m_pendingTuplet;
+
+    // kept through undo and redo: the last number given to a waiting tuplet, and the last one cancelled
+    int m_pendingTupletNumber = 0;
+    int m_cancelledPendingTupletNumber = 0;
 };
 } // namespace mu::engraving
 #endif

@@ -28,6 +28,8 @@
 #include "engraving/dom/chord.h"
 #include "engraving/dom/chordrest.h"
 #include "engraving/dom/factory.h"
+#include "engraving/dom/jianpudurationline.h"
+#include "engraving/dom/keysig.h"
 #include "engraving/dom/lyrics.h"
 #include "engraving/dom/masterscore.h"
 #include "engraving/dom/measure.h"
@@ -35,13 +37,17 @@
 #include "engraving/dom/note.h"
 #include "engraving/dom/pitchspelling.h"
 #include "engraving/dom/segment.h"
+#include "engraving/dom/staff.h"
+#include "engraving/dom/stafftype.h"
 #include "engraving/dom/tremolosinglechord.h"
-
+#include "engraving/editing/editkeysig.h"
+#include "engraving/editing/editlyrics.h"
 #include "engraving/editing/editnote.h"
 #include "engraving/editing/edittie.h"
 #include "engraving/editing/noteinput.h"
 #include "engraving/editing/transaction/transaction.h"
 
+#include "engraving/types/types.h"
 #include "utils/scorerw.h"
 #include "utils/scorecomp.h"
 
@@ -57,6 +63,138 @@ static ChordRest* chordRestAtTick(Score* score, const Fraction& tick, track_idx_
 {
     Segment* segment = score->tick2segment(tick, false, SegmentType::ChordRest);
     return segment ? toChordRest(segment->element(track)) : nullptr;
+}
+
+static track_idx_t findTabTrack(Score* score, const Fraction& tick, voice_idx_t voice = 0)
+{
+    track_idx_t track = muse::nidx;
+
+    for (staff_idx_t i = 0; i < score->nstaves(); i++) {
+        if (score->staff(i)->isTabStaff(tick)) {
+            track = i * VOICES + voice;
+        }
+    }
+
+    return track;
+}
+
+// returns nullptr if note wasn't found
+static Note* firstNoteAtTick(Score* score, const Fraction& tick, track_idx_t track)
+{
+    ChordRest* cr = chordRestAtTick(score, tick, track);
+    if (cr != nullptr && cr->isChord()) {
+        Chord* chord = toChord(cr);
+        if (chord->notes().empty()) {
+            ADD_FAILURE() << "Chord at tick " << tick.toString().toStdString() << " doesn't have any notes";
+            return nullptr;
+        }
+
+        Note* note = chord->notes()[0];
+
+        return note;
+    }
+    ADD_FAILURE() << "No chord at tick " << tick.toString().toStdString();
+    return nullptr;
+}
+
+static void setInputStateForFretEntry(Score* score, Note* note)
+{
+    track_idx_t track = note->track();
+
+    score->inputState().setTrack(track);
+    score->inputState().setSegment(note->chord()->segment());
+    score->inputState().setString(note->string());
+    score->inputState().setDuration(note->chord()->durationType());
+    score->inputState().setNoteEntryMode(true);
+}
+
+static Note* linkedNoteOnOtherStaff(Note* note)
+{
+    for (EngravingObject* e : note->linkList()) {
+        if (e->isNote() && toNote(e)->staffIdx() != note->staffIdx()) {
+            return toNote(e);
+        }
+    }
+    return nullptr;
+}
+
+static void testTabChangePitchTiedNote(const Fraction& tick)
+{
+    MasterScore* score = ScoreRW::readScore(NOTE_DATA_DIR + u"TabChangePitchTiedNotes.mscx");
+    ASSERT_TRUE(score);
+
+    track_idx_t track = findTabTrack(score, tick);
+    ASSERT_NE(track, muse::nidx);
+
+    Note* note = firstNoteAtTick(score, tick, track);
+    ASSERT_TRUE(note);
+
+    setInputStateForFretEntry(score, note);
+
+    // change fret selected from 5 to 3
+    NoteInput::addFret(score->transactionManager()->currentOrDummyTransaction(), score, 3);
+
+    Note* linkedNote = linkedNoteOnOtherStaff(note);
+    ASSERT_TRUE(linkedNote);
+
+    score->doLayout();
+
+    // changing string 3 from fret 5 to 3, where pitch is 55 and 53 respectively
+    for (Note* n : note->tiedNotes()) {
+        EXPECT_EQ(n->fret(), 3);
+        EXPECT_EQ(n->pitch(), 53);
+    }
+    for (Note* n : linkedNote->tiedNotes()) {
+        EXPECT_EQ(n->fret(), 3);
+        EXPECT_EQ(n->pitch(), 53);
+    }
+    delete score;
+}
+
+static void testTabChangePitchTiedNotesKeyChange(const Fraction& tick)
+{
+    MasterScore* score = ScoreRW::readScore(NOTE_DATA_DIR + u"TabChangePitchTiedNotes.mscx");
+    ASSERT_TRUE(score);
+
+    // add key-change to existing score's first and second measures
+    KeySigEvent sharps;
+    sharps.setConcertKey(Key::A);
+    KeySigEvent flats;
+    flats.setConcertKey(Key::A_B);
+    score->startCmd(TranslatableString::untranslatable("Engraving note tests"));
+    EditKeySig::undoChangeKeySig(score->transactionManager()->currentOrDummyTransaction(), score, score->staff(0), Fraction(0, 1), sharps);
+    EditKeySig::undoChangeKeySig(score->transactionManager()->currentOrDummyTransaction(), score, score->staff(0), Fraction(1, 1), flats);
+    score->endCmd();
+
+    // staff 0 is the standard staff in this score
+    Note* standardNote = firstNoteAtTick(score, tick, 0);
+    ASSERT_TRUE(standardNote);
+
+    track_idx_t tabTrack = findTabTrack(score, tick);
+    ASSERT_NE(tabTrack, muse::nidx);
+
+    Note* tabNote = firstNoteAtTick(score, tick, tabTrack);
+    ASSERT_TRUE(tabNote);
+
+    setInputStateForFretEntry(score, tabNote);
+
+    // string 3 fret 6 is pitch 56: G# in A major (first note), but Ab in Ab major
+    NoteInput::addFret(score->transactionManager()->currentOrDummyTransaction(), score, 6);
+    score->doLayout();
+
+    // every note in the tie chain, on both staves, must be spelled as G#
+    for (Note* n : standardNote->tiedNotes()) {
+        EXPECT_EQ(n->pitch(), 56);
+        EXPECT_EQ(n->tpc1(), Tpc::TPC_G_S);
+        EXPECT_EQ(n->tpc2(), Tpc::TPC_G_S);
+    }
+    for (Note* n : tabNote->tiedNotes()) {
+        EXPECT_EQ(n->pitch(), 56);
+        EXPECT_EQ(n->tpc1(), Tpc::TPC_G_S);
+        EXPECT_EQ(n->tpc2(), Tpc::TPC_G_S);
+    }
+
+    delete score;
 }
 
 //---------------------------------------------------------
@@ -504,6 +642,170 @@ TEST_F(Engraving_NoteTests, tpcDegrees)
     //QCOMPARE(tpc2degree(Tpc::TPC_B_S, Key::C_S), 7);
 }
 
+TEST_F(Engraving_NoteTests, jianpuChordNotesAlignHorizontally)
+{
+    MasterScore* score = ScoreRW::readScore(u"beam_data/jianpuBeam.mscx");
+    ASSERT_TRUE(score);
+    ChordRest* chordRest = chordRestAtTick(score, Fraction(0, 1), 0);
+    ASSERT_TRUE(chordRest);
+    ASSERT_TRUE(chordRest->isChord());
+    Chord* chord = toChord(chordRest);
+    ASSERT_TRUE(chord->onJianpuStaff());
+    ASSERT_EQ(chord->notes().size(), 1);
+
+    Note* firstNote = chord->notes().front();
+    firstNote->setPitch(60);
+    firstNote->setTpcFromPitch();
+    for (int pitch : { 62, 64 }) {
+        Note* note = Factory::createNote(chord);
+        note->setPitch(pitch);
+        note->setTpcFromPitch();
+        chord->add(note);
+    }
+
+    for (DirectionV direction : { DirectionV::UP, DirectionV::DOWN }) {
+        chord->setStemDirection(direction);
+        score->doLayout();
+        for (const Note* note : chord->notes()) {
+            EXPECT_DOUBLE_EQ(note->x(), firstNote->x());
+            if (note != firstNote) {
+                EXPECT_LT(note->y(), firstNote->y());
+            }
+        }
+    }
+
+    chord->staff()->setStaffType(Fraction(0, 1), *StaffType::preset(StaffTypes::STANDARD));
+    ASSERT_FALSE(chord->onJianpuStaff());
+    for (DirectionV direction : { DirectionV::UP, DirectionV::DOWN }) {
+        chord->setStemDirection(direction);
+        score->doLayout();
+        EXPECT_NE(chord->notes()[0]->x(), chord->notes()[1]->x());
+    }
+
+    delete score;
+}
+
+TEST_F(Engraving_NoteTests, jianpuDurationLinesReserveSpace)
+{
+    MasterScore* score = ScoreRW::readScore(u"beam_data/jianpuBeam.mscx");
+    ASSERT_TRUE(score);
+    ChordRest* chordRest = chordRestAtTick(score, Fraction(0, 1), 0);
+    ASSERT_TRUE(chordRest);
+    ASSERT_TRUE(chordRest->isChord());
+    Chord* chord = toChord(chordRest);
+
+    for (DurationType duration : { DurationType::V_HALF, DurationType::V_WHOLE, DurationType::V_BREVE }) {
+        chord->setDurationType(TDuration(duration));
+        score->doLayout();
+        ASSERT_FALSE(chord->jianpuDurationLines().empty());
+        for (const JianpuDurationLine* line : chord->jianpuDurationLines()) {
+            const double right = line->pos().x() + line->ldata()->bbox().right();
+            const Shape chordShape = chord->shape();
+            EXPECT_GE(chordShape.right(), right);
+            EXPECT_GE(chord->segment()->staffShape(chord->vStaffIdx()).right(), chord->pos().x() + right);
+
+            bool found = false;
+            for (const ShapeElement& element : chordShape.elements()) {
+                if (element.item() == line) {
+                    found = true;
+                    break;
+                }
+            }
+            EXPECT_TRUE(found);
+        }
+    }
+
+    delete score;
+}
+
+TEST_F(Engraving_NoteTests, jianpuOctave)
+{
+    EXPECT_EQ(pitch2JianpuOctave(36, Tpc::TPC_C, Key::C, KeyMode::MAJOR), -1);
+    EXPECT_EQ(pitch2JianpuOctave(48, Tpc::TPC_C, Key::C, KeyMode::MAJOR), 0);
+    EXPECT_EQ(pitch2JianpuOctave(60, Tpc::TPC_C, Key::C, KeyMode::MAJOR), 1);
+    EXPECT_EQ(pitch2JianpuOctave(72, Tpc::TPC_C, Key::C, KeyMode::MAJOR), 2);
+
+    EXPECT_EQ(pitch2JianpuOctave(43, Tpc::TPC_G, Key::G, KeyMode::MAJOR), -1);
+    EXPECT_EQ(pitch2JianpuOctave(48, Tpc::TPC_C, Key::G, KeyMode::MAJOR), -1);
+    EXPECT_EQ(pitch2JianpuOctave(55, Tpc::TPC_G, Key::G, KeyMode::MAJOR), 0);
+    EXPECT_EQ(pitch2JianpuOctave(60, Tpc::TPC_C, Key::G, KeyMode::MAJOR), 0);
+    EXPECT_EQ(pitch2JianpuOctave(66, Tpc::TPC_F_S, Key::G, KeyMode::MAJOR), 0);
+    EXPECT_EQ(pitch2JianpuOctave(67, Tpc::TPC_G, Key::G, KeyMode::MAJOR), 1);
+    EXPECT_EQ(pitch2JianpuOctave(79, Tpc::TPC_G, Key::G, KeyMode::MAJOR), 2);
+}
+
+TEST_F(Engraving_NoteTests, jianpuModeMapping)
+{
+    String accidental;
+    String degree;
+
+    EXPECT_EQ(jianpuTonicTpc(Key::B_B, KeyMode::DORIAN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::A_B, KeyMode::PHRYGIAN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::G, KeyMode::LYDIAN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::F, KeyMode::MIXOLYDIAN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::E_B, KeyMode::AEOLIAN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::C, KeyMode::IONIAN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::D_B, KeyMode::LOCRIAN), Tpc::TPC_C);
+
+    EXPECT_EQ(jianpuTonicTpc(Key::E_B, KeyMode::MINOR), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::C, KeyMode::MAJOR), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::C, KeyMode::UNKNOWN), Tpc::TPC_C);
+    EXPECT_EQ(jianpuTonicTpc(Key::C, KeyMode::NONE), Tpc::TPC_C);
+
+    const int cDorianTonic = jianpuTonicTpc(Key::B_B, KeyMode::DORIAN);
+    tpc2Jianpu(Tpc::TPC_C, cDorianTonic, KeyMode::DORIAN, accidental, degree);
+    EXPECT_EQ(degree, u"2");
+    EXPECT_TRUE(accidental.empty());
+
+    tpc2Jianpu(Tpc::TPC_E_B, cDorianTonic, KeyMode::DORIAN, accidental, degree);
+    EXPECT_EQ(degree, u"4");
+    EXPECT_TRUE(accidental.empty());
+
+    tpc2Jianpu(Tpc::TPC_E, cDorianTonic, KeyMode::DORIAN, accidental, degree);
+    EXPECT_EQ(degree, u"4");
+    EXPECT_EQ(accidental, u"#");
+
+    const int cMajorTonic = key2Tpc(Key::C);
+    tpc2Jianpu(Tpc::TPC_F_S, cMajorTonic, KeyMode::MAJOR, accidental, degree);
+    EXPECT_EQ(degree, u"4");
+    EXPECT_EQ(accidental, u"#");
+    tpc2Jianpu(Tpc::TPC_G_B, cMajorTonic, KeyMode::MAJOR, accidental, degree);
+    EXPECT_EQ(degree, u"5");
+    EXPECT_EQ(accidental, u"b");
+
+    const int aMinorTonic = jianpuTonicTpc(Key::C, KeyMode::MINOR);
+    EXPECT_EQ(aMinorTonic, Tpc::TPC_A);
+    tpc2Jianpu(Tpc::TPC_A, aMinorTonic, KeyMode::MINOR, accidental, degree);
+    EXPECT_EQ(degree, u"6");
+    EXPECT_TRUE(accidental.empty());
+    tpc2Jianpu(Tpc::TPC_C, aMinorTonic, KeyMode::MINOR, accidental, degree);
+    EXPECT_EQ(degree, u"1");
+    EXPECT_TRUE(accidental.empty());
+
+    EXPECT_EQ(pitch2JianpuOctave(58, Tpc::TPC_B_B, cDorianTonic, KeyMode::DORIAN), 0);
+    EXPECT_EQ(pitch2JianpuOctave(60, Tpc::TPC_C, cDorianTonic, KeyMode::DORIAN), 0);
+    EXPECT_EQ(pitch2JianpuOctave(57, Tpc::TPC_A, aMinorTonic, KeyMode::MINOR), -1);
+    EXPECT_EQ(pitch2JianpuOctave(59, Tpc::TPC_B, aMinorTonic, KeyMode::MINOR), -1);
+    EXPECT_EQ(pitch2JianpuOctave(60, Tpc::TPC_C, aMinorTonic, KeyMode::MINOR), 0);
+    EXPECT_EQ(pitch2JianpuOctave(69, Tpc::TPC_A, aMinorTonic, KeyMode::MINOR), 0);
+    EXPECT_EQ(pitch2JianpuOctave(72, Tpc::TPC_C, aMinorTonic, KeyMode::MINOR), 1);
+}
+
+// KeyMode::UNKNOWN is the mode stored for any ordinary key signature that never had an
+// explicit mode assigned (i.e. almost every major/minor key signature in real scores,
+// since the "mode" XML tag is only written when it differs from UNKNOWN). It must be
+// treated the same as KeyMode::MAJOR so that FOLLOW_SCORE_KEY tracks the actual key.
+TEST_F(Engraving_NoteTests, jianpuUnknownModeTracksScoreKey)
+{
+    EXPECT_EQ(jianpuTonicTpc(Key::G, KeyMode::UNKNOWN), jianpuTonicTpc(Key::G, KeyMode::MAJOR));
+    EXPECT_EQ(jianpuTonicTpc(Key::G, KeyMode::UNKNOWN), Tpc::TPC_G);
+    EXPECT_EQ(jianpuTonicTpc(Key::E_B, KeyMode::UNKNOWN), jianpuTonicTpc(Key::E_B, KeyMode::MAJOR));
+    EXPECT_EQ(jianpuTonicTpc(Key::E_B, KeyMode::UNKNOWN), Tpc::TPC_E_B);
+
+    // Atonal (custom) key signatures have no key to derive a tonic from.
+    EXPECT_EQ(jianpuTonicTpc(Key::C, KeyMode::NONE), Tpc::TPC_C);
+}
+
 TEST_F(Engraving_NoteTests, alteredUnison)
 {
     MasterScore* score = ScoreRW::readScore(NOTE_DATA_DIR + u"altered-unison.mscx");
@@ -575,7 +877,7 @@ TEST_F(Engraving_NoteTests, PreserveLyricsOnRepitch)
 
     // create a note, attach a lyric, then repitch to another note
     score->setNoteRest(cr->segment(), 0, NoteVal(60), duration, DirectionV::AUTO);
-    score->addLyrics(tick, 0, u"la");
+    EditLyrics::addLyrics(score, tick, 0, u"la");
 
     cr = chordRestAtTick(score, tick, 0);
     ASSERT_TRUE(cr);
@@ -605,7 +907,7 @@ TEST_F(Engraving_NoteTests, RepitchDoesNotDuplicateLyrics)
     Fraction duration = cr->ticks();
 
     score->setNoteRest(cr->segment(), 0, NoteVal(60), duration, DirectionV::AUTO);
-    score->addLyrics(tick, 0, u"la");
+    EditLyrics::addLyrics(score, tick, 0, u"la");
 
     cr = chordRestAtTick(score, tick, 0);
     ASSERT_TRUE(cr);
@@ -638,7 +940,7 @@ TEST_F(Engraving_NoteTests, ReplacingNoteWithRestDoesNotPreserveLyrics)
     Fraction duration = cr->ticks();
 
     score->setNoteRest(cr->segment(), 0, NoteVal(60), duration, DirectionV::AUTO);
-    score->addLyrics(tick, 0, u"la");
+    EditLyrics::addLyrics(score, tick, 0, u"la");
 
     cr = chordRestAtTick(score, tick, 0);
     ASSERT_TRUE(cr);
@@ -698,7 +1000,7 @@ TEST_F(Engraving_NoteTests, RepitchPreservesMultipleLyricsAndFormatting)
     ASSERT_TRUE(cr->isChord());
 
     // edge case: multiple lyrics and formatted text
-    score->addLyrics(tick, 0, u"do");
+    EditLyrics::addLyrics(score, tick, 0, u"do");
     Lyrics* lyricVerse1 = Factory::createLyrics(cr);
     lyricVerse1->setVerse(1);
     lyricVerse1->setXmlText(u"re &amp; <i>mi</i>");
@@ -739,7 +1041,7 @@ TEST_F(Engraving_NoteTests, RepitchLyricsUndoRedoPreservesLyrics)
 
     score->startCmd(TranslatableString::untranslatable("Engraving note tests"));
     score->setNoteRest(cr->segment(), 0, NoteVal(60), duration, DirectionV::AUTO);
-    score->addLyrics(tick, 0, u"la");
+    EditLyrics::addLyrics(score, tick, 0, u"la");
     score->endCmd();
 
     cr = chordRestAtTick(score, tick, 0);
@@ -797,7 +1099,7 @@ TEST_F(Engraving_NoteTests, RepeatedRepitchWithTwoLyricsPreservesBoth)
     ASSERT_TRUE(cr);
     ASSERT_TRUE(cr->isChord());
 
-    score->addLyrics(tick, 0, u"do");
+    EditLyrics::addLyrics(score, tick, 0, u"do");
     Lyrics* lyricVerse1 = Factory::createLyrics(cr);
     lyricVerse1->setVerse(1);
     lyricVerse1->setXmlText(u"re &amp; <i>mi</i>");
@@ -838,7 +1140,7 @@ TEST_F(Engraving_NoteTests, RepitchInVoiceTwoDoesNotAffectVoiceOneLyrics)
     Fraction duration = voice1Cr->ticks();
 
     score->setNoteRest(voice1Cr->segment(), 0, NoteVal(60), duration, DirectionV::AUTO);
-    score->addLyrics(tick, 0, u"solo");
+    EditLyrics::addLyrics(score, tick, 0, u"solo");
 
     Segment* segment = voice1Cr->segment();
     // add and repitch voice 2 independently from voice 1
@@ -864,4 +1166,57 @@ TEST_F(Engraving_NoteTests, RepitchInVoiceTwoDoesNotAffectVoiceOneLyrics)
     EXPECT_TRUE(voice2Cr->lyrics().empty());
 
     delete score;
+}
+
+TEST_F(Engraving_NoteTests, TabChangePitchFirstTiedNote)
+{
+    testTabChangePitchTiedNote(Fraction(1, 2));
+}
+
+TEST_F(Engraving_NoteTests, TabChangePitchLastTiedNote)
+{
+    testTabChangePitchTiedNote(Fraction(1, 1));
+}
+
+TEST_F(Engraving_NoteTests, StandardChangePitchTiedNotesUpdatesTab)
+{
+    MasterScore* score = ScoreRW::readScore(NOTE_DATA_DIR + u"TabChangePitchTiedNotes.mscx");
+    ASSERT_TRUE(score);
+
+    Fraction tick(1, 2);
+
+    // staff 0 is the standard staff in this score
+    Note* standardNote = firstNoteAtTick(score, tick, 0);
+    ASSERT_TRUE(standardNote);
+
+    track_idx_t tabTrack = findTabTrack(score, tick);
+    ASSERT_NE(tabTrack, muse::nidx);
+
+    Note* tabNote = firstNoteAtTick(score, tick, tabTrack);
+    ASSERT_TRUE(tabNote);
+
+    // move the standard staff note down a semitone: pitch 55 -> 54
+    score->select(standardNote);
+    EditNote::upDown(score, false, UpDownMode::CHROMATIC);
+    score->doLayout();
+
+    for (Note* n : standardNote->tiedNotes()) {
+        EXPECT_EQ(n->pitch(), 54);
+    }
+    for (Note* n : tabNote->tiedNotes()) {
+        EXPECT_EQ(n->pitch(), 54);
+        EXPECT_EQ(n->fret(), 4);
+    }
+
+    delete score;
+}
+
+TEST_F(Engraving_NoteTests, TabChangePitchTiedNotesKeyChangeFirstNote)
+{
+    testTabChangePitchTiedNotesKeyChange(Fraction(1, 2));
+}
+
+TEST_F(Engraving_NoteTests, TabChangePitchTiedNotesKeyChangeLastNote)
+{
+    testTabChangePitchTiedNotesKeyChange(Fraction(1, 1));
 }

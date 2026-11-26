@@ -53,6 +53,7 @@ public:
     ~Lyrics();
 
     Lyrics* clone() const override { return new Lyrics(*this); }
+    void setOwnershipParent(DummyParentOr<ChordRest> parent) { EngravingItem::setOwnershipParent(parent); }
     bool acceptDrop(EditData&) const override;
     EngravingItem* drop(Transaction& tx, EditData&) override;
 
@@ -133,10 +134,11 @@ class LyricsLine : public SLine
     DECLARE_CLASSOF(ElementType::LYRICSLINE)
 
 public:
-    LyricsLine(DummyParentOr<EngravingItem> parent);
+    LyricsLine(DummyParentOr<Lyrics> parent);
     LyricsLine(const LyricsLine&);
 
     LyricsLine* clone() const override { return new LyricsLine(*this); }
+    void setOwnershipParent(DummyParentOr<Lyrics> parent) { EngravingItem::setOwnershipParent(parent); }
 
     Anchor anchor() const override { return Anchor::SEGMENT; }
 
@@ -154,7 +156,7 @@ public:
     Sid getPropertyStyle(Pid) const override;
 
 protected:
-    LyricsLine(const ElementType& type, DummyParentOr<EngravingItem> parent, ElementFlags = ElementFlag::NOTHING);
+    LyricsLine(const ElementType& type, DummyParentOr<Lyrics> parent, ElementFlags = ElementFlag::NOTHING);
 
     bool isInSpannerMap() const override { return false; }
 
@@ -192,7 +194,7 @@ public:
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue&) override;
     PropertyValue propertyDefault(Pid propertyId) const override;
-    EngravingObject* propertyDelegate(Pid propertyId) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid propertyId) const override;
 
     bool allowTimeAnchor() const override { return false; }
 
@@ -203,6 +205,18 @@ public:
         const std::vector<LineF>& dashes() const { return m_dashes; }
         void clearDashes() { m_dashes.clear(); }
         void addDash(const LineF& dash) { m_dashes.push_back(dash); }
+
+        // The lyrics this segment's position was calculated from (if any), so it moves with them
+        const Lyrics* startXLyrics = nullptr;
+        const Lyrics* endXLyrics = nullptr;
+        const Lyrics* yLyrics = nullptr;
+        void clearReferenceLyrics()
+        {
+            startXLyrics = nullptr;
+            endXLyrics = nullptr;
+            yLyrics = nullptr;
+        }
+
     private:
         std::vector<LineF> m_dashes;
     };
@@ -219,9 +233,10 @@ class PartialLyricsLine final : public LyricsLine
     DECLARE_CLASSOF(ElementType::PARTIAL_LYRICSLINE)
 
 public:
-    PartialLyricsLine(DummyParentOr<EngravingItem> parent);
+    PartialLyricsLine(DummyParent* parent);
     PartialLyricsLine(const PartialLyricsLine&);
     PartialLyricsLine* clone() const override { return new PartialLyricsLine(*this); }
+    void setOwnershipParent(EngravingObject*) = delete;
     LineSegment* createLineSegment() override;
 
     Lyrics* lyrics() const override { return nullptr; }
@@ -275,6 +290,6 @@ public:
     Color color() const override { return lyricsLine()->color(); }
     double baseLineShift() const override;
 
-    EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 };
 } // namespace mu::engraving

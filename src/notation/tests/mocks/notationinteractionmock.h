@@ -78,14 +78,18 @@ public:
     MOCK_METHOD(bool, startDropImage, (const QUrl&), (override));
     MOCK_METHOD(bool, updateDropSingle, (const muse::PointF&, Qt::KeyboardModifiers), (override));
     MOCK_METHOD(bool, updateDropRange, (const muse::PointF&, std::optional<bool>), (override));
-    MOCK_METHOD(bool, dropSingle, (const muse::PointF&, Qt::KeyboardModifiers), (override));
+    MOCK_METHOD(muse::Ret, canDropSingle, (const muse::PointF&), (override));
+    MOCK_METHOD(bool, isDroppingInstrumentChange, (), (const, override));
+    MOCK_METHOD(bool, dropSingle, (const muse::PointF&, Qt::KeyboardModifiers, const std::optional<InstrumentTemplate>&), (override));
     MOCK_METHOD(bool, dropRange, (const QByteArray&, const muse::PointF&, bool), (override));
     MOCK_METHOD(void, setDropTarget, (EngravingItem*, bool), (override));
     MOCK_METHOD(void, setDropRects, (const std::vector<muse::RectF>&), (override));
     MOCK_METHOD(void, endDrop, (), (override));
     MOCK_METHOD(muse::async::Notification, dropChanged, (), (const, override));
 
+    MOCK_METHOD(muse::Ret, canApplyPaletteElement, (mu::engraving::EngravingItem*), (const, override));
     MOCK_METHOD(bool, applyPaletteElement, (mu::engraving::EngravingItem*, Qt::KeyboardModifiers), (override));
+
     MOCK_METHOD(void, undo, (), (override));
     MOCK_METHOD(void, redo, (), (override));
     MOCK_METHOD(void, undoRedoToIndex, (size_t idx), (override));
@@ -93,17 +97,13 @@ public:
     MOCK_METHOD(bool, moveSelectionAvailable, (MoveSelectionType), (const, override));
     MOCK_METHOD(void, moveSelectionDeprecated, (MoveDirection, MoveSelectionType), (override));
 
-    MOCK_METHOD(void, moveLyrics, (MoveDirection), (override));
-
     MOCK_METHOD(EngravingItem*, contextItem, (), (const, override));
 
+    MOCK_METHOD(bool, moveSelectedItems, (MoveDirection, bool), (override));
     MOCK_METHOD(void, movePitch, (MoveDirection, PitchMode), (override));
-    MOCK_METHOD(void, nudge, (MoveDirection, bool), (override));
-    MOCK_METHOD(void, nudgeAnchors, (MoveDirection), (override));
     MOCK_METHOD(void, moveChordRestToStaff, (MoveDirection), (override));
     MOCK_METHOD(void, swapChordRest, (MoveDirection), (override));
-    MOCK_METHOD(void, toggleSnapToPrevious, (), (override));
-    MOCK_METHOD(void, toggleSnapToNext, (), (override));
+    MOCK_METHOD(void, toggleSnapTo, (SnapDirection), (override));
 
     MOCK_METHOD(bool, isTextSelected, (), (const, override));
     MOCK_METHOD(bool, isTextEditingStarted, (), (const, override));
@@ -195,13 +195,13 @@ public:
     MOCK_METHOD(bool, transpose, (const TransposeOptions&), (override));
     MOCK_METHOD(void, swapVoices, (voice_idx_t, voice_idx_t), (override));
     MOCK_METHOD(void, addIntervalToSelectedNotes, (int), (override));
+    MOCK_METHOD(muse::Ret, canAddFret, (), (const, override));
     MOCK_METHOD(void, addFret, (int), (override));
     MOCK_METHOD(void, changeSelectedElementsVoice, (voice_idx_t), (override));
     MOCK_METHOD(void, changeSelectedElementsVoiceAssignment, (VoiceAssignment), (override));
     MOCK_METHOD(void, addAnchoredLineToSelectedNotes, (), (override));
 
-    MOCK_METHOD(void, addTextToTopFrame, (TextStyleType), (override));
-    MOCK_METHOD(void, addTextToItem, (TextStyleType, EngravingItem*), (override));
+    MOCK_METHOD(void, addText, (TextStyleType), (override));
 
     MOCK_METHOD(muse::Ret, canAddImageToItem, (const EngravingItem*), (const, override));
     MOCK_METHOD(void, addImageToItem, (const muse::io::path_t&, EngravingItem*), (override));
@@ -263,23 +263,19 @@ public:
 
     MOCK_METHOD(void, navigateToNearText, (MoveDirection), (override));
 
-    MOCK_METHOD(void, toggleBold, (), (override));
-    MOCK_METHOD(void, toggleItalic, (), (override));
-    MOCK_METHOD(void, toggleUnderline, (), (override));
-    MOCK_METHOD(void, toggleStrike, (), (override));
-    MOCK_METHOD(void, toggleSubScript, (), (override));
-    MOCK_METHOD(void, toggleSuperScript, (), (override));
+    MOCK_METHOD(void, toggleTextFontStyle, (FontStyle), (override));
+    MOCK_METHOD(void, toggleTextVAlign, (VerticalAlignment), (override));
 
     MOCK_METHOD(bool, canInsertClef, (mu::engraving::ClefType), (const, override));
     MOCK_METHOD(void, insertClef, (mu::engraving::ClefType), (override));
 
     MOCK_METHOD(void, toggleArticulation, (mu::engraving::SymId), (override));
-    MOCK_METHOD(void, toggleOrnament, (mu::engraving::SymId), (override));
+    MOCK_METHOD(void, toggleOrnament, (OrnamentType), (override));
     MOCK_METHOD(void, changeAccidental, (mu::engraving::AccidentalType), (override));
     MOCK_METHOD(void, transposeSemitone, (int), (override));
     MOCK_METHOD(void, transposeDiatonicAlterations, (mu::engraving::TransposeDirection), (override));
     MOCK_METHOD(void, toggleAutoplace, (bool), (override));
-    MOCK_METHOD(void, getLocation, (), (override));
+    MOCK_METHOD(void, showLocation, (), (override));
     MOCK_METHOD(void, execute, (void (mu::engraving::Score::*)(), const muse::TranslatableString&), (override));
 
     MOCK_METHOD(void, showItem, (const mu::engraving::EngravingItem*, int), (override));

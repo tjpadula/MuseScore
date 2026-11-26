@@ -81,6 +81,7 @@ public:
     Part* originPart(const Fraction& tick) const;
 
     ClefList& clefList() { return m_clefs; }
+    const ClefList& clefList() const { return m_clefs; }
     ClefTypeList clefType(const Fraction&) const;
     ClefTypeList defaultClefType() const { return m_defaultClefType; }
     void setDefaultClefType(const ClefTypeList& l) { m_defaultClefType = l; }
@@ -105,7 +106,8 @@ public:
 
     Interval transpose(const Fraction& tick) const;
 
-    KeyList* keyList() { return &m_keys; }
+    KeyList& keyList() { return m_keys; }
+    const KeyList& keyList() const { return m_keys; }
     Key key(const Fraction& tick) const { return keySigEvent(tick).key(); }
     Key concertKey(const Fraction& tick) const { return keySigEvent(tick).concertKey(); }
     KeySigEvent keySigEvent(const Fraction&) const;
@@ -171,6 +173,7 @@ public:
     bool isPitchedStaff(const Fraction&) const;
     bool isTabStaff(const Fraction&) const;
     bool isDrumStaff(const Fraction&) const;
+    bool isJianpuStaff(const Fraction&) const;
 
     int lines(const Fraction&) const;
     void setLines(const Fraction&, int lines);
@@ -216,7 +219,7 @@ public:
     bool playbackVoice(int voice) const;
     void setPlaybackVoice(int voice, bool val);
 
-    const std::array<bool, VOICES>& visibilityVoices() const;
+    const std::array<bool, MAX_VOICES>& visibilityVoices() const;
     bool isVoiceVisible(voice_idx_t voice) const;
     bool canDisableVoice() const;
 
@@ -287,12 +290,12 @@ private:
 
     StaffTypeList m_staffTypeList;
 
-    std::map<int, int> m_channelList[VOICES];
+    std::map<int, int> m_channelList[MAX_VOICES];
     std::map<int, SwingParameters> m_swingMap;
     std::map<int, CapoParams> m_capoMap;
     std::map<int, int> m_pitchOffsetMap;
-    bool m_playbackVoice[VOICES] { true, true, true, true };
-    std::array<bool, VOICES> m_visibilityVoices { true, true, true, true };
+    bool m_playbackVoice[MAX_VOICES] { true, true, true, true };
+    std::array<bool, MAX_VOICES> m_visibilityVoices { true, true, true, true };
 
     bool m_reflectTranspositionInLinkedTab = true;
 

@@ -30,7 +30,6 @@
 
 #include "translation.h"
 
-#include "infrastructure/messagebox.h"
 #include "style/style.h"
 
 #include "rw/xmlreader.h"
@@ -1649,19 +1648,6 @@ void Score::cmdMoveRest(Rest* rest, DirectionV dir)
         pos.ry() += rest->spatium() * rest->staffType()->lineDistance().val();
     }
     rest->undoChangeProperty(Pid::OFFSET, pos);
-}
-
-//---------------------------------------------------------
-//   cmdMoveLyrics
-//---------------------------------------------------------
-
-void Score::cmdMoveLyrics(Lyrics* lyrics, DirectionV dir)
-{
-    int verse = lyrics->verse() + (dir == DirectionV::UP ? -1 : 1);
-    if (verse < 0) {
-        return;
-    }
-    lyrics->undoChangeProperty(Pid::VERSE, verse);
 }
 
 //---------------------------------------------------------

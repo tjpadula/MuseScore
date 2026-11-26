@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <QPointer>
+
 #include "abstractlayoutpaneltreeitem.h"
 
 #include "async/asyncable.h"
@@ -34,13 +36,16 @@ class PartTreeItem : public AbstractLayoutPanelTreeItem, public muse::Contextabl
 {
     Q_OBJECT
 
+    Q_PROPERTY(LayoutPanelItemType::SharedGroupRole sharedGroupRole READ sharedGroupRole NOTIFY sharedGroupChanged)
+    Q_PROPERTY(PartTreeItem * sharedGroupHeader READ sharedGroupHeader NOTIFY sharedGroupChanged)
+
     QML_ELEMENT;
     QML_UNCREATABLE("Must be created in C++ only")
 
+public:
     muse::ContextInject<notation::ISelectInstrumentsScenario> selectInstrumentsScenario { this };
     muse::ContextInject<muse::IInteractive> interactive { this };
 
-public:
     PartTreeItem(notation::IMasterNotationPtr masterNotation, notation::INotationPtr notation, QObject* parent,
                  LayoutPanelItemType::ItemType type = LayoutPanelItemType::ItemType::PART);
 
@@ -48,12 +53,14 @@ public:
 
     const notation::Part* part() const;
 
-    MoveParams buildMoveParams(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent, int destinationRow) const override;
+    LayoutPanelItemType::SharedGroupRole sharedGroupRole() const;
+    PartTreeItem* sharedGroupHeader() const;
+    void setSharedGroup(LayoutPanelItemType::SharedGroupRole role, PartTreeItem* header);
 
     void moveChildren(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent, int destinationRow,
                       bool updateNotation) override;
 
-    void moveChildrenOnScore(const MoveParams& params) override;
+    void applyToScore() override;
 
     void removeChildren(int row, int count, bool deleteChild) override;
 
@@ -63,9 +70,13 @@ public:
     Q_INVOKABLE void replaceInstrument();
     Q_INVOKABLE void resetAllFormatting();
 
+signals:
+    void sharedGroupChanged();
+
 protected:
     void listenVisibilityChanged();
     void onScoreChanged(const mu::engraving::ScoreChanges& changes) override;
+    void updateVisibility();
 
 private:
     void createAndAddPart(const muse::ID& masterPartId);
@@ -75,5 +86,7 @@ private:
     const notation::Part* m_part = nullptr;
     bool m_ignoreVisibilityChange = true;
     bool m_partExists = false;
+    LayoutPanelItemType::SharedGroupRole m_sharedGroupRole = LayoutPanelItemType::NOT_IN_GROUP;
+    QPointer<PartTreeItem> m_sharedGroupHeader;
 };
 }

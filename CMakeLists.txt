@@ -153,8 +153,6 @@ set(MUSE_APP_BUILD_MODE "dev" CACHE STRING "Build mode")
 
 set(MUSESCORE_REVISION "" CACHE STRING "Build revision")
 
-option(MUSE_MODULE_DOCKWINDOW_KDDOCKWIDGETS_V2 "Use KDDockWidgets v2" ON)
-
 include(${MUSE_FRAMEWORK_SRC_PATH}/cmake/MuseDeclareOptions.cmake)
 
 # Modules (alphabetical order please)
@@ -198,6 +196,7 @@ option(MUE_BUILD_PROPERTIESPANEL_QML "Build propertiespanel QML" ${MUE_BUILD_PRO
 
 option(MUE_BUILD_INSTRUMENTSSCENE_MODULE "Build instruments scene module" ON)
 option(MUE_BUILD_INSTRUMENTSSCENE_QML "Build instruments scene QML" ${MUE_BUILD_INSTRUMENTSSCENE_MODULE})
+option(MUE_BUILD_INSTRUMENTSSCENE_TESTS "Build instruments scene tests" ${MUE_BUILD_INSTRUMENTSSCENE_MODULE})
 
 option(MUE_BUILD_MUSESOUNDS_MODULE "Build MuseSounds module" ON)
 option(MUE_BUILD_MUSESOUNDS_QML "Build musesounds QML" ${MUE_BUILD_MUSESOUNDS_MODULE})
@@ -293,6 +292,7 @@ if(NOT DEFINED MUSE_MODULE_DOCKWINDOW_KDDOCKWIDGETS_V2)
 endif()
 
 set(MUSE_MODULE_SHORTCUTS_V2 ON)
+set(MUSE_MODULE_RCOMMAND_HANDLER_AUTOUNBLOCK OFF)
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/SetupConfigure.local.cmake")
     include(${CMAKE_CURRENT_LIST_DIR}/SetupConfigure.local.cmake)

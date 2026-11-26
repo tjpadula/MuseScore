@@ -39,13 +39,9 @@
 
 #include "layoutpanelutils.h"
 
-Q_MOC_INCLUDE(< QItemSelectionModel >)
-
 namespace muse::uicomponents {
 class ItemMultiSelectionModel;
 }
-
-class QItemSelectionModel;
 
 namespace mu::instrumentsscene {
 class PartTreeItem;
@@ -63,16 +59,19 @@ class LayoutPanelTreeModel : public QAbstractItemModel, public QQmlParserStatus,
     Q_PROPERTY(QString addInstrumentsKeyboardShortcut READ addInstrumentsKeyboardShortcut NOTIFY addInstrumentsKeyboardShortcutChanged)
     Q_PROPERTY(int selectedItemsType READ selectedItemsType NOTIFY selectedItemsTypeChanged)
     Q_PROPERTY(bool isStaveSharingEnabled READ isStaveSharingEnabled NOTIFY isStaveSharingEnabledChanged FINAL)
+    Q_PROPERTY(bool isHideEmptyStavesEnabled READ isHideEmptyStavesEnabled NOTIFY isHideEmptyStavesEnabledChanged FINAL)
+    Q_PROPERTY(bool isMasterScore READ isMasterScore NOTIFY scoreChanged FINAL)
+    Q_PROPERTY(QString scoreName READ scoreName NOTIFY scoreChanged FINAL)
 
     QML_ELEMENT
 
+public:
     muse::GlobalInject<muse::shortcuts::ICommandShortcutsRegister> commandShortcutsRegister;
     muse::ContextInject<project::IProjectSession> context = { this };
     muse::ContextInject<notation::ISelectInstrumentsScenario> selectInstrumentsScenario = { this };
     muse::ContextInject<muse::rcommand::ICommandDispatcher> commandDispatcher = { this };
     muse::ContextInject<muse::IInteractive> interactive = { this };
 
-public:
     explicit LayoutPanelTreeModel(QObject* parent = nullptr);
     ~LayoutPanelTreeModel() override;
 
@@ -95,9 +94,13 @@ public:
     int selectedItemsType() const;
 
     bool isStaveSharingEnabled() const;
+    bool isHideEmptyStavesEnabled() const;
+    bool isMasterScore() const;
+    QString scoreName() const;
 
     Q_INVOKABLE void load();
     Q_INVOKABLE void toggleStaveSharing(bool on);
+    Q_INVOKABLE void toggleHideEmptyStaves(bool on);
     Q_INVOKABLE void setLayoutPanelVisible(bool visible);
     Q_INVOKABLE void selectRow(const QModelIndex& rowIndex);
     Q_INVOKABLE void clearSelection();
@@ -117,8 +120,6 @@ public:
     Q_INVOKABLE bool moveRows(const QModelIndex& sourceParent, int sourceRow, int count, const QModelIndex& destinationParent,
                               int destinationChild) override;
 
-    Q_INVOKABLE QItemSelectionModel* selectionModel() const;
-
 signals:
     void isMovingUpAvailableChanged(bool isMovingUpAvailable);
     void isMovingDownAvailableChanged(bool isMovingDownAvailable);
@@ -129,6 +130,9 @@ signals:
     void addInstrumentsKeyboardShortcutChanged();
     void selectedItemsTypeChanged(int type);
     void isStaveSharingEnabledChanged(bool enabled);
+    void isHideEmptyStavesEnabledChanged(bool enabled);
+    void sharedGroupEnabledChanged();
+    void scoreChanged();
 
 private slots:
     void updateRearrangementAvailability();
@@ -138,6 +142,8 @@ private slots:
     void updateSelectedItemsType();
     void updateIsAddingSystemMarkingsAvailable();
     void updateIsStaveSharingEnabled();
+    void updateIsHideEmptyStavesEnabled();
+    void updateSharedGroupRoles();
 
 private:
     void classBegin() override;
@@ -153,8 +159,6 @@ private:
     void onMasterNotationChanged();
     void onNotationChanged();
 
-    bool isMasterScore() const;
-
     bool shouldShowSystemObjectLayers() const;
 
     void onBeforeChangeNotation();
@@ -166,6 +170,7 @@ private:
     void setupPartsConnections();
     void setupStavesConnections(const muse::ID& partId);
     void setupNotationConnections();
+    void setupExcerptNameConnection();
 
     void updateSelectedRows();
     void onScoreChanged(const mu::engraving::ScoreChanges& changes);
@@ -180,7 +185,7 @@ private:
     void setItemsSelected(const QModelIndexList& indexes, bool selected);
 
     bool needWarnOnRemoveRows(int row, int count);
-    bool warnAboutRemovingInstrumentsIfNecessary(int count);
+    muse::async::Promise<bool> askAboutRemovingInstruments(int count);
 
     AbstractLayoutPanelTreeItem* buildSharedPartItem(const notation::Part* part);
     AbstractLayoutPanelTreeItem* buildMasterPartItem(const notation::Part* masterPart);
@@ -202,6 +207,7 @@ private:
     bool m_isAddingSystemMarkingsAvailable = false;
 
     bool m_isStaveSharingEnabled = false;
+    bool m_isHideEmptyStavesEnabled = false;
 
     LayoutPanelItemType::ItemType m_selectedItemsType = LayoutPanelItemType::ItemType::UNDEFINED;
 
@@ -219,7 +225,6 @@ private:
 
     bool m_dragInProgress = false;
     AbstractLayoutPanelTreeItem* m_dragSourceParentItem = nullptr;
-    MoveParams m_activeDragMoveParams;
 
     muse::ID m_systemStaffToSelect;
 };

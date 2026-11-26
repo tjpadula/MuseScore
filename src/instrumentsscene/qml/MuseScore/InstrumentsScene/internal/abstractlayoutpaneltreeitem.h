@@ -39,21 +39,6 @@ struct ScoreChanges;
 }
 
 namespace mu::instrumentsscene {
-struct MoveParams {
-    muse::IDList objectIdListToMove;
-    muse::ID destinationObjectId;
-    LayoutPanelItemType::ItemType objectsType = LayoutPanelItemType::UNDEFINED;
-    notation::INotationParts::InsertMode insertMode = notation::INotationParts::InsertMode::Before;
-    bool moveSysObjBelowBottomStaff = false;
-    bool moveSysObjAboveBottomStaff = false;
-
-    bool isValid() const
-    {
-        return !objectIdListToMove.empty() && (destinationObjectId.isValid() || moveSysObjBelowBottomStaff)
-               && objectsType != LayoutPanelItemType::UNDEFINED;
-    }
-};
-
 class AbstractLayoutPanelTreeItem : public QObject
 {
     Q_OBJECT
@@ -69,6 +54,7 @@ class AbstractLayoutPanelTreeItem : public QObject
     Q_PROPERTY(bool isSelected READ isSelected NOTIFY isSelectedChanged)
     Q_PROPERTY(bool settingsAvailable READ settingsAvailable NOTIFY settingsAvailableChanged)
     Q_PROPERTY(bool settingsEnabled READ settingsEnabled NOTIFY settingsEnabledChanged)
+    Q_PROPERTY(bool isLastChild READ isLastChild NOTIFY isLastChildChanged)
 
     QML_ELEMENT;
     QML_UNCREATABLE("Not creatable as it is an abstract base class")
@@ -97,12 +83,11 @@ public:
     Q_INVOKABLE virtual bool canAcceptDrop(const QVariant& item) const;
     Q_INVOKABLE virtual void appendNewItem();
 
-    virtual MoveParams buildMoveParams(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent, int destinationRow) const;
-
     virtual void moveChildren(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent, int destinationRow,
                               bool updateNotation);
 
-    virtual void moveChildrenOnScore(const MoveParams& params);
+    //! Puts the children's order on the score to match the panel
+    virtual void applyToScore();
 
     virtual void removeChildren(int row, int count = 1, bool deleteChild = false);
 
@@ -123,6 +108,7 @@ public:
     bool isEmpty() const;
     int childCount() const;
     int row() const;
+    bool isLastChild() const;
 
 public slots:
     void setTitle(QString title);
@@ -146,6 +132,7 @@ signals:
     void isSelectedChanged(bool isSelected);
     void settingsAvailableChanged(bool available);
     void settingsEnabledChanged(bool enabled);
+    void isLastChildChanged(bool isLast);
 
 protected:
     notation::IMasterNotationPtr masterNotation() const;
@@ -153,6 +140,7 @@ protected:
 
 private:
     int indexOf(const AbstractLayoutPanelTreeItem* item) const;
+    void setIsLastChild(bool isLast);
 
     QList<AbstractLayoutPanelTreeItem*> m_children;
     AbstractLayoutPanelTreeItem* m_parent = nullptr;
@@ -168,6 +156,7 @@ private:
     bool m_isSelected = false;
     bool m_settingsAvailable = false;
     bool m_settingsEnabled = false;
+    bool m_isLastChild = false;
 
     notation::IMasterNotationPtr m_masterNotation = nullptr;
     notation::INotationPtr m_notation = nullptr;

@@ -1126,6 +1126,22 @@ enum class Sid : short {
     articulationOffset,
     articulationPosition,
 
+    jianpuNumberFontFace,
+    jianpuNumberFontSize,
+    jianpuNumberLineSpacing,
+    jianpuNumberFontSpatiumDependent,
+    jianpuNumberFontStyle,
+    jianpuNumberColor,
+    jianpuNumberAlign,
+    jianpuNumberOffset,
+    jianpuNumberFrameType,
+    jianpuNumberFramePadding,
+    jianpuNumberFrameWidth,
+    jianpuNumberFrameRound,
+    jianpuNumberFrameFgColor,
+    jianpuNumberFrameBgColor,
+    jianpuNumberPosition,
+
     longInstrumentFontFace,
     longInstrumentFontSize,
     longInstrumentLineSpacing,
@@ -2137,6 +2153,7 @@ enum class Sid : short {
     harpPedalTextDiagramMusicalSymbolSize,
     headerMusicalSymbolSize,
     instrumentChangeMusicalSymbolSize,
+    jianpuNumberMusicalSymbolSize,
     letRingMusicalSymbolSize,
     lhGuitarFingeringMusicalSymbolSize,
     longInstrumentMusicalSymbolSize,
@@ -2279,6 +2296,14 @@ enum class Sid : short {
     palmMuteEndFilledArrowHeight,
     palmMuteEndFilledArrowWidth,
 
+    jianpuNumberVerticalDistance,
+    jianpuVoiceVerticalDistance,
+    jianpuOctaveDotRadius,
+    jianpuOctaveDotDistance,
+    jianpuDiminutionBeamThickness,
+    jianpuDiminutionBeamDistance,
+    jianpuDiminutionBeamPlacement,
+    jianpuDurationLineThickness,
     STYLES
 };
 

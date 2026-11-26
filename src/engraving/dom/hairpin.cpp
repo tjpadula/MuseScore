@@ -29,6 +29,7 @@
 #include "../editing/elementeditdata.h"
 #include "types/typesconv.h"
 
+#include "dummyparent.h"
 #include "dynamic.h"
 #include "dynamichairpingroup.h"
 #include "measure.h"
@@ -237,6 +238,7 @@ void HairpinSegment::dragGrip(EditData& ed)
         }
         hairpin()->setHairpinHeight(Spatium(newHeight));
         triggerLayout();
+        return;
     }
     TextLineBaseSegment::dragGrip(ed);
 }
@@ -245,7 +247,7 @@ void HairpinSegment::dragGrip(EditData& ed)
 //   propertyDelegate
 //---------------------------------------------------------
 
-EngravingObject* HairpinSegment::propertyDelegate(Pid pid) const
+PropertyDelegate HairpinSegment::resolvePropertyDelegate(Pid pid) const
 {
     if (pid == Pid::HAIRPIN_TYPE
         || pid == Pid::VELO_CHANGE
@@ -259,9 +261,9 @@ EngravingObject* HairpinSegment::propertyDelegate(Pid pid) const
         || pid == Pid::DIRECTION
         || pid == Pid::CENTER_BETWEEN_STAVES
         ) {
-        return spanner();
+        return PropertyDelegate(spanner());
     }
-    return TextLineBaseSegment::propertyDelegate(pid);
+    return TextLineBaseSegment::resolvePropertyDelegate(pid);
 }
 
 //---------------------------------------------------------
@@ -503,7 +505,7 @@ Sid Hairpin::getPropertyStyle(Pid pid) const
 //   Hairpin
 //---------------------------------------------------------
 
-Hairpin::Hairpin(DummyParentOr<EngravingItem> parent)
+Hairpin::Hairpin(DummyParent* parent)
     : TextLineBase(ElementType::HAIRPIN, parent)
 {
     initElementStyle(&hairpinStyle);
@@ -816,6 +818,8 @@ void Hairpin::reset()
 {
     undoResetProperty(Pid::DIRECTION);
     undoResetProperty(Pid::CENTER_BETWEEN_STAVES);
+    undoResetProperty(Pid::SNAP_BEFORE);
+    undoResetProperty(Pid::SNAP_AFTER);
     TextLineBase::reset();
 }
 

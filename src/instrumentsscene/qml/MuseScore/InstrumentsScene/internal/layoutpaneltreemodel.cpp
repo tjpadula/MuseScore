@@ -29,8 +29,11 @@
 #include "translation.h"
 #include "defer.h"
 
+#include "engraving/dom/excerpt.h"
 #include "engraving/dom/score.h"
+#include "engraving/dom/sharedpart.h"
 
+#include "notation/inotationelements.h" // IWYU pragma: keep
 #include "notation/inotationinteraction.h" // IWYU pragma: keep
 #include "notation/inotationselection.h" // IWYU pragma: keep
 #include "notation/inotationstyle.h" // IWYU pragma: keep
@@ -119,6 +122,7 @@ void LayoutPanelTreeModel::onNotationChanged()
 
     if (m_notation) {
         load();
+        setupExcerptNameConnection();
     } else {
         clear();
     }
@@ -146,13 +150,6 @@ bool LayoutPanelTreeModel::removeRows(int row, int count, const QModelIndex& par
 
     if (!parentItem) {
         parentItem = m_rootItem;
-    }
-
-    if (parentItem == m_rootItem && needWarnOnRemoveRows(row, count)) {
-        // When removing instruments, the user needs to be warned in some cases
-        if (!warnAboutRemovingInstrumentsIfNecessary(count)) {
-            return false;
-        }
     }
 
     setLoadingBlocked(true);
@@ -236,6 +233,7 @@ void LayoutPanelTreeModel::setupPartsConnections()
 
     m_notation->parts()->sharedPartsChanged().onNotify(this, [this]() {
         updateIsStaveSharingEnabled();
+        updateSharedGroupRoles();
     }, Mode::SetReplace);
 }
 
@@ -322,6 +320,18 @@ void LayoutPanelTreeModel::setupNotationConnections()
     }, Mode::SetReplace /*because this channel is from MasterScore*/);
 }
 
+void LayoutPanelTreeModel::setupExcerptNameConnection()
+{
+    const engraving::Excerpt* excerpt = m_notation->elements()->msScore()->excerpt();
+    if (!excerpt) {
+        return;
+    }
+
+    excerpt->nameChanged().onNotify(m_partsNotifyReceiver.get(), [this]() {
+        emit scoreChanged();
+    });
+}
+
 void LayoutPanelTreeModel::updateSelectedRows()
 {
     if (!m_layoutPanelVisible || !m_notation) {
@@ -360,10 +370,13 @@ void LayoutPanelTreeModel::onScoreChanged(const mu::engraving::ScoreChanges& cha
     }
 
     updateIsStaveSharingEnabled();
+    updateIsHideEmptyStavesEnabled();
 
     for (AbstractLayoutPanelTreeItem* item : m_rootItem->childItems()) {
         item->onScoreChanged(changes);
     }
+
+    updateSharedGroupRoles();
 
     m_scoreChanged = false;
 }
@@ -376,12 +389,18 @@ void LayoutPanelTreeModel::clear()
     deleteItems();
     endResetModel();
 
+    updateIsHideEmptyStavesEnabled();
+
+    emit scoreChanged();
     emit isEmptyChanged();
     emit isAddingAvailableChanged(false);
 }
 
 void LayoutPanelTreeModel::deleteItems()
 {
+    m_dragSourceParentItem = nullptr;
+    m_dragInProgress = false;
+
     m_selectionModel->clear();
     delete m_rootItem;
     m_rootItem = nullptr;
@@ -437,13 +456,18 @@ void LayoutPanelTreeModel::load()
 
     endResetModel();
 
+    m_shouldUpdateSystemObjectLayers = false;
+
     setupPartsConnections();
     setupNotationConnections();
 
     updateIsAddingSystemMarkingsAvailable();
 
     updateIsStaveSharingEnabled();
+    updateIsHideEmptyStavesEnabled();
+    updateSharedGroupRoles();
 
+    emit scoreChanged();
     emit isEmptyChanged();
     emit isAddingAvailableChanged(true);
 }
@@ -452,6 +476,19 @@ void LayoutPanelTreeModel::toggleStaveSharing(bool on)
 {
     m_notation->parts()->toggleStaveSharing(on);
     updateIsStaveSharingEnabled();
+}
+
+void LayoutPanelTreeModel::toggleHideEmptyStaves(bool on)
+{
+    if (!m_notation || isHideEmptyStavesEnabled() == on) {
+        return;
+    }
+
+    m_notation->undoStack()->prepareChanges(TranslatableString("undoableAction", "Hide empty staves"));
+    m_notation->style()->setStyleValue(StyleId::hideEmptyStaves, on);
+    m_notation->undoStack()->commitChanges();
+
+    updateIsHideEmptyStavesEnabled();
 }
 
 void LayoutPanelTreeModel::sortParts(PartList& parts, const PartList& referenceParts)
@@ -581,7 +618,19 @@ void LayoutPanelTreeModel::removeSelectedRows()
         return f.row() < s.row();
     });
 
-    removeRows(firstIndex.row(), selectedIndexList.size(), firstIndex.parent());
+    const int count = selectedIndexList.size();
+
+    // When removing instruments, the user needs to be warned in some cases
+    if (firstIndex.parent().isValid() || !needWarnOnRemoveRows(firstIndex.row(), count) || m_masterNotation->excerpts().empty()) {
+        removeRows(firstIndex.row(), count, firstIndex.parent());
+        return;
+    }
+
+    askAboutRemovingInstruments(count).onResolve(this, [this, first = QPersistentModelIndex(firstIndex), count](bool remove) {
+        if (remove && first.isValid()) {
+            removeRows(first.row(), count, first.parent());
+        }
+    });
 }
 
 bool LayoutPanelTreeModel::moveRows(const QModelIndex& sourceParent, int sourceRow, int count, const QModelIndex& destinationParent,
@@ -632,14 +681,13 @@ bool LayoutPanelTreeModel::moveRows(const QModelIndex& sourceParent, int sourceR
         return false;
     }
 
-    if (m_dragInProgress) {
-        MoveParams params = sourceParentItem->buildMoveParams(sourceRow, count, destinationParentItem, destinationRow);
-        if (!params.isValid()) {
-            return false;
-        }
+    // Staves stay in their part
+    if (sourceParentItem != destinationParentItem && sourceParentItem != m_rootItem) {
+        return false;
+    }
 
+    if (m_dragInProgress) {
         m_dragSourceParentItem = sourceParentItem;
-        m_activeDragMoveParams = params;
     }
 
     beginMoveRows(sourceParent, sourceFirstRow, sourceLastRow, destinationParent, destinationRow);
@@ -650,6 +698,7 @@ bool LayoutPanelTreeModel::moveRows(const QModelIndex& sourceParent, int sourceR
         updateSystemObjectLayers();
     }
 
+    updateSharedGroupRoles();
     updateRearrangementAvailability();
 
     return true;
@@ -665,11 +714,10 @@ void LayoutPanelTreeModel::endActiveDrag()
     setLoadingBlocked(true);
 
     if (m_dragSourceParentItem) {
-        m_dragSourceParentItem->moveChildrenOnScore(m_activeDragMoveParams);
+        m_dragSourceParentItem->applyToScore();
     }
 
     m_dragSourceParentItem = nullptr;
-    m_activeDragMoveParams = MoveParams();
     m_dragInProgress = false;
 
     setLoadingBlocked(false);
@@ -711,11 +759,6 @@ void LayoutPanelTreeModel::changeEnabled(const QModelIndex& index, bool enable)
     item->setIsEnabled(enable);
 
     setLoadingBlocked(false);
-}
-
-QItemSelectionModel* LayoutPanelTreeModel::selectionModel() const
-{
-    return m_selectionModel;
 }
 
 QModelIndex LayoutPanelTreeModel::index(int row, int column, const QModelIndex& parent) const
@@ -852,6 +895,16 @@ bool LayoutPanelTreeModel::isStaveSharingEnabled() const
     return m_isStaveSharingEnabled;
 }
 
+bool LayoutPanelTreeModel::isHideEmptyStavesEnabled() const
+{
+    return m_isHideEmptyStavesEnabled;
+}
+
+QString LayoutPanelTreeModel::scoreName() const
+{
+    return m_notation ? m_notation->name() : QString();
+}
+
 QString LayoutPanelTreeModel::addInstrumentsKeyboardShortcut() const
 {
     muse::shortcuts::Shortcut shortcut = commandShortcutsRegister()->shortcut(INSTRUMENTS_SELECT_COMMAND);
@@ -944,7 +997,7 @@ void LayoutPanelTreeModel::updateMovingDownAvailability(bool isSelectionMovable,
     }
 
     // exclude the control item
-    bool hasControlItem = parentItem->type() != LayoutPanelItemType::ROOT;
+    const bool hasControlItem = parentItem->childType(parentItem->childCount() - 1) == LayoutPanelItemType::CONTROL_ADD_STAFF;
     const AbstractLayoutPanelTreeItem* curItem = modelIndexToItem(lastSelectedRowIndex);
     bool lastSelectedIsSystemObjectLayer = curItem && curItem->type() == LayoutPanelItemType::ItemType::SYSTEM_OBJECTS_LAYER;
 
@@ -1056,6 +1109,64 @@ void LayoutPanelTreeModel::updateIsStaveSharingEnabled()
     emit isStaveSharingEnabledChanged(enabled);
 }
 
+void LayoutPanelTreeModel::updateIsHideEmptyStavesEnabled()
+{
+    bool enabled = m_notation && m_notation->style()->styleValue(StyleId::hideEmptyStaves).toBool();
+    if (enabled == m_isHideEmptyStavesEnabled) {
+        return;
+    }
+
+    m_isHideEmptyStavesEnabled = enabled;
+    emit isHideEmptyStavesEnabledChanged(enabled);
+}
+
+static const PartTreeItem* nextPartItemAfter(const QList<AbstractLayoutPanelTreeItem*>& items, int row)
+{
+    for (int i = row + 1; i < items.size(); ++i) {
+        if (items.at(i)->type() != LayoutPanelItemType::SYSTEM_OBJECTS_LAYER) {
+            return dynamic_cast<const PartTreeItem*>(items.at(i));
+        }
+    }
+
+    return nullptr;
+}
+
+void LayoutPanelTreeModel::updateSharedGroupRoles()
+{
+    if (!m_rootItem) {
+        return;
+    }
+
+    const QList<AbstractLayoutPanelTreeItem*>& items = m_rootItem->childItems();
+    PartTreeItem* currentHeader = nullptr;
+
+    for (int i = 0; i < items.size(); ++i) {
+        PartTreeItem* partItem = dynamic_cast<PartTreeItem*>(items.at(i));
+        if (!partItem) {
+            // Markings rows sit next to their instrument, even inside a group
+            if (items.at(i)->type() != LayoutPanelItemType::SYSTEM_OBJECTS_LAYER) {
+                currentHeader = nullptr;
+            }
+            continue;
+        }
+
+        LayoutPanelItemType::SharedGroupRole role = LayoutPanelItemType::NOT_IN_GROUP;
+
+        if (partItem->type() == LayoutPanelItemType::SHARED_PART) {
+            currentHeader = partItem;
+            role = LayoutPanelItemType::GROUP_HEADER;
+        } else if (currentHeader && partItem->part()->sharedPart() == currentHeader->part()) {
+            const PartTreeItem* nextPartItem = nextPartItemAfter(items, i);
+            const bool isLast = !nextPartItem || nextPartItem->part()->sharedPart() != currentHeader->part();
+            role = isLast ? LayoutPanelItemType::GROUP_LAST_MEMBER : LayoutPanelItemType::GROUP_MEMBER;
+        } else {
+            currentHeader = nullptr;
+        }
+
+        partItem->setSharedGroup(role, currentHeader);
+    }
+}
+
 void LayoutPanelTreeModel::setItemsSelected(const QModelIndexList& indexes, bool selected)
 {
     for (const QModelIndex& index : indexes) {
@@ -1079,25 +1190,29 @@ bool LayoutPanelTreeModel::needWarnOnRemoveRows(int row, int count)
     return false;
 }
 
-bool LayoutPanelTreeModel::warnAboutRemovingInstrumentsIfNecessary(int count)
+muse::async::Promise<bool> LayoutPanelTreeModel::askAboutRemovingInstruments(int count)
 {
-    // Only warn if excerpts are existent
-    if (m_masterNotation->excerpts().empty()) {
-        return true;
-    }
+    return muse::async::make_promise<bool>([this, count](auto resolve) {
+        interactive()->warning(
+            muse::trc("layoutpanel", "Are you sure you want to delete the selected instrument(s)?", nullptr, count),
+            muse::trc("layoutpanel", "This will remove the instrument(s) from the full score and all part scores.", nullptr, count),
+            { IInteractive::Button::No, IInteractive::Button::Yes }
+            )
+        .onResolve(this, [resolve](const IInteractive::Result& result) {
+            (void)resolve(result.standardButton() == IInteractive::Button::Yes);
+        });
 
-    return interactive()->warningSync(
-        muse::trc("layoutpanel", "Are you sure you want to delete the selected instrument(s)?", nullptr, count),
-        muse::trc("layoutpanel", "This will remove the instrument(s) from the full score and all part scores.", nullptr, count),
-        { IInteractive::Button::No, IInteractive::Button::Yes }
-        )
-           .standardButton() == IInteractive::Button::Yes;
+        return muse::async::Promise<bool>::dummy_result();
+    }, muse::async::PromiseType::AsyncByBody);
 }
 
 AbstractLayoutPanelTreeItem* LayoutPanelTreeModel::buildSharedPartItem(const Part* part)
 {
     auto sharedPartItem = new SharedPartTreeItem(m_masterNotation, m_notation, m_rootItem);
     sharedPartItem->init(part);
+
+    connect(sharedPartItem, &AbstractLayoutPanelTreeItem::isEnabledChanged,
+            this, &LayoutPanelTreeModel::sharedGroupEnabledChanged);
 
     return sharedPartItem;
 }
@@ -1114,8 +1229,10 @@ AbstractLayoutPanelTreeItem* LayoutPanelTreeModel::buildMasterPartItem(const Par
         partItem->appendChild(staffItem);
     }
 
-    auto addStaffControlItem = buildAddStaffControlItem(partItem->id(), partItem);
-    partItem->appendChild(addStaffControlItem);
+    // Instruments in a shared-staves group can't add staves
+    if (!masterPart->sharedPart()) {
+        partItem->appendChild(buildAddStaffControlItem(partItem->id(), partItem));
+    }
 
     setupStavesConnections(partItem->id());
 

@@ -61,7 +61,7 @@ public:
     PointF circledTip() const { return m_circledTip; }
     void setCircledTip(const PointF& p) { m_circledTip = p; }
 
-    EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 
     int gripsCount() const override;
     std::vector<PointF> gripsPositions(const EditData& = EditData()) const override;
@@ -106,9 +106,10 @@ class Hairpin final : public TextLineBase
     DECLARE_CLASSOF(ElementType::HAIRPIN)
 
 public:
-    Hairpin(DummyParentOr<EngravingItem> parent);
+    Hairpin(DummyParent* parent);
 
     Hairpin* clone() const override { return new Hairpin(*this); }
+    void setOwnershipParent(EngravingObject*) = delete;
 
     Anchor anchor() const override { return Anchor::SEGMENT; }
 

@@ -469,6 +469,12 @@ bool EngravingItem::onTabStaff() const
     return stt ? stt->isTabStaff() : false;
 }
 
+bool EngravingItem::onJianpuStaff() const
+{
+    const Staff* st = staff();
+    return st ? st->isJianpuStaff(tick()) : false;
+}
+
 bool EngravingItem::hasGrips() const
 {
     return gripsCount() > 0;
@@ -2422,7 +2428,11 @@ void EngravingItem::endDrag(EditData& ed)
     }
     for (const auto& [id, v, f] : eed->propertyData) {
         setPropertyFlags(id, f);     // reset initial property flags state
-        score()->undoPropertyChanged(this, id, v,
+
+        // Commit on the property's owner, so propagation uses its link list
+        EngravingObject* owner = propertyDelegate(id);
+        EngravingItem* target = owner && owner->isEngravingItem() ? toEngravingItem(owner) : this;
+        score()->undoPropertyChanged(target, id, v,
                                      f == PropertyFlags::STYLED ? PropertyFlags::UNSTYLED : f);
         setGenerated(false);
     }
@@ -2559,7 +2569,10 @@ void EngravingItem::endDragGrip(EditData& ed)
             if (f == PropertyFlags::STYLED) {
                 f = PropertyFlags::UNSTYLED;
             }
-            if (score()->undoPropertyChanged(this, id, data, f)) {
+            // Commit on the property's owner, so propagation uses its link list
+            EngravingObject* owner = propertyDelegate(id);
+            EngravingItem* target = owner && owner->isEngravingItem() ? toEngravingItem(owner) : this;
+            if (score()->undoPropertyChanged(target, id, data, f)) {
                 changed = true;
             }
         }

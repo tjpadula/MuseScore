@@ -48,7 +48,7 @@ public:
 
     GlissandoSegment* clone() const override { return new GlissandoSegment(*this); }
 
-    EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 };
 
 //---------------------------------------------------------
@@ -75,7 +75,7 @@ public:
     static constexpr double GLISS_PALETTE_WIDTH = 4.0;
     static constexpr double GLISS_PALETTE_HEIGHT = 4.0;
 
-    Glissando(DummyParentOr<EngravingItem> parent);
+    Glissando(DummyParentOr<Note> parent);
     Glissando(const Glissando&);
 
     Anchor anchor() const override { return Anchor::NOTE; }
@@ -87,6 +87,7 @@ public:
 
     // overridden inherited methods
     Glissando* clone() const override { return new Glissando(*this); }
+    void setOwnershipParent(DummyParentOr<Note> parent) { EngravingItem::setOwnershipParent(parent); }
 
     LineSegment* createLineSegment() override;
 

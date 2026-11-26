@@ -38,6 +38,7 @@
 #include "harppedaldiagram.h"
 #include "hook.h"
 #include "instrchange.h"
+#include "jianpudurationline.h"
 #include "keysig.h"
 #include "lyrics.h"
 #include "marker.h"
@@ -78,7 +79,7 @@ namespace mu::engraving {
 //   ChordRest
 //---------------------------------------------------------
 
-ChordRest::ChordRest(const ElementType& type, DummyParentOr<Segment> parent)
+ChordRest::ChordRest(const ElementType& type, DummyParentOr<Segment, Chord> parent)
     : DurationElement(type, parent)
 {
     m_staffMove    = 0;
@@ -135,6 +136,7 @@ ChordRest::~ChordRest()
 {
     muse::DeleteAll(m_lyrics);
     muse::DeleteAll(m_el);
+    muse::DeleteAll(m_jianpuDurationLines);
     delete m_tabDur;
 
     if (m_beam) {
@@ -515,35 +517,7 @@ String ChordRest::durationUserName() const
 {
     String tupletType;
     if (tuplet()) {
-        switch (tuplet()->ratio().numerator()) {
-        case 2:
-            tupletType = muse::mtrc("engraving", "Duplet");
-            break;
-        case 3:
-            tupletType = muse::mtrc("engraving", "Triplet");
-            break;
-        case 4:
-            tupletType = muse::mtrc("engraving", "Quadruplet");
-            break;
-        case 5:
-            tupletType = muse::mtrc("engraving", "Quintuplet");
-            break;
-        case 6:
-            tupletType = muse::mtrc("engraving", "Sextuplet");
-            break;
-        case 7:
-            tupletType = muse::mtrc("engraving", "Septuplet");
-            break;
-        case 8:
-            tupletType = muse::mtrc("engraving", "Octuplet");
-            break;
-        case 9:
-            tupletType = muse::mtrc("engraving", "Nonuplet");
-            break;
-        default:
-            //: %1 is tuplet ratio numerator (i.e. the number of notes in the tuplet)
-            tupletType = muse::mtrc("engraving", "%1 note tuplet").arg(tuplet()->ratio().numerator());
-        }
+        tupletType = Tuplet::typeUserName(tuplet()->ratio().numerator());
     }
     String dotString;
     if (!tupletType.isEmpty()) {
@@ -886,6 +860,9 @@ void ChordRest::processSiblings(std::function<void(EngravingItem*)> func)
     for (EngravingItem* e : m_el) {
         func(e);
     }
+    for (JianpuDurationLine* dl : m_jianpuDurationLines) {
+        func(dl);
+    }
 }
 
 //---------------------------------------------------------
@@ -1108,6 +1085,9 @@ void ChordRest::scanElements(std::function<void(EngravingItem*)> func)
     }
     if (m_tabDur) {
         func(m_tabDur);
+    }
+    for (JianpuDurationLine* dl : m_jianpuDurationLines) {
+        func(dl);
     }
 }
 
@@ -1375,5 +1355,20 @@ bool ChordRest::hasPrecedingJumpItem() const
     std::vector<Measure*> precedingRepeatMeasures = findPreviousRepeatMeasures(measure);
 
     return !precedingRepeatMeasures.empty();
+}
+
+void ChordRest::setJianpuDurationLineCount(size_t count)
+{
+    while (m_jianpuDurationLines.size() < count) {
+        JianpuDurationLine* dl = new JianpuDurationLine(this);
+        dl->setOwnershipParent(this);
+        dl->setTrack(track());
+        m_jianpuDurationLines.push_back(dl);
+    }
+
+    while (m_jianpuDurationLines.size() > count) {
+        delete m_jianpuDurationLines.back();
+        m_jianpuDurationLines.pop_back();
+    }
 }
 }

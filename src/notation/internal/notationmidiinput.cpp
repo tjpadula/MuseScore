@@ -41,7 +41,7 @@
 #include "notation/inotationselection.h" // IWYU pragma: keep
 
 #include "playback/playbackcommands.h"
-#include "notationscene/notationcommands.h"
+#include "notation/notationcommands.h"
 
 #include "log.h"
 
@@ -245,7 +245,7 @@ void NotationMidiInput::startNoteInputIfNeed()
 
     if (configuration()->startNoteInputAtSelectedNoteRestWhenPressingMidiKey()) {
         if (m_notationInteraction->selection()->elementsSelected(NOTE_REST_TYPES) && containsNoteOn()) {
-            commandsDispatcher()->dispatch(TOGGLE_NOTE_INPUT_COMMAND);
+            commandsDispatcher()->dispatch(ToggleNoteInputDefaultCommand {});
         }
     }
 }

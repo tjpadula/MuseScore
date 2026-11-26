@@ -122,12 +122,6 @@ void AbstractLayoutPanelTreeItem::appendNewItem()
 {
 }
 
-MoveParams AbstractLayoutPanelTreeItem::buildMoveParams(int, int, AbstractLayoutPanelTreeItem*, int) const
-{
-    UNREACHABLE;
-    return MoveParams();
-}
-
 void AbstractLayoutPanelTreeItem::moveChildren(int sourceRow, int count,
                                                AbstractLayoutPanelTreeItem* destinationParent,
                                                int destinationRow, bool)
@@ -152,7 +146,7 @@ void AbstractLayoutPanelTreeItem::moveChildren(int sourceRow, int count,
     AbstractLayoutPanelTreeItem::removeChildren(childToRemoveIndex, count);
 }
 
-void AbstractLayoutPanelTreeItem::moveChildrenOnScore(const MoveParams&)
+void AbstractLayoutPanelTreeItem::applyToScore()
 {
 }
 
@@ -161,11 +155,16 @@ void AbstractLayoutPanelTreeItem::removeChildren(int row, int count, bool delete
     for (int i = row + count - 1; i >= row; --i) {
         AbstractLayoutPanelTreeItem* child = m_children.at(i);
 
+        child->setIsLastChild(false);
         m_children.removeAt(i);
 
         if (deleteChild) {
             child->deleteLater();
         }
+    }
+
+    if (!m_children.isEmpty()) {
+        m_children.last()->setIsLastChild(true);
     }
 }
 
@@ -223,6 +222,16 @@ int AbstractLayoutPanelTreeItem::indexOf(const AbstractLayoutPanelTreeItem* item
     return m_children.indexOf(const_cast<AbstractLayoutPanelTreeItem*>(item));
 }
 
+void AbstractLayoutPanelTreeItem::setIsLastChild(bool isLast)
+{
+    if (m_isLastChild == isLast) {
+        return;
+    }
+
+    m_isLastChild = isLast;
+    emit isLastChildChanged(isLast);
+}
+
 void AbstractLayoutPanelTreeItem::appendChild(AbstractLayoutPanelTreeItem* child)
 {
     if (!child) {
@@ -231,7 +240,12 @@ void AbstractLayoutPanelTreeItem::appendChild(AbstractLayoutPanelTreeItem* child
 
     child->setParentItem(this);
 
+    if (!m_children.isEmpty()) {
+        m_children.last()->setIsLastChild(false);
+    }
+
     m_children.append(child);
+    child->setIsLastChild(true);
 
     if (isSelected()) {
         child->setIsSelected(true);
@@ -246,7 +260,13 @@ void AbstractLayoutPanelTreeItem::insertChild(AbstractLayoutPanelTreeItem* child
 
     child->setParentItem(this);
 
+    const bool isLast = beforeRow == m_children.size();
+    if (isLast && !m_children.isEmpty()) {
+        m_children.last()->setIsLastChild(false);
+    }
+
     m_children.insert(beforeRow, child);
+    child->setIsLastChild(isLast);
 
     if (isSelected()) {
         child->setIsSelected(true);
@@ -266,6 +286,11 @@ int AbstractLayoutPanelTreeItem::childCount() const
 int AbstractLayoutPanelTreeItem::row() const
 {
     return m_parent ? m_parent->indexOf(this) : 0;
+}
+
+bool AbstractLayoutPanelTreeItem::isLastChild() const
+{
+    return m_isLastChild;
 }
 
 void AbstractLayoutPanelTreeItem::setTitle(QString title)

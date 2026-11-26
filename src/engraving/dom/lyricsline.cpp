@@ -26,6 +26,7 @@
 
 #include "chord.h"
 #include "chordrest.h"
+#include "dummyparent.h"
 #include "factory.h"
 #include "measure.h"
 #include "note.h"
@@ -45,7 +46,7 @@ static const ElementStyle lyricsLineElementStyle {
     { Sid::lyricsDashLineThickness, Pid::LINE_WIDTH }
 };
 
-LyricsLine::LyricsLine(DummyParentOr<EngravingItem> parent)
+LyricsLine::LyricsLine(DummyParentOr<Lyrics> parent)
     : SLine(ElementType::LYRICSLINE, parent)
 {
     setDiagonal(false);
@@ -53,7 +54,7 @@ LyricsLine::LyricsLine(DummyParentOr<EngravingItem> parent)
     m_nextLyrics = 0;
 }
 
-LyricsLine::LyricsLine(const ElementType& type, DummyParentOr<EngravingItem> parent, ElementFlags f)
+LyricsLine::LyricsLine(const ElementType& type, DummyParentOr<Lyrics> parent, ElementFlags f)
     : SLine(type, parent, f)
 {
     setDiagonal(false);
@@ -185,8 +186,8 @@ double LyricsLineSegment::baseLineShift() const
 
 PropertyValue LyricsLineSegment::getProperty(Pid propertyId) const
 {
-    if (EngravingObject* delegate = propertyDelegate(propertyId)) {
-        return delegate->getProperty(propertyId);
+    if (const PropertyDelegate d = resolvePropertyDelegate(propertyId); d.hasDelegate) {
+        return d.delegate ? d.delegate->getProperty(propertyId) : propertyDefault(propertyId);
     }
 
     return LineSegment::getProperty(propertyId);
@@ -194,8 +195,8 @@ PropertyValue LyricsLineSegment::getProperty(Pid propertyId) const
 
 bool LyricsLineSegment::setProperty(Pid propertyId, const PropertyValue& val)
 {
-    if (EngravingObject* delegate = propertyDelegate(propertyId)) {
-        return delegate->setProperty(propertyId, val);
+    if (const PropertyDelegate d = resolvePropertyDelegate(propertyId); d.hasDelegate) {
+        return d.delegate ? d.delegate->setProperty(propertyId, val) : false;
     }
 
     return LineSegment::setProperty(propertyId, val);
@@ -203,20 +204,20 @@ bool LyricsLineSegment::setProperty(Pid propertyId, const PropertyValue& val)
 
 PropertyValue LyricsLineSegment::propertyDefault(Pid propertyId) const
 {
-    if (EngravingObject* delegate = propertyDelegate(propertyId)) {
-        return delegate->propertyDefault(propertyId);
+    if (const PropertyDelegate d = resolvePropertyDelegate(propertyId); d.hasDelegate) {
+        return d.delegate ? d.delegate->propertyDefault(propertyId) : PropertyValue();
     }
 
     return LineSegment::propertyDefault(propertyId);
 }
 
-EngravingObject* LyricsLineSegment::propertyDelegate(Pid propertyId) const
+PropertyDelegate LyricsLineSegment::resolvePropertyDelegate(Pid propertyId) const
 {
     if (propertyId == Pid::GENERATED) {
-        return lyricsLine();
+        return PropertyDelegate(lyricsLine());
     }
 
-    return LineSegment::propertyDelegate(propertyId);
+    return LineSegment::resolvePropertyDelegate(propertyId);
 }
 
 //=========================================================
@@ -228,7 +229,7 @@ static const ElementStyle partialLyricsLineElementStyle {
     { Sid::lyricsPlacement,         Pid::PLACEMENT },
 };
 
-PartialLyricsLine::PartialLyricsLine(DummyParentOr<EngravingItem> parent)
+PartialLyricsLine::PartialLyricsLine(DummyParent* parent)
     : LyricsLine(ElementType::PARTIAL_LYRICSLINE, parent)
 {
     setGenerated(false);
@@ -382,14 +383,14 @@ double PartialLyricsLineSegment::baseLineShift() const
     return -style().styleD(Sid::lyricsDashYposRatio) * lyrics->fontMetrics().xHeight();
 }
 
-EngravingObject* PartialLyricsLineSegment::propertyDelegate(Pid pid) const
+PropertyDelegate PartialLyricsLineSegment::resolvePropertyDelegate(Pid pid) const
 {
     switch (pid) {
     case Pid::VERSE:
     case Pid::CENTER_BETWEEN_STAVES:
-        return lyricsLine();
+        return PropertyDelegate(lyricsLine());
     default:
-        return LyricsLineSegment::propertyDelegate(pid);
+        return LyricsLineSegment::resolvePropertyDelegate(pid);
     }
 }
 

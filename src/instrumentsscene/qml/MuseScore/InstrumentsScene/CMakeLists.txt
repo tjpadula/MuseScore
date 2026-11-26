@@ -63,9 +63,14 @@ qt_add_qml_module(instrumentsscene_qml
         internal/InstrumentsView.qml
         internal/LayoutControlPanel.qml
         internal/LayoutPanelAddButton.qml
-        internal/LayoutPanelItemControl.qml
-        internal/LayoutPanelItemDelegate.qml
+        internal/LayoutPanelAddStaffButton.qml
+        internal/LayoutPanelCard.qml
+        internal/LayoutPanelCardContent.qml
+        internal/LayoutPanelItemSettingsPopup.qml
+        internal/LayoutPanelTree.qml
+        internal/LayoutPanelTreeDelegate.qml
         internal/StaffSettingsPopup.qml
+        internal/SystemObjectsLayerHelpPopup.qml
         internal/SystemObjectsLayerSettingsPopup.qml
         LayoutPanel.qml
     IMPORTS
@@ -80,3 +85,7 @@ target_link_libraries(instrumentsscene_qml PRIVATE muse::uicomponents_qml)
 
 # Necessary for the auto-generated sources
 target_include_directories(instrumentsscene_qml PRIVATE internal)
+
+if (MUE_BUILD_INSTRUMENTSSCENE_TESTS)
+    add_subdirectory(tests)
+endif()

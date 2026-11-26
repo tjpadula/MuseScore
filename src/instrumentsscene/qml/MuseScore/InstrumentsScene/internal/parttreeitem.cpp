@@ -80,20 +80,42 @@ const Part* PartTreeItem::part() const
     return m_part;
 }
 
+LayoutPanelItemType::SharedGroupRole PartTreeItem::sharedGroupRole() const
+{
+    return m_sharedGroupRole;
+}
+
+PartTreeItem* PartTreeItem::sharedGroupHeader() const
+{
+    return m_sharedGroupHeader.data();
+}
+
+void PartTreeItem::setSharedGroup(LayoutPanelItemType::SharedGroupRole role, PartTreeItem* header)
+{
+    if (m_sharedGroupRole == role && m_sharedGroupHeader == header) {
+        return;
+    }
+
+    m_sharedGroupRole = role;
+    m_sharedGroupHeader = header;
+    emit sharedGroupChanged();
+}
+
 void PartTreeItem::onScoreChanged(const mu::engraving::ScoreChanges&)
 {
     if (!m_part) {
         return;
     }
 
-    const String instName = m_part->partName();
-    setTitle(instName.simplified()); // Collapse whitespace...
+    setTitle(m_part->partName().simplified());
+    updateVisibility();
+    setIsEnabled(!(m_part->sharedPart() && m_part->sharedPart()->enabled()));
+}
 
+void PartTreeItem::updateVisibility()
+{
     m_ignoreVisibilityChange = true;
     setIsVisible(m_partExists && m_part->getProperty(Pid::VISIBLE).toBool());
-    if (!m_part->isSharedPart()) {
-        setIsEnabled(!(m_part->sharedPart() && m_part->sharedPart()->enabled()));
-    }
     m_ignoreVisibilityChange = false;
 }
 
@@ -126,7 +148,12 @@ void PartTreeItem::createAndAddPart(const ID& masterPartId)
 
     size_t index = resolveNewPartIndex(masterPartId);
 
-    notation()->parts()->insertPart(masterPart->clone(), index);
+    // The clone would keep the main score's shared part, which doesn't exist in parts. While it's enabled
+    // (instruments combined), the instrument would stay hidden in the part (see Part::show())
+    Part* part = masterPart->clone();
+    part->setSharedPart(nullptr);
+
+    notation()->parts()->insertPart(part, index);
 }
 
 size_t PartTreeItem::resolveNewPartIndex(const ID& partId) const
@@ -165,51 +192,26 @@ size_t PartTreeItem::resolveNewPartIndex(const ID& partId) const
     return parts.size();
 }
 
-MoveParams PartTreeItem::buildMoveParams(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent,
-                                         int destinationRow) const
-{
-    MoveParams moveParams;
-
-    IDList stavesIds;
-
-    for (int i = sourceRow; i < sourceRow + count; ++i) {
-        stavesIds.push_back(childAtRow(i)->id());
-    }
-
-    moveParams.objectIdListToMove = stavesIds;
-
-    int destinationRowLast = destinationRow;
-    INotationParts::InsertMode moveMode = INotationParts::InsertMode::Before;
-
-    // exclude the control item
-    if (destinationRow == destinationParent->childCount() - 1) {
-        destinationRowLast = destinationRow - 1;
-        moveMode = INotationParts::InsertMode::After;
-    }
-
-    AbstractLayoutPanelTreeItem* destinationStaffItem = destinationParent->childAtRow(destinationRowLast);
-
-    moveParams.destinationObjectId = destinationStaffItem->id();
-    moveParams.insertMode = moveMode;
-    moveParams.objectsType = LayoutPanelItemType::STAFF;
-
-    return moveParams;
-}
-
 void PartTreeItem::moveChildren(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent,
                                 int destinationRow, bool updateNotation)
 {
-    if (updateNotation) {
-        MoveParams moveParams = buildMoveParams(sourceRow, count, destinationParent, destinationRow);
-        moveChildrenOnScore(moveParams);
-    }
-
     AbstractLayoutPanelTreeItem::moveChildren(sourceRow, count, destinationParent, destinationRow, updateNotation);
+
+    if (updateNotation) {
+        applyToScore();
+    }
 }
 
-void PartTreeItem::moveChildrenOnScore(const MoveParams& params)
+void PartTreeItem::applyToScore()
 {
-    notation()->parts()->moveStaves(params.objectIdListToMove, params.destinationObjectId, params.insertMode);
+    IDList staffIds;
+    for (const AbstractLayoutPanelTreeItem* child : childItems()) {
+        if (child->type() == LayoutPanelItemType::STAFF) {
+            staffIds.push_back(child->id());
+        }
+    }
+
+    notation()->parts()->reorderStaves(staffIds);
 }
 
 void PartTreeItem::removeChildren(int row, int count, bool deleteChild)
@@ -277,7 +279,13 @@ void PartTreeItem::resetAllFormatting()
     .onResolve(this, [this](const IInteractive::Result& res) {
         if (res.isButton(IInteractive::Button::Yes)) {
             const Part* masterPart = masterNotation()->parts()->part(id());
-            notation()->parts()->replacePart(id(), masterPart->clone());
+
+            // The clone would keep the main score's shared part, which doesn't exist in parts. While it's enabled
+            // (instruments combined), the instrument would stay hidden in the part (see Part::show())
+            Part* part = masterPart->clone();
+            part->setSharedPart(nullptr);
+
+            notation()->parts()->replacePart(id(), part);
         }
     });
 }

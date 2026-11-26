@@ -31,7 +31,7 @@
 #include "rcommand/icommandsregister.h"
 #include "project/iprojectsession.h"
 #include "ui/iuistate.h"
-#include "notationscene/inotationcommandscontroller.h"
+#include "notation/inotationcommandscontroller.h"
 
 namespace mu::notation {
 class NoteInputBarModel : public muse::uicomponents::AbstractMenuModel, public QQmlParserStatus
@@ -44,7 +44,6 @@ class NoteInputBarModel : public muse::uicomponents::AbstractMenuModel, public Q
 
     muse::GlobalInject<muse::rcommand::ICommandsRegister> commandsRegister;
     muse::ContextInject<muse::ui::IUiState> uiState = { this };
-    muse::ContextInject<project::IProjectSession> context = { this };
     muse::ContextInject<INotationCommandsController> commandsController = { this };
 
 public:
@@ -86,6 +85,7 @@ private:
 
     muse::uicomponents::MenuItemList makeCrossStaffBeamingItems();
     muse::uicomponents::MenuItemList makeTupletItems();
+    void updateTupletItemChecked();
     muse::uicomponents::MenuItemList makeAddItems();
     muse::uicomponents::MenuItemList makeNotesItems();
     muse::uicomponents::MenuItemList makeIntervalsItems();
@@ -94,5 +94,7 @@ private:
     muse::uicomponents::MenuItemList makeTextItems();
     muse::uicomponents::MenuItemList makeLinesItems();
     muse::uicomponents::MenuItemList makeChordAndFretboardDiagramsItems();
+
+    muse::uicomponents::MenuItem* m_tupletItem = nullptr;
 };
 }

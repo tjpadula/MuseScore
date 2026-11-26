@@ -80,6 +80,8 @@
 #include "dom/instrchange.h"
 #include "dom/instrumentname.h"
 
+#include "dom/jianpudurationline.h"
+#include "dom/jianpuoctavedot.h"
 #include "dom/jump.h"
 
 #include "dom/keysig.h"
@@ -161,6 +163,7 @@
 
 #include "editing/editchord.h"
 #include "editing/navigation.h"
+#include "editing/noteinput.h"
 
 #include "accidentalslayout.h"
 #include "arpeggiolayout.h"
@@ -319,6 +322,12 @@ void TLayout::layoutItem(EngravingItem* item, LayoutContext& ctx)
         break;
     case ElementType::INSTRUMENT_NAME:
         layoutInstrumentName(item_cast<const InstrumentName*>(item), static_cast<InstrumentName::LayoutData*>(ldata));
+        break;
+    case ElementType::JIANPU_DURATION_LINE:
+        layoutJianpuDurationLine(item_cast<JianpuDurationLine*>(item), ctx);
+        break;
+    case ElementType::JIANPU_OCTAVE_DOT:
+        layoutJianpuOctaveDot(item_cast<JianpuOctaveDot*>(item), ctx);
         break;
     case ElementType::JUMP:
         layoutJump(item_cast<const Jump*>(item), static_cast<Jump::LayoutData*>(ldata));
@@ -531,8 +540,9 @@ void TLayout::layoutAccidental(const Accidental* item, Accidental::LayoutData* l
     ldata->syms.clear();
 
     // TODO: remove Accidental in layout
-    // don't show accidentals for tab or slash notation
-    if (item->onTabStaff() || (item->note() && item->note()->fixed())) {
+    // don't show accidentals for tab or slash notation; Jianpu shows its
+    // accidental as part of the digit label instead of this glyph
+    if (item->onTabStaff() || item->onJianpuStaff() || (item->note() && item->note()->fixed())) {
         ldata->setIsSkipDraw(true);
         return;
     }
@@ -1780,6 +1790,14 @@ void TLayout::layoutClef(const Clef* item, Clef::LayoutData* ldata, const Layout
         const Fraction tick = endOfMeasureClef && !item->isTrailer() ? item->tick() : clefSeg->measure()->tick();
 
         const Fraction tickPrev = tick - Fraction::eps();
+
+        if (item->staff()->isJianpuStaff(tick)) {
+            ldata->setShape(Shape());
+            ldata->setBbox(RectF());
+            ldata->symId = SymId::noSym;
+            return; // Jianpu do not need to show clef
+        }
+
         const StaffType* st = item->staff()->staffType(tick);
         const StaffType* stPrev = !tickPrev.negative() ? item->staff()->staffType(tickPrev) : nullptr;
         StaffGroup staffGroup = st->group();
@@ -1803,6 +1821,7 @@ void TLayout::layoutClef(const Clef* item, Clef::LayoutData* ldata, const Layout
 
         // if clef not to show or not compatible with staff group
         if (!show) {
+            ldata->setShape(Shape());
             ldata->setBbox(RectF());
             ldata->symId = SymId::noSym;
             LOGD("invisible clef at tick %d(%d) staff %zu",
@@ -1934,6 +1953,21 @@ void TLayout::layoutDeadSlapped(const DeadSlapped* item, DeadSlapped::LayoutData
         ldata->path1 = path1;
         ldata->path2 = path2;
     }
+}
+
+void TLayout::layoutJianpuDurationLine(JianpuDurationLine* item, const LayoutContext& ctx)
+{
+    LAYOUT_CALL_ITEM(item);
+    double mag = item->mag();
+    JianpuDurationLine::LayoutData* ldata = item->mutldata();
+    ldata->setMag(mag);
+    ldata->lineWidth = ctx.conf().styleAbsolute(Sid::jianpuDurationLineThickness) * mag;
+    if (item->staff()) {
+        const_cast<JianpuDurationLine*>(item)->setColor(item->staff()->staffType(item->tick())->color());
+    }
+
+    double w2 = ldata->lineWidth * .5;
+    ldata->setBbox(0, -w2, ldata->len, 2 * w2);
 }
 
 void TLayout::layoutDynamic(Dynamic* item, Dynamic::LayoutData* ldata, const LayoutConfiguration& conf)
@@ -2272,56 +2306,14 @@ static void layoutLines(const FiguredBass* item, FiguredBass::LayoutData* ldata,
     double printedLineLength = lastCR ? lastCR->pageX() - item->pageX() + 1.5 * item->spatium() : 3 * item->spatium();
     ldata->printedLineLength = printedLineLength;
 
-    // get duration indicator line(s) from page position of nextSegm
-    const std::vector<System*>& systems = ctx.dom().systems();
-    System* s1  = item->segment()->measure()->system();
-    System* s2  = nextSegm->measure()->system();
-    system_idx_t sysIdx1 = muse::indexOf(systems, s1);
-    system_idx_t sysIdx2 = muse::indexOf(systems, s2);
-
-    if (sysIdx2 == muse::nidx || sysIdx2 < sysIdx1) {
-        sysIdx2 = sysIdx1;
+    // get duration indicator line from page position of nextSegm
+    // TODO: lines on the following systems, when the duration ends on another system. The systems after
+    // the item's own may not have been laid out yet, so this needs an approach like that for spanners.
+    if (nextSegm->measure()->system() != item->segment()->measure()->system()) {
         nextSegm = item->segment()->next1();
-        // TODO
-        // During layout of figured bass next systems' numbers may be still
-        // undefined (then sysIdx2 == muse::nidx) or change in the future.
-        // A layoutSystem() approach similar to that for spanners should
-        // probably be implemented.
     }
-
-    system_idx_t i;
-    int len;
-    size_t segIdx = 0;
-    for (i = sysIdx1, segIdx = 0; i <= sysIdx2; ++i, ++segIdx) {
-        len = 0;
-        if (sysIdx1 == sysIdx2 || i == sysIdx1) {
-            // single line
-            len = nextSegm->pageX() - item->pageX() - 4;               // stop 4 raster units before next segm
-        } else if (i == sysIdx1) {
-            // initial line
-            double w   = s1->staff(item->staffIdx())->bbox().right();
-            double x   = s1->pageX() + w;
-            len = x - item->pageX();
-        } else if (i > 0 && i != sysIdx2) {
-            // middle line
-            LOGD("FiguredBass: duration indicator middle line not implemented");
-        } else if (i == sysIdx2) {
-            // end line
-            LOGD("FiguredBass: duration indicator end line not implemented");
-        }
-        // store length item, reusing array items if already present
-        if (lineLengths.size() <= segIdx) {
-            lineLengths.push_back(len);
-        } else {
-            lineLengths[segIdx] = len;
-        }
-    }
-    // if more array items than needed, truncate array
-    if (lineLengths.size() > segIdx) {
-        lineLengths.resize(segIdx);
-    }
-
-    ldata->lineLengths = lineLengths;
+    int len = nextSegm->pageX() - item->pageX() - 4;               // stop 4 raster units before next segm
+    ldata->lineLengths = { static_cast<double>(len) };
 }
 
 void TLayout::layoutFiguredBass(const FiguredBass* item, FiguredBass::LayoutData* ldata, const LayoutContext& ctx)
@@ -2428,7 +2420,7 @@ void TLayout::layoutFingering(const Fingering* item, Fingering::LayoutData* ldat
                     // force extra space above staff & chord (but not other fingerings)
                     double top = 0.0;
                     if (chord->up() && chord->beam() && stem) {
-                        top = stem->y() + stem->ldata()->bbox().top();
+                        top = std::min(0.0, stem->y() + stem->ldata()->bbox().top());
                     } else {
                         const Note* un = chord->upNote();
                         top = std::min(0.0, un->y() + un->ldata()->bbox().top());
@@ -2458,7 +2450,7 @@ void TLayout::layoutFingering(const Fingering* item, Fingering::LayoutData* ldat
                     // force extra space below staff & chord (but not other fingerings)
                     double bottom;
                     if (!chord->up() && chord->beam() && stem) {
-                        bottom = stem->y() + stem->ldata()->bbox().bottom();
+                        bottom = std::max(vStaff->staffHeight(item->tick()), stem->y() + stem->ldata()->bbox().bottom());
                     } else {
                         const Note* dn = chord->downNote();
                         bottom = std::max(vStaff->staffHeight(item->tick()), dn->y() + dn->ldata()->bbox().bottom());
@@ -3151,12 +3143,15 @@ void TLayout::manageHairpinSnapping(HairpinSegment* item, LayoutContext& ctx)
         ldata->connectItemSnappedAfter(possibleSnapAfterElement);
     }
 
-    // In case of dynamics/expressions before or after, make space for them horizontally
+    if (!item->autoplace()) {
+        return;
+    }
+
     double mag = item->staff()->staffMag(item);
     double hairpinDistToDynOrExpr = ctx.conf().style().styleAbsolute(Sid::autoplaceHairpinDynamicsDistance) * mag;
 
-    bool makeSpaceBefore = (doSnapBefore && possibleSnapBeforeElement->isTextBase())
-                           || (possibleSnapBeforeElement && possibleSnapBeforeElement->isDynamic());
+    bool makeSpaceBefore = possibleSnapBeforeElement && possibleSnapBeforeElement->isTextBase()
+                           && possibleSnapBeforeElement->autoplace();
 
     if (makeSpaceBefore && possibleSnapBeforeElement->findAncestor(ElementType::SYSTEM) == item->system()) {
         double xItemPos = possibleSnapBeforeElement->pageX() - item->system()->pageX();
@@ -3169,8 +3164,8 @@ void TLayout::manageHairpinSnapping(HairpinSegment* item, LayoutContext& ctx)
         }
     }
 
-    bool makeSpaceAfter = (doSnapAfter && possibleSnapAfterElement->isTextBase())
-                          || (possibleSnapAfterElement && possibleSnapAfterElement->isDynamic());
+    bool makeSpaceAfter = possibleSnapAfterElement && possibleSnapAfterElement->isTextBase()
+                          && possibleSnapAfterElement->autoplace();
 
     if (makeSpaceAfter && possibleSnapAfterElement->findAncestor(ElementType::SYSTEM) == item->system()) {
         double xItemPos = possibleSnapAfterElement->pageX() - item->system()->pageX();
@@ -3487,6 +3482,7 @@ void TLayout::layoutKeySig(const KeySig* item, KeySig::LayoutData* ldata, const 
 
     ldata->setBbox(RectF());
     ldata->keySymbols.clear();
+    ldata->jianpuLabel = String();
 
     const Staff* staff = item->staff();
     const StaffType* stVisibility = staff ? staff->staffType(item->tick()) : nullptr;
@@ -3495,9 +3491,26 @@ void TLayout::layoutKeySig(const KeySig* item, KeySig::LayoutData* ldata, const 
     }
 
     const StaffType* st = item->staffType();
+    double spatium = item->spatium();
+
+    if (staff && staff->isJianpuStaff(item->tick())) {
+        // Jianpu staves show a numbering label (e.g. "1=C") in place of the standard ♭/♯ symbols
+        ldata->jianpuLabel = jianpuKeyLabel(item->keySigEvent());
+
+        const double height = (st ? st->jianpuBoxH() : spatium) * item->mag();
+        double width = 0.0;
+        if (!ldata->jianpuLabel.isEmpty()) {
+            Font font(st ? st->jianpuFont() : Font());
+            font.setPointSizeF(font.pointSizeF() * item->mag());
+            width = FontMetrics(font).width(ldata->jianpuLabel);
+        }
+        ldata->setPosY(item->staffOffsetY());
+        ldata->setBbox(0.0, -height * 0.5, width, height);
+        return;
+    }
+
     const Segment* s = item->segment();
     track_idx_t track = item->track();
-    double spatium = item->spatium();
     double step = spatium * (st ? st->lineDistance().val() * 0.5 : 0.5);
 
     // determine current clef for this staff
@@ -3663,7 +3676,7 @@ void TLayout::layoutKeySig(const KeySig* item, KeySig::LayoutData* ldata, const 
                     layoutNaturals();
                 }
             } else if (prevKsEvent.custom()) {
-                Fraction prevKeyTick = Fraction::fromTicks(item->staff()->keyList()->currentKeyTick(
+                Fraction prevKeyTick = Fraction::fromTicks(item->staff()->keyList().currentKeyTick(
                                                                (item->tick() - Fraction::eps()).ticks()));
                 Segment* prevKsSeg = item->score()->tick2segment(prevKeyTick, true, SegmentType::KeySig);
                 if (prevKsSeg) {
@@ -4145,6 +4158,7 @@ void TLayout::layoutNote(const Note* item, Note::LayoutData* ldata)
     }
 
     bool useTablature = item->staff() && item->staff()->isTabStaff(item->chord()->tick());
+    bool useJianpu = item->staff() && item->staff()->isJianpuStaff(item->chord()->tick());
     ldata->useTablature.set_value(useTablature);
 
     RectF noteBBox;
@@ -4178,6 +4192,28 @@ void TLayout::layoutNote(const Note* item, Note::LayoutData* ldata)
         double height = item->deadNote() ? tab->deadFretBoxH() : tab->fretBoxH();
 
         noteBBox = RectF(0, y * mags, w, height * mags);
+    } else if (useJianpu) {
+        const Staff* st = item->staff();
+        const StaffType* jianpu = st->staffTypeForElement(item);
+
+        KeySigEvent ks = st->keySigEvent(item->chord()->tick());
+        KeyMode mode;
+        int tonicTpc;
+        jianpuKeyMapping(ks, mode, tonicTpc);
+        String accName, stepName;
+        tpc2Jianpu(item->tpc(), tonicTpc, mode, accName, stepName);
+        Tie* tieBack = item->tieBackNonPartial();
+        if (tieBack && tieBack->startNote()->tpc() == item->tpc()) {
+            // tied continuation: accidental was already shown on the tied-from note
+            accName = String();
+        }
+        const_cast<Note*>(item)->setJianpuDigit(stepName);
+        const_cast<Note*>(item)->setJianpuAccidental(jianpuAccidentalMark(accName));
+
+        double width = item->headWidth();
+        double height = jianpu->jianpuBoxH() * item->magS();
+
+        noteBBox = RectF(0, -height * .5, width, height);
     } else {
         if (item->deadNote()) {
             const_cast<Note*>(item)->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
@@ -4262,6 +4298,10 @@ void TLayout::fillNoteShape(const Note* item, Note::LayoutData* ldata)
         }
     }
 
+    for (JianpuOctaveDot* octaveDot : item->jianpuOctaveDots()) {
+        shape.add(octaveDot->ldata()->bbox().translated(octaveDot->pos()), octaveDot);
+    }
+
     ldata->setShape(shape);
 }
 
@@ -4275,6 +4315,19 @@ void TLayout::layoutNoteDot(const NoteDot* item, NoteDot::LayoutData* ldata)
     }
 
     ldata->setBbox(item->symBbox(SymId::augmentationDot));
+}
+
+void TLayout::layoutJianpuOctaveDot(JianpuOctaveDot* item, LayoutContext& ctx)
+{
+    LAYOUT_CALL_ITEM(item);
+    JianpuOctaveDot::LayoutData* ldata = item->mutldata();
+
+    double mag = item->note()->mag();
+    ldata->setMag(mag);
+    ldata->radius = ctx.conf().styleAbsolute(Sid::jianpuOctaveDotRadius) * mag;
+
+    double diameter = ldata->radius * 2;
+    ldata->setBbox(0, -ldata->radius, ldata->len, diameter);
 }
 
 void TLayout::layoutOrnament(const Ornament* item, Ornament::LayoutData* ldata, const LayoutConfiguration& conf)
@@ -4692,6 +4745,7 @@ void TLayout::layoutShadowNote(ShadowNote* item, LayoutContext& ctx)
     double mag = item->mag();
     RectF noteheadBbox = item->symBbox(item->noteheadSymbol());
     bool up = item->computeUp();
+    bool isJianpu = item->staff() && item->staff()->isJianpuStaff(item->tick());
 
     // Layout dots
     double dotWidth = 0.0;
@@ -4746,6 +4800,12 @@ void TLayout::layoutShadowNote(ShadowNote* item, LayoutContext& ctx)
 
         double lw = ctx.conf().styleAbsolute(Sid::ledgerLineWidth);
 
+        // jianpu will show the 5-line staff with more extra length
+        if (isJianpu) {
+            x -= 2 * extraLen;
+            w += 4 * extraLen;
+        }
+
         RectF r(x, -lw * .5, w, lw);
         const int topLine = -2 + yOffset / step;
         for (int i = topLine; i >= lineIdx; i -= 2) {
@@ -4757,9 +4817,9 @@ void TLayout::layoutShadowNote(ShadowNote* item, LayoutContext& ctx)
         }
     }
 
-    // Layout accidental
+    // Layout accidental (Jianpu shows its accidental as part of the digit label instead)
     SymId acc = Accidental::subtype2symbol(item->accidentalType());
-    if (acc != SymId::noSym) {
+    if (!isJianpu && acc != SymId::noSym) {
         RectF symRect = item->symBbox(acc);
         double accWidth = symRect.width() + ctx.conf().styleAbsolute(Sid::accidentalNoteDistance) * mag;
         double dh = 0.0;
@@ -4774,6 +4834,73 @@ void TLayout::layoutShadowNote(ShadowNote* item, LayoutContext& ctx)
         newBbox.setX(newBbox.x() - accWidth);
         newBbox.setWidth(newBbox.width() + accWidth);
         newBbox.setHeight(newBbox.height() + dh);
+    }
+
+    // Layout jianpu
+    RectF jianpuBbox(noteheadBbox.x(), 0, noteheadBbox.width(), 0);
+    if (isJianpu) {
+        const Staff* staff = item->staff();
+        const StaffType* st = staff->staffTypeForElement(item);
+        int dots = 0;
+
+        // jianpu digit
+        if (item->isRest()) {
+            item->setJianpuDigit(String(u"0"));
+            item->setJianpuAccidental(String());
+        } else {
+            item->setJianpuDigit(String());
+            item->setJianpuAccidental(String());
+            Score* score = item->score();
+            Position pos;
+            bool error = !(score && score->getPosition(&pos, item->pos(), item->track()) && pos.segment);
+            NoteVal nval;
+            if (!error) {
+                nval = NoteInput::noteValForPosition(score, pos, item->accidentalType(), error);
+            }
+            if (!error) {
+                bool concertPitch = ctx.conf().styleB(Sid::concertPitch);
+                int tpc = nval.tpc(concertPitch);
+
+                if (tpc != Tpc::TPC_INVALID) {
+                    String accName, stepName;
+                    KeySigEvent ks = staff->keySigEvent(item->tick());
+                    KeyMode mode;
+                    int tonicTpc;
+                    jianpuKeyMapping(ks, mode, tonicTpc);
+                    tpc2Jianpu(tpc, tonicTpc, mode, accName, stepName);
+                    item->setJianpuDigit(stepName);
+                    item->setJianpuAccidental(jianpuAccidentalMark(accName));
+
+                    Interval transpose = item->part()->instrument(item->tick())->transpose();
+                    int epitch = nval.pitch - transpose.chromatic;
+                    dots = -pitch2JianpuOctave(epitch, tpc, tonicTpc, mode);
+                }
+            }
+        }
+        double dotDistance = ctx.conf().styleAbsolute(Sid::jianpuOctaveDotDistance) * mag;
+        double lineDistance = ctx.conf().styleAbsolute(Sid::jianpuDiminutionBeamDistance) * mag;
+        jianpuBbox.setHeight(st->jianpuBoxH() * mag + dotDistance);
+        if (!up) {
+            jianpuBbox.setY(noteheadBbox.y() - jianpuBbox.height()); // Jianpu is above the head note
+        } else {
+            jianpuBbox.setY(newBbox.y() + newBbox.height()); // Jianpu is under the head note
+        }
+
+        // jianpu diminution line
+        int lines = jianpuDiminutionLinesForDuration(item->duration());
+        item->setJianpuDiminutionLines(lines);
+
+        // jianpu octave dots
+        item->setJianpuOctaveDots(dots);
+
+        // Always has one extra distance
+        double extraHeight = (1 + abs(dots)) * dotDistance + lines * lineDistance;
+
+        jianpuBbox.setHeight(jianpuBbox.height() + extraHeight);
+        if (!up) {
+            jianpuBbox.setY(jianpuBbox.y() - extraHeight); // Jianpu is above the head note
+        }
+        newBbox |= jianpuBbox;
     }
 
     const std::set<SymId>& articulationIds = item->articulationIds();

@@ -30,6 +30,7 @@
 #include "arpeggio.h"
 #include "beam.h"
 #include "chord.h"
+#include "dummyparent.h"
 #include "masterscore.h"
 #include "measure.h"
 #include "note.h"
@@ -283,6 +284,12 @@ void SlurSegment::dragGrip(EditData& ed)
     switch (g) {
     case Grip::START:
     case Grip::END:
+        // Lock the location of the endpoints in as user offset as the code calculating this will no longer run when points are edited
+        // This prevents the endpoints jumping as soon as they are dragged
+        if (!isEndPointsEdited()) {
+            ups(Grip::START).off += endPointOff1();
+            ups(Grip::END).off += endPointOff2();
+        }
         ups(g).off += ed.delta;
         //
         // move anchor for slurs/ties
@@ -380,7 +387,12 @@ Slur::Slur(const Slur& s)
 //   Slur
 //---------------------------------------------------------
 
-Slur::Slur(DummyParentOr<EngravingItem> parent, ElementType type)
+Slur::Slur(DummyParent* parent)
+    : SlurTie(ElementType::SLUR, parent)
+{
+}
+
+Slur::Slur(const ElementType& type, EngravingObject* parent)
     : SlurTie(type, parent)
 {
 }

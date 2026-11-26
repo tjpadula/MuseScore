@@ -37,21 +37,13 @@ public:
 
     void init(const notation::Part* part) override;
 
-    MoveParams buildMoveParams(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent, int destinationRow) const override;
-
-    void moveChildren(int sourceRow, int count, AbstractLayoutPanelTreeItem* destinationParent, int destinationRow,
-                      bool updateNotation) override;
-
-    void moveChildrenOnScore(const MoveParams& params) override;
-
-    void removeChildren(int row, int count, bool deleteChild) override;
-
-    void listenEnabledChanged();
-
-    Q_INVOKABLE bool canAcceptDrop(const QVariant& item) const override;
-
 private:
     void onScoreChanged(const mu::engraving::ScoreChanges& changes) override;
+
+    void listenEnabledChanged();
+    void updateEnabled();
+    bool isTitleAffected(const mu::engraving::ScoreChanges& changes) const;
+    QString groupTitle() const;
 
     bool m_ignoreEnabledChanged = true;
 };

@@ -44,7 +44,7 @@ public:
 
     void initStyle();
 
-    virtual EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 
     TextLine* textLine() const { return toTextLine(spanner()); }
 };
@@ -59,13 +59,14 @@ class TextLine final : public TextLineBase
     DECLARE_CLASSOF(ElementType::TEXTLINE)
 
 public:
-    TextLine(DummyParentOr<EngravingItem> parent, bool system=false);
+    TextLine(DummyParentOr<Note> parent, bool system=false);
     TextLine(const TextLine&);
     ~TextLine() {}
 
     void undoChangeProperty(Pid id, const PropertyValue&, PropertyFlags ps) override;
 
     TextLine* clone() const override { return new TextLine(*this); }
+    void setOwnershipParent(DummyParentOr<Note> parent) { EngravingItem::setOwnershipParent(parent); }
 
     Anchor anchor() const override { return Anchor::SEGMENT; }
 

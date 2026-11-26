@@ -33,7 +33,7 @@
 
 #include "notation/inotation.h"
 #include "notation/inotationelements.h" // IWYU pragma: keep
-#include "notationscene/notationcommands.h"
+#include "notation/notationcommands.h"
 
 // api
 #include "engravingapiv1.h"
@@ -207,8 +207,8 @@ void PluginAPI::registerQmlTypes()
     qmlRegisterAnonymousType<OrnamentIntervalWrapper>("MuseScore", 3);
     qRegisterMetaType<OrnamentIntervalWrapper*>("OrnamentIntervalWrapper*");
 
-#if QT_QPROCESS_SUPPORTED
-    qmlRegisterType<MsProcess>("MuseScore", 3, 0, "MsProcess");
+#ifdef QT_QPROCESS_SUPPORTED
+    qmlRegisterType<MsProcess>("MuseScore", 3, 0, "QProcess");
 #endif
     qmlRegisterType<FileIO, 1>("FileIO",    3, 0, "FileIO");
 
@@ -423,14 +423,14 @@ apiv1::Score* PluginAPI::newScore(const QString& /*name*/, const QString& part, 
 void PluginAPI::cmd(const QString& s)
 {
     static const QMap<QString, muse::rcommand::Command> COMPAT_CMD_MAP = {
-        { "escape", notation::CANCEL_COMMAND },
-        { "cut", notation::CUT_COMMAND },
-        { "copy", notation::COPY_COMMAND },
-        { "paste", notation::PASTE_COMMAND },
-        { "paste-half", notation::PASTE_HALF_COMMAND },
-        { "paste-double", notation::PASTE_DOUBLE_COMMAND },
+        { "escape", notation::CancelCommand::id },
+        { "cut", notation::CutCommand::id },
+        { "copy", notation::CopyCommand::id },
+        { "paste", notation::PasteDefaultCommand::id },
+        { "paste-half", notation::PasteHalfCommand::id },
+        { "paste-double", notation::PasteDoubleCommand::id },
         { "select-all", notation::SelectAllCommand::id },
-        { "delete", notation::DELETE_COMMAND },
+        { "delete", notation::DeleteCommand::id },
         { "next-chord", notation::MOVE_RIGHT_COMMAND },
         { "prev-chord", notation::MOVE_LEFT_COMMAND },
         { "prev-measure", notation::MOVE_LEFT_QUICKLY_COMMAND }

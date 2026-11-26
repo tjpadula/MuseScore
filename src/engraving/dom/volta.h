@@ -47,7 +47,7 @@ public:
 
     Volta* volta() const { return (Volta*)spanner(); }
 
-    EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 };
 
 //---------------------------------------------------------
@@ -65,9 +65,10 @@ public:
         OPEN, CLOSED
     };
 
-    Volta(DummyParentOr<EngravingItem> parent);
+    Volta(DummyParent* parent);
 
     Volta* clone() const override { return new Volta(*this); }
+    void setOwnershipParent(EngravingObject*) = delete;
 
     Anchor anchor() const override { return Anchor::MEASURE; }
 

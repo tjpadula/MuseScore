@@ -39,7 +39,7 @@ public:
 
     NoteLineSegment* clone() const override { return new NoteLineSegment(*this); }
 
-    EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 };
 
 class NoteLine final : public TextLineBase
@@ -48,11 +48,12 @@ class NoteLine final : public TextLineBase
     DECLARE_CLASSOF(ElementType::NOTELINE)
 
 public:
-    NoteLine(EngravingObject* parent);
+    NoteLine(DummyParentOr<Note> parent);
     NoteLine(const NoteLine&);
     ~NoteLine() {}
 
     NoteLine* clone() const override { return new NoteLine(*this); }
+    void setOwnershipParent(DummyParentOr<Note> parent) { EngravingItem::setOwnershipParent(parent); }
 
     Anchor anchor() const override { return Anchor::NOTE; }
 
@@ -69,7 +70,7 @@ public:
 
     void reset() override;
 
-    bool enforceMinLength() { return m_lineEndPlacement != NoteLineEndPlacement::LEFT_EDGE; }
+    bool enforceMinLength() const { return m_lineEndPlacement != NoteLineEndPlacement::LEFT_EDGE; }
 
 protected:
     Sid defaultPosSid() const override;

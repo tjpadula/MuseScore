@@ -92,7 +92,7 @@ public:
     OttavaSegment* clone() const override { return new OttavaSegment(*this); }
     Ottava* ottava() const { return (Ottava*)spanner(); }
 
-    EngravingObject* propertyDelegate(Pid) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid) const override;
 
     bool canBeExcludedFromOtherParts() const override { return true; }
 
@@ -111,10 +111,11 @@ class Ottava final : public TextLineBase
     DECLARE_CLASSOF(ElementType::OTTAVA)
 
 public:
-    Ottava(DummyParentOr<EngravingItem> parent);
+    Ottava(DummyParent* parent);
     Ottava(const Ottava&);
 
     Ottava* clone() const override { return new Ottava(*this); }
+    void setOwnershipParent(EngravingObject*) = delete;
 
     Anchor anchor() const override { return Anchor::SEGMENT; }
 

@@ -28,6 +28,7 @@
 
 #include "inotation_fwd.h"
 #include "notationtypes.h"
+#include "types/instrumentstypes.h"
 #include "types/noteinputtypes.h"
 
 class QKeyEvent;
@@ -89,6 +90,7 @@ public:
     virtual muse::Ret select(const std::vector<EngravingItem*>& items, SelectType type = SelectType::REPLACE, staff_idx_t staffIdx = 0) = 0;
     virtual muse::Ret select(SelectionTarget target) = 0;
     virtual muse::Ret addToSelection(SelectionTarget target) = 0;
+    virtual void showLocation() = 0;
     virtual void clearSelection() = 0;
 
     virtual void selectAndStartEditIfNeeded(EngravingItem* element) = 0;
@@ -97,8 +99,6 @@ public:
     // Change selection
     virtual bool moveSelectionAvailable(MoveSelectionType type) const = 0;
     virtual void moveSelectionDeprecated(MoveDirection d, MoveSelectionType type) = 0;
-
-    virtual void moveLyrics(MoveDirection d) = 0;
 
     virtual EngravingItem* contextItem() const = 0;
 
@@ -128,26 +128,31 @@ public:
     virtual bool startDropImage(const QUrl& url) = 0;
     virtual bool updateDropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) = 0; //! NOTE Also may set drop target
     virtual bool updateDropRange(const muse::PointF& pos, std::optional<bool> preserveMeasureAlignment = std::nullopt) = 0;
-    virtual bool dropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers) = 0;
+
+    virtual muse::Ret canDropSingle(const muse::PointF& pos) = 0;
+    virtual bool isDroppingInstrumentChange() const = 0;
+    virtual bool dropSingle(const muse::PointF& pos, Qt::KeyboardModifiers modifiers,
+                            const std::optional<InstrumentTemplate>& instrument = std::nullopt) = 0;
+
     virtual bool dropRange(const QByteArray& data, const muse::PointF& pos, bool deleteSourceMaterial) = 0;
     virtual void setDropTarget(EngravingItem* item, bool notify = true) = 0;
     virtual void setDropRects(const std::vector<muse::RectF>& rects) = 0;
     virtual void endDrop() = 0;
     virtual muse::async::Notification dropChanged() const = 0;
 
+    virtual muse::Ret canApplyPaletteElement(mu::engraving::EngravingItem* element) const = 0;
     virtual bool applyPaletteElement(mu::engraving::EngravingItem* element, Qt::KeyboardModifiers modifiers = {}) = 0;
+
     virtual void undo() = 0;
     virtual void redo() = 0;
     virtual void undoRedoToIndex(size_t idx) = 0;
 
     // Move/nudge elements
+    virtual bool moveSelectedItems(MoveDirection d, bool quickly) = 0;
     virtual void movePitch(MoveDirection d, PitchMode mode) = 0;
-    virtual void nudge(MoveDirection d, bool quickly) = 0;
-    virtual void nudgeAnchors(MoveDirection d) = 0;
     virtual void moveChordRestToStaff(MoveDirection d) = 0;
     virtual void swapChordRest(MoveDirection d) = 0;
-    virtual void toggleSnapToPrevious() = 0;
-    virtual void toggleSnapToNext() = 0;
+    virtual void toggleSnapTo(SnapDirection direction) = 0;
 
     // Text edit
     virtual bool isTextSelected() const = 0;
@@ -241,13 +246,15 @@ public:
     virtual bool transpose(const TransposeOptions& options) = 0;
     virtual void swapVoices(voice_idx_t voiceIndex1, voice_idx_t voiceIndex2) = 0;
     virtual void addIntervalToSelectedNotes(int interval) = 0;
+
+    virtual muse::Ret canAddFret() const = 0;
     virtual void addFret(int fretIndex) = 0;
+
     virtual void changeSelectedElementsVoice(voice_idx_t voiceIndex) = 0;
     virtual void changeSelectedElementsVoiceAssignment(VoiceAssignment voiceAssignment) = 0;
     virtual void addAnchoredLineToSelectedNotes() = 0;
 
-    virtual void addTextToTopFrame(TextStyleType type) = 0;
-    virtual void addTextToItem(TextStyleType type, EngravingItem* item) = 0;
+    virtual void addText(TextStyleType type) = 0;
 
     virtual muse::Ret canAddImageToItem(const EngravingItem* item) const = 0;
     virtual void addImageToItem(const muse::io::path_t& imagePath, EngravingItem* item) = 0;
@@ -312,23 +319,18 @@ public:
     virtual void navigateToNearText(MoveDirection direction) = 0;
 
     // Text style
-    virtual void toggleBold() = 0;
-    virtual void toggleItalic() = 0;
-    virtual void toggleUnderline() = 0;
-    virtual void toggleStrike() = 0;
-    virtual void toggleSubScript() = 0;
-    virtual void toggleSuperScript() = 0;
+    virtual void toggleTextFontStyle(FontStyle style) = 0;
+    virtual void toggleTextVAlign(VerticalAlignment align) = 0;
 
     virtual bool canInsertClef(mu::engraving::ClefType) const = 0;
     virtual void insertClef(mu::engraving::ClefType) = 0;
 
     virtual void toggleArticulation(mu::engraving::SymId) = 0;
-    virtual void toggleOrnament(mu::engraving::SymId) = 0;
+    virtual void toggleOrnament(OrnamentType) = 0;
     virtual void changeAccidental(mu::engraving::AccidentalType) = 0;
     virtual void transposeSemitone(int) = 0;
     virtual void transposeDiatonicAlterations(mu::engraving::TransposeDirection) = 0;
     virtual void toggleAutoplace(bool all) = 0;
-    virtual void getLocation() = 0;
     virtual void execute(void (mu::engraving::Score::*)(), const muse::TranslatableString& actionName) = 0;
 
     struct ShowItemRequest {

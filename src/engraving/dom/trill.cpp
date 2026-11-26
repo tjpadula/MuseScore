@@ -27,6 +27,7 @@
 #include "../editing/addremoveelement.h"
 #include "types/typesconv.h"
 
+#include "dummyparent.h"
 #include "iengravingfont.h"
 
 #include "accidental.h"
@@ -146,19 +147,19 @@ void TrillSegment::scanElements(std::function<void(EngravingItem*)> func)
 //   propertyDelegate
 //---------------------------------------------------------
 
-EngravingObject* TrillSegment::propertyDelegate(Pid pid) const
+PropertyDelegate TrillSegment::resolvePropertyDelegate(Pid pid) const
 {
     if (pid == Pid::TRILL_TYPE || pid == Pid::ORNAMENT_STYLE || pid == Pid::PLACEMENT) {
-        return spanner();
+        return PropertyDelegate(spanner());
     }
-    return LineSegment::propertyDelegate(pid);
+    return LineSegment::resolvePropertyDelegate(pid);
 }
 
 //---------------------------------------------------------
 //   Trill
 //---------------------------------------------------------
 
-Trill::Trill(DummyParentOr<EngravingItem> parent)
+Trill::Trill(DummyParent* parent)
     : SLine(ElementType::TRILL, parent)
 {
     m_trillType     = TrillType::TRILL_LINE;
@@ -225,7 +226,7 @@ void Trill::computeStartElement()
 {
     Spanner::computeStartElement();
     if (startElement() && startElement()->isChord() && m_ornament) {
-        m_ornament->setOwnershipParent(startElement());
+        m_ornament->setOwnershipParent(toChord(startElement()));
 
         Chord* cueChord = m_ornament->cueNoteChord();
         if (cueChord) {

@@ -76,6 +76,8 @@ qt_add_qml_module(notationscene_qml
         notationpaintview.h
         notationruler.cpp
         notationruler.h
+        notationstatusbarmodel.cpp
+        notationstatusbarmodel.h
         notationswitchlistmodel.cpp
         notationswitchlistmodel.h
         notationtoolbarmodel.cpp
@@ -94,6 +96,8 @@ qt_add_qml_module(notationscene_qml
         paintedengravingitem.h
         partlistmodel.cpp
         partlistmodel.h
+        pendingtupletmarker.cpp
+        pendingtupletmarker.h
         percussionpanel/percussionpanelmodel.cpp
         percussionpanel/percussionpanelmodel.h
         percussionpanel/percussionpanelpadlistmodel.cpp
@@ -198,6 +202,7 @@ qt_add_qml_module(notationscene_qml
         internal/SelectionFilterSection.qml
         internal/VoicesPopup.qml
 		MetaKeyControl.qml
+        NotationStatusBar.qml
         NotationToolBar.qml
         NotationView.qml
         NoteInputBar.qml
@@ -329,6 +334,7 @@ target_include_directories(notationscene_qml PRIVATE
 target_link_libraries(notationscene_qml PRIVATE
     Qt::Widgets # for QApplication
     muse::uicomponents_qml
+    muse::workspace_qml # for the status bar
 )
 
 if(MUE_BUILD_NOTATIONSCENE_TESTS)

@@ -73,8 +73,6 @@ target_sources(engraving PRIVATE
     iengravingfont.h
     iengravingfontsprovider.h
 
-    infrastructure/messagebox.cpp
-    infrastructure/messagebox.h
     infrastructure/imimedata.h
     infrastructure/mscio.h
     infrastructure/mscreader.cpp
@@ -144,6 +142,8 @@ target_sources(engraving PRIVATE
     editing/editinstrumentchange.h
     editing/editkeysig.cpp
     editing/editkeysig.h
+    editing/editlyrics.cpp
+    editing/editlyrics.h
     editing/editmeasurerepeat.cpp
     editing/editmeasurerepeat.h
     editing/editmeasures.cpp
@@ -166,6 +166,8 @@ target_sources(engraving PRIVATE
     editing/editscoreproperties.h
     editing/editslashnotation.cpp
     editing/editslashnotation.h
+    editing/editslur.cpp
+    editing/editslur.h
     editing/editsoundflag.cpp
     editing/editsoundflag.h
     editing/editspanner.cpp
@@ -217,6 +219,7 @@ target_sources(engraving PRIVATE
     editing/reset.h
     editing/splitjoinmeasure.cpp
     editing/splitjoinmeasure.h
+    editing/staffconfig.h
     editing/textedit.cpp
     editing/textedit.h
     editing/transaction/transaction.cpp

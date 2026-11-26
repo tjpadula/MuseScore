@@ -1,0 +1,349 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * MuseScore-Studio-CLA-applies
+ *
+ * MuseScore Studio
+ * Music Composition & Notation
+ *
+ * Copyright (C) 2021 MuseScore Limited and others
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import QtQuick
+import QtQuick.Window
+import QtQuick.Layouts
+
+import Muse.Ui
+import Muse.UiComponents
+import MuseScore.Playback
+
+Item {
+    id: root
+
+    property bool viewOnly: false
+
+    NotationStatusBarModel {
+        id: model
+    }
+
+    property NavigationSection navigationSection: NavigationSection {
+        id: navSec
+        name: "NotationStatusBar"
+        enabled: root.enabled && root.visible
+        order: 8
+    }
+
+    NavigationPanel {
+        id: navPanel
+        name: "NotationStatusBar"
+        enabled: root.enabled && root.visible
+        order: 0
+        direction: NavigationPanel.Horizontal
+        section: navSec
+    }
+    
+    RowLayout {
+    	id: metaButtonRow
+    	
+    	anchors.left: parent.left
+        anchors.leftMargin: 4
+        anchors.right: parent.right
+        anchors.rightMargin: 4
+        
+		anchors.top: metaSeparator.bottom
+		
+        height: 28
+        
+        spacing: 4
+
+        visible: Qt.platform.os === "ios"
+        
+        StyledTextLabel {
+            id: helloWorld
+            Layout.alignment: Qt.AlignVCenter
+            Layout.fillWidth: false
+
+            text: "Hello, world!"
+            horizontalAlignment: Text.AlignLeft
+
+            visible: false
+        }
+        
+         ArrowKeyControl {
+            id: arrowKeyControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: parent.visible
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onSendAction: function(inAction) {
+//				console.log("ArrowKeyControl.onSendAction ", inAction);
+                model.sendAction(inAction)
+            }
+        }
+        
+        ActionKeyControl {
+            id: actionKeyControl
+            Layout.alignment: Qt.AlignCenter
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: parent.visible
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onSendAction: function(inAction) {
+                model.sendAction(inAction)
+            }
+        }
+
+        MetaKeyControl {
+            id: metaKeyControl
+            Layout.alignment: Qt.AlignVCenter + Qt.AlignRight
+            Layout.preferredHeight: 28
+
+            enabled: true
+            visible: parent.visible
+
+            navigationPanel: navPanel
+            navigationOrderMin: onlineSoundsStatusView.navigationOrder + 1
+
+            onMetaKeyChange: function(metaKeyName, state) {
+                model.setMetaKeyState(metaKeyName, state)
+            }
+
+            onSendAction: function(inAction) {
+                model.sendAction(inAction)
+            }
+        }
+	}
+
+	SeparatorLine { 
+		id: metaSeparator
+		Layout.topMargin: 2
+		Layout.bottomMargin: 2
+		orientation: Qt.Horizontal
+		visible: Qt.platform.os === "ios" 
+		
+		anchors.top:  statusBarRow.bottom
+	}
+
+    RowLayout {
+        id: statusBarRow
+
+        //! TODO: hiding of controls is disabled because there is a bug
+        // Determination of the size of the window content works incorrectly
+        readonly property int eps: 100
+        //property int remainingSpace: Window.window ? Window.window.width - (viewModeControl.width + zoomControl.width + eps) : 0
+        property int remainingSpace: 999999
+
+        anchors.left: parent.left
+        anchors.leftMargin: 12
+        anchors.right: parent.right
+        anchors.rightMargin: 4
+
+		anchors.top: parent.top
+
+        height: 28
+
+        spacing: 4
+
+        PlaybackLoadingInfo {
+            id: playbackLoadingInfo
+            Layout.fillWidth: false
+
+            enabled: !root.viewOnly
+
+            onStarted: {
+                visible = true
+            }
+
+            onFinished: {
+                visible = false
+            }
+        }
+
+        SeparatorLine { 
+            Layout.leftMargin: 2
+            Layout.rightMargin: 2
+            orientation: Qt.Vertical
+            visible: playbackLoadingInfo.visible 
+        }
+
+        StyledTextLabel {
+            id: accessibiityInfo
+            Layout.alignment: Qt.AlignVCenter
+            Layout.fillWidth: true
+
+            text: model.accessibilityInfo
+            horizontalAlignment: Text.AlignLeft
+
+            enabled: !root.viewOnly
+            visible: !hiddenControlsMenuButton.visible
+        }
+
+        OnlineSoundsStatusView {
+            id: onlineSoundsStatusView
+
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            enabled: !root.viewOnly
+
+            navigationPanel: navPanel
+            navigationOrder: 1
+        }
+
+        SeparatorLine { orientation: Qt.Vertical; visible: workspaceControl.visible }
+
+        FlatButton {
+            id: workspaceControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            text: model.currentWorkspaceItem.title
+            icon: IconCode.WORKSPACE
+            orientation: Qt.Horizontal
+
+            transparent: true
+            enabled: !root.viewOnly
+            visible: model.isWorkspaceAvailable && statusBarRow.remainingSpace > width + concertPitchControl.width
+
+            navigation.panel: navPanel
+            navigation.order: metaKeyControl.navigationOrderMax + 1
+
+            onClicked: {
+                menuLoader.toggleOpened(model.currentWorkspaceItem.subitems)
+            }
+
+            StyledMenuLoader {
+                id: menuLoader
+
+                menuAnchorItem: root.Window.window ? root.Window.window.contentItem : null
+
+                onHandleMenuItem: function(itemId) {
+                    Qt.callLater(model.handleWorkspacesMenuItem, itemId)
+                }
+            }
+        }
+
+        SeparatorLine { orientation: Qt.Vertical; visible: concertPitchControl.visible }
+
+        ConcertPitchControl {
+            id: concertPitchControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            text: model.concertPitchItem.title
+            icon: model.concertPitchItem.icon
+            checked: model.concertPitchItem.checked
+            enabled: model.concertPitchItem.enabled && !root.viewOnly
+            visible: statusBarRow.remainingSpace > width
+
+            navigation.panel: navPanel
+            navigation.order: workspaceControl.navigationOrder + 1
+
+            onToggleConcertPitchRequested: {
+                model.toggleConcertPitch()
+            }
+        }
+
+        SeparatorLine { orientation: Qt.Vertical }
+
+        ViewModeControl {
+            id: viewModeControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            currentViewMode: model.currentViewMode
+            availableViewModeList: model.availableViewModeList
+
+            navigation.panel: navPanel
+            navigation.order: concertPitchControl.navigationOrder + 1
+
+            onChangeCurrentViewModeRequested: function(newViewMode) {
+                model.setCurrentViewMode(newViewMode)
+            }
+        }
+
+        ZoomControl {
+            id: zoomControl
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredHeight: 28
+
+            enabled: model.zoomEnabled
+            currentZoomPercentage: model.currentZoomPercentage
+            minZoomPercentage: model.minZoomPercentage()
+            maxZoomPercentage: model.maxZoomPercentage()
+            availableZoomList: model.availableZoomList
+
+            navigationPanel: navPanel
+            navigationOrderMin: viewModeControl.navigationOrder + 1
+
+            onChangeZoomPercentageRequested: function(newZoomPercentage) {
+                model.currentZoomPercentage = newZoomPercentage
+            }
+
+            onChangeZoomRequested: function(zoomId) {
+                model.setCurrentZoom(zoomId)
+            }
+
+            onZoomInRequested: {
+                model.zoomIn()
+            }
+
+            onZoomOutRequested: {
+                model.zoomOut()
+            }
+        }
+
+        SeparatorLine { orientation: Qt.Vertical; visible: hiddenControlsMenuButton.visible }
+
+        MenuButton {
+            id: hiddenControlsMenuButton
+
+            Layout.alignment: Qt.AlignVCenter
+
+            enabled: !root.viewOnly
+            visible: !concertPitchControl.visible ||
+                     (model.isWorkspaceAvailable && !workspaceControl.visible)
+
+            navigation.panel: navPanel
+            navigation.order: zoomControl.navigationOrderMax + 1
+
+            menuModel: {
+                var result = []
+
+                if (!concertPitchControl.visible) {
+                    result.push(model.concertPitchItem)
+                }
+
+                if (model.isWorkspaceAvailable && !workspaceControl.visible) {
+                    result.push(model.currentWorkspaceItem)
+                }
+
+                return result
+            }
+
+            onHandleMenuItem: function(itemId) {
+                model.handleMenuItem(itemId)
+            }
+        }
+    }
+}

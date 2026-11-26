@@ -28,6 +28,7 @@
 
 #include "global/containers.h"
 
+#include "engraving/types/constants.h"
 #include "engraving/dom/articulation.h"
 #include "engraving/dom/chord.h"
 #include "engraving/dom/durationtype.h"
@@ -86,6 +87,9 @@ using Interval = mu::engraving::Interval;
 using BracketType = mu::engraving::BracketType;
 using Segment = mu::engraving::Segment;
 using TextStyleType = mu::engraving::TextStyleType;
+using FontStyle = mu::engraving::FontStyle;
+using ClefType = mu::engraving::ClefType;
+using VerticalAlignment = mu::engraving::VerticalAlignment;
 using PageList = std::vector<Page*>;
 using voice_idx_t = mu::engraving::voice_idx_t;
 using track_idx_t = mu::engraving::track_idx_t;
@@ -93,6 +97,20 @@ using staff_idx_t = mu::engraving::staff_idx_t;
 using GuitarBendType = mu::engraving::GuitarBendType;
 using Pid = mu::engraving::Pid;
 using VoiceAssignment = mu::engraving::VoiceAssignment;
+using TupletNumberType = mu::engraving::TupletNumberType;
+using TupletBracketType = mu::engraving::TupletBracketType;
+using TupletSelectedDuration = mu::engraving::TupletSelectedDuration;
+using OrnamentType = mu::engraving::OrnamentType;
+
+//! NOTE Values mirror SymId so the command argument casts to a symbol id.
+//! Named separately from muse::mpe::ArticulationType, which models playback.
+enum class ArticulationType {
+    UNDEFINED = (int)mu::engraving::SymId::noSym,
+    MARCATO = (int)mu::engraving::SymId::articMarcatoAbove,
+    SFORZATO = (int)mu::engraving::SymId::articAccentAbove,
+    TENUTO = (int)mu::engraving::SymId::articTenutoAbove,
+    STACCATO = (int)mu::engraving::SymId::articStaccatoAbove,
+};
 
 enum class DragMode : unsigned char
 {
@@ -108,6 +126,36 @@ enum class MoveDirection : unsigned char
     Right,
     Up,
     Down
+};
+
+//! NOTE How far a text navigation command moves the cursor.
+//! `Element` jumps to the next/previous text element, `Word` additionally
+//! continues a multi-syllable lyrics word, `Beat` moves by beat inside
+//! chord symbols (ignoring the notes/rests in between).
+enum class TextNavigationMode : unsigned char
+{
+    Element = 0,
+    Word,
+    Beat
+};
+
+//! NOTE Direction of a text navigation. Values mirror the horizontal values of
+//! `MoveDirection` so the two convert with a plain cast, but the enum is
+//! closed: `Up`/`Down` make no sense for text navigation, and having them
+//! absent lets the contract expose exactly the valid choices.
+enum class TextMoveDirection : unsigned char
+{
+    Prev = static_cast<unsigned char>(MoveDirection::Left),
+    Next = static_cast<unsigned char>(MoveDirection::Right),
+};
+
+//! NOTE Lyrics-specific navigation, separate from `TextNavigateCommand`.
+//! Verse moves vertically between lyric verses; syllable advances with a hyphen.
+enum class LyricsNavigateAction : unsigned char
+{
+    NextVerse = 0,
+    PrevVerse,
+    NextSyllable
 };
 
 enum class SelectionTarget : unsigned char
@@ -251,6 +299,14 @@ struct TransposeOptions
     bool needTransposeDoubleSharpsFlats = false;
 };
 
+enum class ChangeDurationMode : unsigned char
+{
+    Double,
+    Halve,
+    DoubleDotted,
+    HalveDotted,
+};
+
 enum class ScoreConfigType : unsigned char
 {
     ShowInvisibleElements,
@@ -299,20 +355,26 @@ enum class BracketsType : unsigned char
     Parentheses
 };
 
-static constexpr int MIN_NOTES_INTERVAL = -10;
-static constexpr int MAX_NOTES_INTERVAL = 10;
+//! NOTE Which end of an element (hairpin, gradual tempo change) is snapped to
+//! the adjacent item. Only `Prev` applies to hairpins, `Next` applies to both
+//! hairpins and gradual tempo changes.
+enum class SnapDirection : unsigned char
+{
+    Prev = 0,
+    Next
+};
 
 static constexpr int MAX_FRET = 14;
 
 constexpr bool isNotesIntervalValid(int interval)
 {
-    return interval >= MIN_NOTES_INTERVAL && interval <= MAX_NOTES_INTERVAL
+    return interval >= mu::engraving::MIN_NOTES_INTERVAL && interval <= mu::engraving::MAX_NOTES_INTERVAL
            && interval != 0 && interval != -1;
 }
 
 constexpr bool isVoiceIndexValid(voice_idx_t voiceIndex)
 {
-    return voiceIndex < mu::engraving::VOICES;
+    return voiceIndex < mu::engraving::MAX_VOICES;
 }
 
 inline bool isVerticalBoxTextStyle(TextStyleType type)

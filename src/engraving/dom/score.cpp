@@ -2398,10 +2398,10 @@ KeyList Score::keyList() const
     bool isFirstStaff = true;
     for (Staff* s : masterScore()->staves()) {
         if (!s->isDrumStaff(Fraction(0, 1))) {
-            KeyList* km = s->keyList();
+            const KeyList& km = s->keyList();
             if (isFirstStaff) {
                 isFirstStaff = false;
-                tmpKeymap.insert(km->begin(), km->end());
+                tmpKeymap.insert(km.begin(), km.end());
                 firstStaff = s;
                 continue;
             }
@@ -2409,23 +2409,23 @@ KeyList Score::keyList() const
             // in terms of ticks, tmpKeymap = intersection(tmpKeymap, km)
             // note that if every single staff has a custom local keysig on this tick,
             // we will just copy the one from the top staff.
-            auto currKey = km->begin();
+            auto currKey = km.begin();
             KeyList kl;
             for (auto key : tmpKeymap) {
                 if (key.first < (*currKey).first) {
                     continue;
                 }
-                while ((*currKey).first < key.first && currKey != km->end()) {
+                while ((*currKey).first < key.first && currKey != km.end()) {
                     currKey++;
                 }
-                if (currKey == km->end()) {
+                if (currKey == km.end()) {
                     break;
                 }
                 if (key.first == (*currKey).first) {
                     // there is a matching key sig on this staff
                     ++currKey;
                     kl.insert(key);
-                    if (currKey == km->end()) {
+                    if (currKey == km.end()) {
                         break;
                     }
                 }
@@ -3683,42 +3683,6 @@ void Score::lassoSelectEnd()
     setUpdateAll();
 }
 
-//---------------------------------------------------------
-//   addLyrics
-//---------------------------------------------------------
-
-void Score::addLyrics(const Fraction& tick, staff_idx_t staffIdx, const String& txt)
-{
-    if (txt.trimmed().isEmpty()) {
-        return;
-    }
-    Measure* measure = tick2measure(tick);
-    Segment* seg     = measure->findSegment(SegmentType::ChordRest, tick);
-    if (seg == 0) {
-        LOGD("no segment found for lyrics<%s> at tick %d",
-             muPrintable(txt), tick.ticks());
-        return;
-    }
-
-    bool lyricsAdded = false;
-    for (voice_idx_t voice = 0; voice < VOICES; ++voice) {
-        track_idx_t track = staffIdx * VOICES + voice;
-        ChordRest* cr = toChordRest(seg->element(track));
-        if (cr) {
-            Lyrics* l = Factory::createLyrics(cr);
-            l->setXmlText(txt);
-            l->setTrack(track);
-            cr->add(l);
-            lyricsAdded = true;
-            break;
-        }
-    }
-    if (!lyricsAdded) {
-        LOGD("no chord/rest for lyrics<%s> at tick %d, staff %zu",
-             muPrintable(txt), tick.ticks(), staffIdx);
-    }
-}
-
 BeatsPerSecond Score::tempo(const Fraction& tick) const
 {
     return tempoTimeline(/*expandRepeats*/ false).tempo(tick.ticks());
@@ -3803,10 +3767,11 @@ void Score::cmdSelectSection()
 //    and all part scores (if there are any)
 //---------------------------------------------------------
 
-std::list<Score*> Score::scoreList()
+std::vector<Score*> Score::scoreList()
 {
-    std::list<Score*> scores;
+    std::vector<Score*> scores;
     MasterScore* root = masterScore();
+    scores.reserve(1 + root->excerpts().size());
     scores.push_back(root);
     for (const Excerpt* ex : root->excerpts()) {
         if (ex->excerptScore()) {
@@ -4613,8 +4578,8 @@ PropertyValue Score::getProperty(Pid /*id*/) const
 
 bool Score::setProperty(Pid /*id*/, const PropertyValue& /*v*/)
 {
+    UNREACHABLE;
     LOGD("Score::setProperty: unhandled id");
-    setLayoutAll();
     return true;
 }
 

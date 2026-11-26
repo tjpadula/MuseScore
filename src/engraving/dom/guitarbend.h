@@ -59,11 +59,12 @@ class GuitarBend final : public SLine
     M_PROPERTY2(float, endTimeFactor, setEndTimeFactor, 1.f)
 
 public:
-    GuitarBend(EngravingObject* parent);
+    GuitarBend(DummyParentOr<Note> parent);
     GuitarBend(const GuitarBend&);
     ~GuitarBend() override;
 
     GuitarBend* clone() const override { return new GuitarBend(*this); }
+    void setOwnershipParent(DummyParentOr<Note> parent) { EngravingItem::setOwnershipParent(parent); }
 
     LineSegment* createLineSegment() override;
 
@@ -194,7 +195,7 @@ public:
     PropertyValue getProperty(Pid id) const override;
     bool setProperty(Pid propertyId, const PropertyValue& v) override;
     PropertyValue propertyDefault(Pid id) const override;
-    EngravingObject* propertyDelegate(Pid id) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid id) const override;
 
     PointF vertexPointOff() const { return m_vertexPointOff; }
     void setVertexPointOff(PointF p) { m_vertexPointOff = p; }

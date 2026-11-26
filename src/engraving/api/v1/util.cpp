@@ -358,8 +358,7 @@ int FileIO::modifiedTime()
     return fileInfo.lastModified().toSecsSinceEpoch();
 }
 
-#if QT_QPROCESS_SUPPORTED
-
+#ifdef QT_QPROCESS_SUPPORTED
 void MsProcess::start(const QString& command)
 {
     QT_WARNING_PUSH;
@@ -374,6 +373,5 @@ void MsProcess::startWithArgs(const QString& program, const QStringList& args)
     QProcess::start(program, args, ReadWrite);
 }
 
-#endif
-
+#endif // QT_QPROCESS_SUPPORTED
 }

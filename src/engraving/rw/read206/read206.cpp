@@ -837,7 +837,7 @@ static void readStaff(Staff* staff, XmlReader& e, ReadContext& ctx)
         } else if (tag == "hideSystemBarLine") {
             staff->setHideSystemBarLine(e.readInt());
         } else if (tag == "keylist") {
-            read400::TRead::read(staff->keyList(), e, ctx);
+            read400::TRead::read(&staff->keyList(), e, ctx);
         } else if (tag == "bracket") {
             int col = e.intAttribute("col", -1);
             if (col == -1) {
@@ -1226,10 +1226,6 @@ bool Read206::readNoteProperties206(Note* note, XmlReader& e, ReadContext& ctx)
             if (sp->isTie()) {
                 note->setTieBack(toTie(sp));
             } else {
-                bool isNoteAnchoredTextLine = sp->isNoteLine() && toNoteLine(sp)->enforceMinLength();
-                if ((sp->isGlissando() || isNoteAnchoredTextLine) && note->ownershipParent() && note->ownershipParent()->isChord()) {
-                    toChord(note->ownershipParent())->setEndsNoteAnchoredLine(true);
-                }
                 note->addSpannerBack(sp);
             }
             ctx.removeSpanner(sp);
@@ -1414,6 +1410,8 @@ static bool readTextProperties206(XmlReader& e, ReadContext& ctx, TextBase* t)
             t->ryoffset() += .5 * ctx.spatium();           // HACK: bbox is different in 2.x
         }
         adjustPlacement(t);
+    } else if (tag == "subtype") {
+        e.skipCurrentElement();     // unused
     } else if (!read400::TRead::readTextProperties(t, e, ctx)) {
         return false;
     }

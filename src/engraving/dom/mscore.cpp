@@ -54,7 +54,6 @@ int MScore::pedalEventsMinTicks;
 
 double MScore::nudgeStep;
 double MScore::nudgeStep10;
-double MScore::nudgeStep50;
 
 bool MScore::noImages = false;
 bool MScore::pdfPrinting = false;
@@ -125,6 +124,7 @@ std::string MScore::errorToString(MsError err)
     case MsError::CANNOT_EXPLODE_IMPLODE_LOCAL_TIMESIG: return "CANNOT_EXPLODE_IMPLODE_LOCAL_TIMESIG";
     case MsError::NO_SPACE_FOR_TUPLET: return "NO_SPACE_FOR_TUPLET";
     case MsError::TUPLET_NOTE_VALUE_TOO_SHORT: return "TUPLET_NOTE_VALUE_TOO_SHORT";
+    case MsError::TUPLET_RATIO_NOT_POSSIBLE: return "TUPLET_RATIO_NOT_POSSIBLE";
     }
 
     return {};

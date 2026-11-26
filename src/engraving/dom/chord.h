@@ -87,6 +87,7 @@ class GraceNotesGroup final : public std::vector<Chord*>, public EngravingItem
     OBJECT_ALLOCATOR(engraving, GraceNotesGroup)
 public:
     GraceNotesGroup* clone() const override { return new GraceNotesGroup(*this); }
+    void setOwnershipParent(DummyParentOr<Chord> parent) { EngravingItem::setOwnershipParent(parent); }
     GraceNotesGroup(DummyParentOr<Chord> c);
 
     Chord* parent() const { return _parent; }
@@ -216,9 +217,8 @@ public:
     void setTremoloSingleChord(TremoloSingleChord* tr);
 
     ChordLine* chordLine() const;
-    bool endsNoteAnchoredLine() const { return m_endsNoteAnchoredLine; }
-    void setEndsNoteAnchoredLine(bool val) { m_endsNoteAnchoredLine = val; }
-    void updateEndsNoteAnchoredLine();
+    /// Whether a glissando, guitar bend, or note line that enforces a minimum length ends on one of this chord's notes
+    bool endsNoteAnchoredLine() const;
     StemSlash* stemSlash() const { return m_stemSlash; }
     bool showStemSlash() const { return m_showStemSlash; }
     void setShowStemSlashInAdvance();
@@ -386,7 +386,7 @@ private:
 
     friend class Factory;
 
-    Chord(DummyParentOr<Segment> parent);
+    Chord(DummyParentOr<Segment, Chord> parent);
     Chord(const Chord&, bool link = false);
 
     // `includeTemporarySiblings`: whether items that are deleted & recreated during every layout should also be processed
@@ -407,7 +407,6 @@ private:
     TremoloTwoChord* m_tremoloTwoChord = nullptr;
     TremoloSingleChord* m_tremoloSingleChord = nullptr;
 
-    bool m_endsNoteAnchoredLine = false;        // true if this chord is the ending point of a glissando (needed for layout)
     std::vector<Chord*> m_graceNotes;    // storage for all grace notes
     mutable GraceNotesGroup m_graceNotesBefore = GraceNotesGroup(this); // will store before-chord grace notes
     mutable GraceNotesGroup m_graceNotesAfter = GraceNotesGroup(this); // will store after-chord grace notes

@@ -23,6 +23,8 @@
 #pragma once
 
 #include "modularity/imoduleinterface.h"
+#include "async/promise.h"
+#include "types/ret.h"
 #include "notation/inotation_fwd.h"
 #include "inotationwriter.h"
 #include "internal/exporttype.h"
@@ -42,13 +44,13 @@ class IExportProjectScenario : MODULE_CONTEXT_INTERFACE
 public:
     virtual std::vector<INotationWriter::UnitType> supportedUnitTypes(const ExportType& exportType) const = 0;
 
-    virtual muse::RetVal<muse::io::path_t> askExportPath(const notation::INotationPtrList& notations, const ExportType& exportType,
-                                                         INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
-                                                         muse::io::path_t defaultPath = "") const = 0;
+    virtual muse::async::Promise<muse::io::path_t> askExportPath(const notation::INotationPtrList& notations, const ExportType& exportType,
+                                                                 INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
+                                                                 muse::io::path_t defaultPath = "") const = 0;
 
-    virtual bool exportScores(notation::INotationPtrList notations, const muse::io::path_t destinationPath,
-                              INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
-                              bool openDestinationFolderOnExport = false) const = 0;
+    virtual muse::async::Promise<muse::Ret> exportScores(notation::INotationPtrList notations, const muse::io::path_t destinationPath,
+                                                         INotationWriter::UnitType unitType = INotationWriter::UnitType::PER_PART,
+                                                         bool openDestinationFolderOnExport = false) const = 0;
 
     virtual const ExportInfo& exportInfo() const = 0;
     virtual void setExportInfo(const ExportInfo& exportInfo) = 0;

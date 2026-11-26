@@ -65,6 +65,9 @@ public:
     void resetNumberProperty();
     static void resetNumberProperty(Text* number);
 
+    static String typeUserName(int numerator);
+    static String numberText(const Fraction& ratio, TupletNumberType numberType, bool useSymbols);
+
     bool isEditable() const override;
     void startDragGrip(EditData&) override;
     void dragGrip(EditData&) override;
@@ -131,7 +134,7 @@ public:
     void setVisible(bool f) override;
     void setColor(const Color& col) override;
 
-    EngravingObject* propertyDelegate(Pid id) const override;
+    PropertyDelegate resolvePropertyDelegate(Pid id) const override;
     PropertyValue getProperty(Pid propertyId) const override;
     bool setProperty(Pid propertyId, const PropertyValue& v) override;
     PropertyValue propertyDefault(Pid id) const override;
@@ -148,6 +151,8 @@ public:
     bool calcHasBracket(const DurationElement* cr1, const DurationElement* cr2) const;
 
     static int computeTupletDenominator(int numerator, Fraction totalDuration);
+    // The number of normal notes for numerator notes, as in 2:3, 3:2, 4:3, 5:4, 6:4, 7:4, 8:6 and 9:8
+    static int conventionalTupletDenominator(int numerator);
 
     PointF bracketL[4];
     PointF bracketR[3];
@@ -187,7 +192,7 @@ private:
     Fraction m_tick;
 
     PointF m_p1, m_p2;
-    PointF m_userP1, m_userP2;      // user offset
+    PointF m_userP1, m_userP2; // user adjustments of the bracket start/end
 
     Text* m_number = nullptr;
 };

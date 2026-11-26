@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "barline.h"
+#include "dummyparent.h"
 #include "keysig.h"
 #include "measure.h"
 #include "score.h"
@@ -88,19 +89,19 @@ VoltaSegment::VoltaSegment(Volta* sp)
 //   propertyDelegate
 //---------------------------------------------------------
 
-EngravingObject* VoltaSegment::propertyDelegate(Pid pid) const
+PropertyDelegate VoltaSegment::resolvePropertyDelegate(Pid pid) const
 {
     if (pid == Pid::BEGIN_HOOK_TYPE || pid == Pid::END_HOOK_TYPE || pid == Pid::VOLTA_ENDING) {
-        return spanner();
+        return PropertyDelegate(spanner());
     }
-    return TextLineBaseSegment::propertyDelegate(pid);
+    return TextLineBaseSegment::resolvePropertyDelegate(pid);
 }
 
 //---------------------------------------------------------
 //   Volta
 //---------------------------------------------------------
 
-Volta::Volta(DummyParentOr<EngravingItem> parent)
+Volta::Volta(DummyParent* parent)
     : TextLineBase(ElementType::VOLTA, parent, ElementFlag::SYSTEM)
 {
     setPlacement(PlacementV::ABOVE);

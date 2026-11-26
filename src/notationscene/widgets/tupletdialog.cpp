@@ -24,7 +24,7 @@
 
 #include "notation/inotation.h"
 #include "notation/inotationstyle.h"
-#include "notationcommands.h"
+#include "notation/notationcommands.h"
 
 #include "ui/view/widgetstatestore.h"
 
@@ -51,6 +51,10 @@ void TupletDialog::componentComplete()
     connect(buttonBox, &QDialogButtonBox::clicked, this, &TupletDialog::bboxClicked);
 
     defaultToStyleSettings();
+
+    const TupletSelectedDuration selectedDurationAsPreference = configuration()->tupletCommandsSelectedDurationAs();
+    subdivision->setChecked(selectedDurationAsPreference == TupletSelectedDuration::SUBDIVISION);
+    tupletLength->setChecked(selectedDurationAsPreference == TupletSelectedDuration::TUPLET_LENGTH);
 
     numberGroupBox->setAccessibleName(formatGroupBox->title() + " " + numberGroupBox->title());
     bracketGroupBox->setAccessibleName(formatGroupBox->title() + " " + bracketGroupBox->title());
@@ -138,14 +142,14 @@ INotationPtr TupletDialog::notation() const
 
 void TupletDialog::apply()
 {
-    rcommand::Params params = {
-        { "ratio", Val(Fraction(actualNotes->value(), normalNotes->value()).toString().toStdString()) },
-        EnumContract<TupletNumberType>::param(numberType()),
-        EnumContract<TupletBracketType>::param(bracketType()),
-        EnumContract<TupletSelectedDuration>::param(selectedDurationAs()),
-    };
+    AddTupletCommand cmd;
+    cmd.ratio = Fraction(actualNotes->value(), normalNotes->value()).toString().toStdString();
+    cmd.numberType = numberType();
+    cmd.bracketType = bracketType();
+    cmd.selectedDurationAs = selectedDurationAs();
+    cmd.autoBaseLen = false;
 
-    dispatcher()->dispatch(ADD_TUPLET_COMMAND, params);
+    dispatcher()->dispatch(cmd);
 }
 
 void TupletDialog::bboxClicked(QAbstractButton* button)

@@ -185,21 +185,25 @@ PointF KeySig::staffOffset() const
     return PointF(0.0, 0.0);
 }
 
-EngravingObject* KeySig::propertyDelegate(Pid propertyId) const
+PropertyDelegate KeySig::resolvePropertyDelegate(Pid propertyId) const
 {
     if (!_isCourtesy) {
-        return nullptr;
+        return PropertyDelegate();
     }
     switch (propertyId) {
     case Pid::KEY:
     case Pid::KEY_CONCERT:
     case Pid::SHOW_COURTESY:
     case Pid::KEYSIG_MODE:
+    case Pid::JIANPU_NUMBERING:
+    case Pid::JIANPU_TONIC_KEY:
+    case Pid::JIANPU_TONIC_MODE:
     {
         Segment* thisSeg = segment();
         Segment* nextKSSeg = thisSeg ? thisSeg->next1(SegmentType::KeySig) : nullptr;
         if (nextKSSeg && nextKSSeg->tick() == thisSeg->tick()) {
-            return nextKSSeg->element(track());
+            EngravingItem* next = nextKSSeg->element(track());
+            return next ? PropertyDelegate(next) : PropertyDelegate();
         }
         break;
     }
@@ -207,7 +211,7 @@ EngravingObject* KeySig::propertyDelegate(Pid propertyId) const
         break;
     }
 
-    return nullptr;
+    return PropertyDelegate();
 }
 
 //---------------------------------------------------------
@@ -216,8 +220,8 @@ EngravingObject* KeySig::propertyDelegate(Pid propertyId) const
 
 PropertyValue KeySig::getProperty(Pid propertyId) const
 {
-    if (EngravingObject* e = propertyDelegate(propertyId)) {
-        return e->getProperty(propertyId);
+    if (const PropertyDelegate d = resolvePropertyDelegate(propertyId); d.hasDelegate) {
+        return d.delegate ? d.delegate->getProperty(propertyId) : propertyDefault(propertyId);
     }
     switch (propertyId) {
     case Pid::KEY:
@@ -228,6 +232,12 @@ PropertyValue KeySig::getProperty(Pid propertyId) const
         return showCourtesy();
     case Pid::KEYSIG_MODE:
         return mode();
+    case Pid::JIANPU_NUMBERING:
+        return jianpuNumbering();
+    case Pid::JIANPU_TONIC_KEY:
+        return jianpuTonicKey();
+    case Pid::JIANPU_TONIC_MODE:
+        return jianpuTonicMode();
     case Pid::IS_COURTESY:
         return _isCourtesy;
     default:
@@ -241,8 +251,8 @@ PropertyValue KeySig::getProperty(Pid propertyId) const
 
 bool KeySig::setProperty(Pid propertyId, const PropertyValue& v)
 {
-    if (EngravingObject* e = propertyDelegate(propertyId)) {
-        return e->setProperty(propertyId, v);
+    if (const PropertyDelegate d = resolvePropertyDelegate(propertyId); d.hasDelegate) {
+        return d.delegate ? d.delegate->setProperty(propertyId, v) : false;
     }
     switch (propertyId) {
     case Pid::KEY:
@@ -270,6 +280,27 @@ bool KeySig::setProperty(Pid propertyId, const PropertyValue& v)
         setMode(v.value<KeyMode>());
         staff()->setKey(tick(), keySigEvent());
         break;
+    case Pid::JIANPU_NUMBERING:
+        if (generated()) {
+            return false;
+        }
+        setJianpuNumbering(v.value<JianpuNumbering>());
+        staff()->setKey(tick(), keySigEvent());
+        break;
+    case Pid::JIANPU_TONIC_KEY:
+        if (generated()) {
+            return false;
+        }
+        setJianpuTonicKey(v.value<Key>());
+        staff()->setKey(tick(), keySigEvent());
+        break;
+    case Pid::JIANPU_TONIC_MODE:
+        if (generated()) {
+            return false;
+        }
+        setJianpuTonicMode(v.value<KeyMode>());
+        staff()->setKey(tick(), keySigEvent());
+        break;
     case Pid::IS_COURTESY:
         _isCourtesy = v.toBool();
         break;
@@ -290,7 +321,11 @@ bool KeySig::setProperty(Pid propertyId, const PropertyValue& v)
 
 void KeySig::undoChangeProperty(Pid id, const PropertyValue& v, PropertyFlags ps)
 {
-    if (EngravingObject* e = propertyDelegate(id)) {
+    if (const PropertyDelegate d = resolvePropertyDelegate(id); d.hasDelegate) {
+        EngravingObject* e = d.delegate;
+        if (!e) {
+            return;
+        }
         /* If this is a courtesy, we must change the property of the _real_ key signature,
          * and we want to avoid EngravingObject::undoChangeProperty unsetting GENERATED
          * unless something really has changed about the courtesy itself: */
@@ -320,6 +355,12 @@ PropertyValue KeySig::propertyDefault(Pid id) const
         return true;
     case Pid::KEYSIG_MODE:
         return KeyMode::UNKNOWN;
+    case Pid::JIANPU_NUMBERING:
+        return JianpuNumbering::FOLLOW_SCORE_KEY;
+    case Pid::JIANPU_TONIC_KEY:
+        return Key::C;
+    case Pid::JIANPU_TONIC_MODE:
+        return KeyMode::MAJOR;
     case Pid::IS_COURTESY:
         return false;
     default:

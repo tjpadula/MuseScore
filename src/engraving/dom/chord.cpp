@@ -281,7 +281,7 @@ std::vector<int> Chord::noteDistances() const
 //   Chord
 //---------------------------------------------------------
 
-Chord::Chord(DummyParentOr<Segment> parent)
+Chord::Chord(DummyParentOr<Segment, Chord> parent)
     : ChordRest(ElementType::CHORD, parent)
 {
     m_stem             = 0;
@@ -289,7 +289,6 @@ Chord::Chord(DummyParentOr<Segment> parent)
     m_stemDirection    = DirectionV::AUTO;
     m_arpeggio         = 0;
     m_spanArpeggio     = 0;
-    m_endsNoteAnchoredLine    = false;
     m_noteType         = NoteType::NORMAL;
     m_stemSlash        = 0;
     m_noStem           = false;
@@ -328,7 +327,6 @@ Chord::Chord(const Chord& c, bool link)
     }
     m_stem          = 0;
     m_hook          = 0;
-    m_endsNoteAnchoredLine = false;
     m_arpeggio      = 0;
     m_stemSlash     = 0;
 
@@ -671,9 +669,6 @@ void Chord::add(EngravingItem* e)
     case ElementType::TREMOLO_SINGLECHORD:
         setTremoloSingleChord(item_cast<TremoloSingleChord*>(e));
         break;
-    case ElementType::GLISSANDO:
-        m_endsNoteAnchoredLine = true;
-        break;
     case ElementType::STEM:
         assert(!m_stem);
         m_stem = toStem(e);
@@ -777,9 +772,6 @@ void Chord::remove(EngravingItem* e)
         break;
     case ElementType::TREMOLO_SINGLECHORD:
         setTremoloSingleChord(nullptr);
-        break;
-    case ElementType::GLISSANDO:
-        m_endsNoteAnchoredLine = false;
         break;
     case ElementType::STEM:
         m_stem = 0;
@@ -1073,7 +1065,8 @@ bool Chord::shouldHaveStem() const
            && !(durationType().type() == DurationType::V_HALF && staffType && staffType->isTabStaff()
                 && staffType->minimStyle() == TablatureMinimStyle::NONE)
            && !(measure() && measure()->stemless(staffIdx()))
-           && !(staffType && staffType->isTabStaff() && staffType->stemless());
+           && !(staffType && staffType->isTabStaff() && staffType->stemless())
+           && !(staff && staff->isJianpuStaff(tick()));
 }
 
 bool Chord::shouldHaveHook() const
@@ -1994,24 +1987,16 @@ void Chord::setSlash(bool flag, bool stemless)
     }
 }
 
-//---------------------------------------------------------
-//  updateEndsNoteAnchoredLine
-//    sets/resets the chord m_endsNoteAnchoredLine according any note anchored line
-//    end into this chord or no.
-//---------------------------------------------------------
-
-void Chord::updateEndsNoteAnchoredLine()
+bool Chord::endsNoteAnchoredLine() const
 {
-    m_endsNoteAnchoredLine = false;         // assume no note anchored line ends here
-    // scan all chord notes for note anchored lines ending on this chord
-    for (Note* note : notes()) {
-        for (Spanner* sp : note->spannerBack()) {
-            if (sp->isGlissando() || (sp->isNoteLine() && toNoteLine(sp)->enforceMinLength())) {
-                m_endsNoteAnchoredLine = true;
-                return;
+    for (const Note* note : m_notes) {
+        for (const Spanner* sp : note->spannerBack()) {
+            if (sp->isGlissando() || sp->isGuitarBend() || (sp->isNoteLine() && toNoteLine(sp)->enforceMinLength())) {
+                return true;
             }
         }
     }
+    return false;
 }
 
 //---------------------------------------------------------

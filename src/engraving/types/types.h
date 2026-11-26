@@ -218,6 +218,8 @@ enum class ElementType : unsigned char {
     TAPPING_HALF_SLUR,
     TAPPING_HALF_SLUR_SEGMENT,
     TAPPING_TEXT,
+    JIANPU_OCTAVE_DOT,
+    JIANPU_DURATION_LINE,
 
     STAVE_SHARING_CHANGE,
 
@@ -1030,6 +1032,7 @@ enum class TextStyleType : unsigned char {
     FRET_DIAGRAM_FRET_NUMBER,
     HARP_PEDAL_DIAGRAM,
     HARP_PEDAL_TEXT_DIAGRAM,
+    JIANPU_NUMBER,
 
     // Line-oriented styles
     TEXTLINE,
@@ -1185,6 +1188,12 @@ enum class CourtesyBarlineMode : char {
     DOUBLE_BEFORE_COURTESY = 2,
 };
 
+// How the tonic ("1") of a Jianpu staff is determined
+enum class JianpuNumbering : char {
+    FOLLOW_SCORE_KEY = 0,     // tonic follows the actual key signature
+    CUSTOM           = 1      // tonic and mode are selected independently
+};
+
 enum class FermataType : signed char {
     Undefined = -1,
     VeryShort,
@@ -1323,9 +1332,9 @@ enum class MarkerType : unsigned char {
 };
 
 enum class StaffGroup : unsigned char {
-    STANDARD, PERCUSSION, TAB
+    STANDARD, PERCUSSION, TAB, JIANPU
 };
-constexpr int STAFF_GROUP_MAX = int(StaffGroup::TAB) + 1; // out of enum to avoid compiler complains about not handled switch cases
+constexpr int STAFF_GROUP_MAX = int(StaffGroup::JIANPU) + 1; // out of enum to avoid compiler complains about not handled switch cases
 
 // keep in sync with the _presets initialization in StaffType::initStaffTypes() and _defaultPreset for legacy scores
 enum class StaffTypes : signed char {
@@ -1338,6 +1347,7 @@ enum class StaffTypes : signed char {
     TAB_ITALIAN, TAB_FRENCH,
     TAB_7COMMON, TAB_8COMMON, TAB_9COMMON, TAB_10COMMON,
     TAB_7SIMPLE, TAB_8SIMPLE, TAB_9SIMPLE, TAB_10SIMPLE,
+    JIANPU,
     STAFF_TYPES,
     PERC_DEFAULT = StaffTypes::PERC_5LINE,
     TAB_DEFAULT = StaffTypes::TAB_6COMMON,
@@ -1588,16 +1598,34 @@ enum class ActionIconType : signed char {
 };
 
 enum class TupletNumberType : unsigned char {
-    SHOW_NUMBER, SHOW_RELATION, NO_TEXT
+    SHOW_NUMBER, SHOW_RELATION, NO_TEXT, DEFAULT /*from style*/
 };
 
 enum class TupletBracketType : unsigned char {
-    AUTO_BRACKET, SHOW_BRACKET, SHOW_NO_BRACKET
+    AUTO_BRACKET, SHOW_BRACKET, SHOW_NO_BRACKET, DEFAULT /*from style*/
 };
 
 // what a tuplet command uses the selected duration as
 enum class TupletSelectedDuration : unsigned char {
-    SUBDIVISION, TUPLET_LENGTH
+    SUBDIVISION, TUPLET_LENGTH, DEFAULT /*from configuration*/
+};
+
+enum class OrnamentType {
+    UNDEFINED = (int)SymId::noSym,
+    TURN = (int)SymId::ornamentTurn,
+    TURN_INVERTED = (int)SymId::ornamentTurnInverted,
+    TURN_SLASH = (int)SymId::ornamentTurnSlash,
+    TURN_UP = (int)SymId::ornamentTurnUp,
+    TURN_INVERTED_UP = (int)SymId::ornamentTurnUpS,
+    TRILL = (int)SymId::ornamentTrill,
+    SHORT_TRILL = (int)SymId::ornamentShortTrill,
+    MORDENT = (int)SymId::ornamentMordent,
+    HAYDN = (int)SymId::ornamentHaydn,
+    TREMBLEMENT = (int)SymId::ornamentTremblement,
+    PRALL_MORDENT = (int)SymId::ornamentPrallMordent,
+    SHAKE = (int)SymId::ornamentShake3,
+    SHAKE_MUFFAT = (int)SymId::ornamentShakeMuffat1,
+    TREMBLEMENT_COUPERIN = (int)SymId::ornamentTremblementCouperin,
 };
 } // mu::engraving
 

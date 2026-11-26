@@ -39,6 +39,10 @@ StyledDialogView {
 
     ExportDialogModel {
         id: exportModel
+
+        onExportStarted: {
+            root.hide()
+        }
     }
 
     onNavigationActivateRequested: {
@@ -149,15 +153,14 @@ StyledDialogView {
 
                     FlatButton {
                         text: qsTrc("project/export", "Export…")
+                        navigation.name: "Export"
                         buttonRole: ButtonBoxModel.AcceptRole
                         buttonId: ButtonBoxModel.Done
                         enabled: exportModel.selectionLength > 0 && exportOptionsView.isExportAvailable
                         accentButton: true
 
                         onClicked: {
-                            if (exportModel.exportScores()) {
-                                root.hide();
-                            }
+                            exportModel.exportScores()
                         }
                     }
 

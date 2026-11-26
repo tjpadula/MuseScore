@@ -23,9 +23,11 @@
 #pragma once
 
 #include <QDir>
-// This is madness. If this is here, it evaluates to false.
-// #if QT_QPROCESS_SUPPORTED
-#if !defined(Q_OS_IOS)
+//#if !defined(Q_OS_IOS)
+
+#include "muse_framework_config.h"
+
+#ifdef QT_QPROCESS_SUPPORTED
 #include <QProcess>
 #endif
 
@@ -192,5 +194,5 @@ public slots:
     /// --
     Q_INVOKABLE QByteArray readAllStandardOutput() { return QProcess::readAllStandardOutput(); }
 };
-#endif
+#endif // QT_QPROCESS_SUPPORTED
 }

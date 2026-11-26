@@ -48,7 +48,11 @@ target_sources(notation PRIVATE
     inotationelements.h
     inotationparts.h
     iinstrumentsrepository.h
+    inotationcommandscontroller.h
+    inotationviewcontroller.h
 
+    notationcommands.h
+    notationcommandsenums.h
     notationtypes.h
     types/automationlane.h
     types/instrumentstypes.h
@@ -69,8 +73,6 @@ target_sources(notation PRIVATE
     internal/instrumentsrepository.h
     internal/masternotation.cpp
     internal/masternotation.h
-    internal/masternotationparts.cpp
-    internal/masternotationparts.h
     internal/mscnotationwriter.cpp
     internal/mscnotationwriter.h
     internal/mscoreerrorscontroller.cpp
@@ -118,6 +120,12 @@ target_sources(notation PRIVATE
     internal/scorecallbacks.h
     internal/searchcommandsparser.cpp
     internal/searchcommandsparser.h
+    internal/notationactioncontroller.cpp
+    internal/notationactioncontroller.h
+    internal/notationcommandsregister.cpp
+    internal/notationcommandsregister.h
+    internal/notationcommandsstate.cpp
+    internal/notationcommandsstate.h
 
     utilities/offsetutilities.h
     utilities/scorerangeutilities.cpp
